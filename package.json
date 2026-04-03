@@ -1,0 +1,24 @@
+{
+  "name": "isg-second-brain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Module 1 infrastructure for the ISG Second Brain.",
+  "main": "src/api/server.js",
+  "scripts": {
+    "start": "node src/api/server.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed-test-data.js",
+    "test": "node --test --test-concurrency=1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "csv-parser": "^3.1.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "uuid": "^11.1.0",
+    "xlsx": "^0.18.5"
+  }
+}
