@@ -9,7 +9,7 @@ let pool = null;
 function getPoolConfig() {
   return {
     host: process.env.POSTGRES_HOST || 'localhost',
-    port: Number(process.env.POSTGRES_PORT || 5432),
+    port: Number(process.env.POSTGRES_PORT || 5433),
     database: process.env.POSTGRES_DB || 'isg_brain',
     user: process.env.POSTGRES_USER || 'isg',
     password: process.env.POSTGRES_PASSWORD || 'localdev'

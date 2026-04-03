@@ -83,7 +83,7 @@ test('Module 1 integration', async (t) => {
 
   await t.test('Docker service ports are reachable', async () => {
     const postgresHost = process.env.POSTGRES_HOST || 'localhost';
-    const postgresPort = Number(process.env.POSTGRES_PORT || 5432);
+    const postgresPort = Number(process.env.POSTGRES_PORT || 5433);
     const chromaHost = process.env.CHROMA_HOST || 'localhost';
     const chromaPort = Number(process.env.CHROMA_PORT || 8000);
 

@@ -10,7 +10,7 @@ Module 1 provides the local infrastructure for the ISG Second Brain: PostgreSQL 
 
 ## Setup
 
-1. Copy `.env.example` to `.env` and adjust values if needed.
+1. Copy `.env.example` to `.env` and adjust values if needed. By default, PostgreSQL is mapped to `5433` to avoid colliding with a locally installed Postgres on macOS.
 2. Start the local services:
 
 ```powershell
