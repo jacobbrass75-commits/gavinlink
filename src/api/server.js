@@ -9,6 +9,7 @@ const buyersRouter = require('./routes/buyers');
 const sellersRouter = require('./routes/sellers');
 const knowledgeRouter = require('./routes/knowledge');
 const matchRouter = require('./routes/match');
+const matchesRouter = require('./routes/matches');
 const dailyRouter = require('./routes/daily');
 const importExportRouter = require('./routes/import-export');
 
@@ -25,6 +26,7 @@ function createApp() {
   app.use(sellersRouter);
   app.use(knowledgeRouter);
   app.use(matchRouter);
+  app.use(matchesRouter);
   app.use(dailyRouter);
   app.use(importExportRouter);
   return app;
