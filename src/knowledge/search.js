@@ -1,5 +1,5 @@
 const { query } = require('../db/connection');
-const { generateEmbedding, getKnowledgeCollection } = require('./embeddings');
+const { getKnowledgeCollection } = require('./embeddings');
 const { getKnowledgeEntry } = require('./extract');
 
 function cleanText(value, fallback = null) {
@@ -155,9 +155,8 @@ async function semanticSearch(searchQuery, options = {}) {
 
   try {
     const collection = await getKnowledgeCollection();
-    const embedding = await generateEmbedding(q);
     const queryResult = await collection.query({
-      queryEmbeddings: [embedding],
+      queryTexts: [q],
       nResults: Math.max(limit * 3, limit),
       include: ['documents', 'metadatas', 'distances']
     });

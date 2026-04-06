@@ -1,9 +1,19 @@
 const path = require('path');
 const dotenv = require('dotenv');
+const Anthropic = require('@anthropic-ai/sdk');
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const SUPPORTED_PROVIDERS = new Set(['claude', 'ollama', 'openai']);
+
+let _anthropicClient = null;
+
+function getAnthropicClient() {
+  if (!_anthropicClient) {
+    _anthropicClient = new Anthropic();
+  }
+  return _anthropicClient;
+}
 
 function getProvider() {
   const provider = String(process.env.INFERENCE_PROVIDER || 'claude')
@@ -74,8 +84,27 @@ async function complete(prompt, options = {}) {
     throw new Error('prompt must be a non-empty string');
   }
 
-  void options;
   const provider = await ensureProviderConfigured();
+
+  if (provider === 'claude') {
+    const client = getAnthropicClient();
+    const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+    const maxTokens = options.maxTokens || 2048;
+
+    const response = await client.messages.create({
+      model,
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const text = response.content
+      .filter((block) => block.type === 'text')
+      .map((block) => block.text)
+      .join('');
+
+    return text;
+  }
+
   throw new Error(getScaffoldMessage(provider));
 }
 

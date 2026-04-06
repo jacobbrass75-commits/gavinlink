@@ -1,6 +1,7 @@
 const provider = require('../inference/provider');
-const { classifyEntityType } = require('../entities/extract');
-const { normalizeEntityType } = require('./merge');
+const { classifyEntityType, normalizeName } = require('../entities/extract');
+const { normalizeEntityType, findEntitiesFuzzy } = require('./merge');
+const { query } = require('../db/connection');
 
 const SYSTEM_PROMPT = `You are the ingestion engine for a commercial real estate Second Brain. The user (a broker) is going to tell you something. Your job is to classify what they said and extract structured data from it.
 
@@ -52,7 +53,27 @@ Response format:
     "sensibilities": "Numbers-driven, direct communicator, don't waste time with fluff"
   },
   "seller_profile": null,
-  "property_ref": null,
+  "property_ref": null
+}
+
+When the message is about a seller or distressed property, use this seller_profile format instead:
+{
+  "classifications": ["seller_intel", "property_note"],
+  "entities": [...],
+  "relationships": [...],
+  "buyer_profile": null,
+  "seller_profile": {
+    "entity_name": "Jane Smith",
+    "motivation": "foreclosure",
+    "distress_level": 4,
+    "timeline": "30 days",
+    "lender_status": "not cooperating",
+    "minimum_acceptable": 10000000,
+    "asking_price": null,
+    "sensibilities": "Desperate, willing to take cash below market",
+    "notes": null
+  },
+  "property_ref": { "apn": null, "address": "8122 Maie Ave", "raw": "8122 Maie Ave" },
   "action_items": [
     "Run matching for Mike Chen against current inventory",
     "Send Mike 2-3 property options within 48 hours"
@@ -68,7 +89,18 @@ Rules:
 - For financing_preference, use: cash, conventional, sba, bridge, seller_financing
 - For urgency, use: actively_looking, opportunistic, long_term
 - Extract sensibilities verbatim — preserve the broker's exact observations about communication style, preferences, deal-breakers
-- Be conservative — if you're not sure, omit the field rather than guess`;
+- Be conservative — if you're not sure, omit the field rather than guess
+- For seller_profile.motivation, use: foreclosure, bankruptcy, divorce, estate, relocation, retirement, market_timing
+- For seller_profile.distress_level, use 1-5 (1=not distressed, 5=extremely distressed)
+- When a message mentions a property owner wanting to sell, in distress, or facing foreclosure, ALWAYS include a seller_profile
+- When a message references a specific property address or APN, ALWAYS include property_ref
+
+IMPORTANT — Follow-up messages:
+- If "Known entities" context is provided below, the broker is adding NEW information about people/companies already in the system.
+- When a message mentions a known entity with an existing buyer profile, classify as "buyer_intel" and include a buyer_profile with ONLY the new/changed fields (the system will merge them).
+- When a message mentions a known entity with an existing seller profile, classify as "seller_intel".
+- Always extract ALL people mentioned — including new people introduced alongside known ones (e.g. "his partner Dave" means Dave is a new entity).
+- When a message updates an existing contact (new cities, new preferences, new relationships), this is NOT a "general_note" — classify it by what the update is about.`;
 
 const ALLOWED_CLASSIFICATIONS = new Set([
   'buyer_intel',
@@ -532,6 +564,98 @@ function validateClassification(response) {
   };
 }
 
+async function buildEntityContext(message) {
+  const names = extractCapitalizedNames(message);
+
+  if (names.length === 0) {
+    return '';
+  }
+
+  const seen = new Set();
+  const contextLines = [];
+
+  for (const name of names) {
+    const normalized = normalizeName(name);
+
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+
+    let matches;
+
+    try {
+      matches = await findEntitiesFuzzy(normalized, 0.5);
+    } catch (_error) {
+      continue;
+    }
+
+    if (!matches || matches.length === 0) {
+      continue;
+    }
+
+    const entity = matches[0];
+
+    if (entity.score < 0.5) {
+      continue;
+    }
+
+    let line = `- ${entity.name} (${entity.entity_type})`;
+
+    try {
+      const buyerResult = await query(
+        `SELECT bp.id, bp.preferred_property_types, bp.target_cities, bp.urgency,
+                bp.financing_preference, bp.investment_strategy, bp.max_price
+         FROM buyer_profiles bp WHERE bp.entity_id = $1 AND bp.active = TRUE LIMIT 1`,
+        [entity.id]
+      );
+
+      if (buyerResult.rows[0]) {
+        const bp = buyerResult.rows[0];
+        const details = [];
+
+        if (bp.preferred_property_types?.length) {
+          details.push(`looking for: ${bp.preferred_property_types.join(', ')}`);
+        }
+
+        if (bp.target_cities?.length) {
+          details.push(`in: ${bp.target_cities.join(', ')}`);
+        }
+
+        if (bp.max_price) {
+          details.push(`budget: $${Number(bp.max_price).toLocaleString()}`);
+        }
+
+        if (details.length) {
+          line += ` [EXISTING BUYER: ${details.join('; ')}]`;
+        }
+      }
+
+      const sellerResult = await query(
+        `SELECT sp.id FROM seller_profiles sp
+         JOIN entities e ON e.id = sp.entity_id
+         WHERE sp.entity_id = $1 LIMIT 1`,
+        [entity.id]
+      );
+
+      if (sellerResult.rows[0]) {
+        line += ' [EXISTING SELLER]';
+      }
+    } catch (_error) {
+      // DB lookup failed — still include the entity without profile details
+    }
+
+    contextLines.push(line);
+  }
+
+  if (contextLines.length === 0) {
+    return '';
+  }
+
+  return `\n\nKnown entities mentioned in this message:\n${contextLines.join('\n')}`;
+}
+
 async function classifyMessage(message) {
   const cleanMessage = cleanText(message, null);
 
@@ -539,9 +663,17 @@ async function classifyMessage(message) {
     throw new Error('message must be a non-empty string');
   }
 
+  let entityContext = '';
+
+  try {
+    entityContext = await buildEntityContext(cleanMessage);
+  } catch (_error) {
+    // If context lookup fails, proceed without it
+  }
+
   try {
     const response = await provider.complete(
-      `${SYSTEM_PROMPT}\n\nBroker message:\n${cleanMessage}`
+      `${SYSTEM_PROMPT}${entityContext}\n\nBroker message:\n${cleanMessage}`
     );
 
     return validateClassification(response);
