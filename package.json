@@ -2,23 +2,31 @@
   "name": "isg-second-brain",
   "version": "0.1.0",
   "private": true,
-  "description": "Module 1 infrastructure for the ISG Second Brain.",
+  "description": "ISG Second Brain backend with infrastructure, entity intelligence, buyer/seller intelligence, and conversational ingestion.",
   "main": "src/api/server.js",
+  "bin": {
+    "brain": "src/cli/brain.js"
+  },
   "scripts": {
     "start": "node src/api/server.js",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed-test-data.js",
-    "test": "node --test --test-concurrency=1"
+    "test": "node --test --test-concurrency=1",
+    "brain": "node src/cli/brain.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "csv-parser": "^3.1.0",
+    "chromadb": "^3.4.2",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "multer": "^2.1.1",
     "pg": "^8.13.1",
     "uuid": "^11.1.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
   }
 }
