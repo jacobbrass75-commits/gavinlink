@@ -209,6 +209,11 @@ async function resolveEntityId(propertyRow, explicitEntityId = null) {
     );
   }
 
+  // Fallback to trustee or lender entity for foreclosure properties without owner
+  if (!entityId) {
+    return propertyRow?.trustee_entity_id || propertyRow?.lender_entity_id || null;
+  }
+
   return entityId;
 }
 
@@ -580,19 +585,26 @@ async function autoGenerateSellerProfiles() {
   let created = 0;
   let existing = 0;
 
+  let skipped = 0;
+
   for (const row of rowsResult.rows) {
     if (row.seller_profile_id) {
       existing += 1;
       continue;
     }
 
-    await createSellerProfile({ property_id: row.id, source: 'auto_generated' });
-    created += 1;
+    try {
+      await createSellerProfile({ property_id: row.id, source: 'auto_generated' });
+      created += 1;
+    } catch (_error) {
+      skipped += 1;
+    }
   }
 
   return {
     created,
-    existing
+    existing,
+    skipped
   };
 }
 
