@@ -2,6 +2,7 @@ const express = require('express');
 const { query } = require('../../db/connection');
 const { getPortfolio, detectPortfolioDistress } = require('../../entities/cluster');
 const { normalizeName } = require('../../entities/extract');
+const { findEntityExact, findEntitiesFuzzy } = require('../../ingestion/merge');
 
 const router = express.Router();
 
@@ -121,6 +122,159 @@ async function getEntityDetail(id) {
     }))
   };
 }
+
+async function getKnowledgeForEntity(entityId) {
+  const result = await query(
+    `
+      SELECT ke.id, ke.title, ke.ai_summary, ke.created_at
+      FROM knowledge_entities links
+      JOIN knowledge_entries ke ON ke.id = links.knowledge_entry_id
+      WHERE links.entity_id = $1
+      ORDER BY ke.created_at DESC
+      LIMIT 25
+    `,
+    [entityId]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    ai_summary: row.ai_summary,
+    created_at: row.created_at
+  }));
+}
+
+async function getKnowledgeForProperty(propertyId) {
+  const result = await query(
+    `
+      SELECT ke.id, ke.title, ke.ai_summary, ke.created_at
+      FROM knowledge_properties links
+      JOIN knowledge_entries ke ON ke.id = links.knowledge_entry_id
+      WHERE links.property_id = $1
+      ORDER BY ke.created_at DESC
+      LIMIT 25
+    `,
+    [propertyId]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    ai_summary: row.ai_summary,
+    created_at: row.created_at
+  }));
+}
+
+router.get('/api/entities/lookup', async (req, res, next) => {
+  try {
+    const name = String(req.query.name || '').trim();
+
+    if (!name) {
+      return res.status(400).json({ error: 'name is required' });
+    }
+
+    const exact = await findEntityExact(name);
+    const fuzzy = exact ? [] : await findEntitiesFuzzy(name, 0.4);
+    const matchedEntity = exact || fuzzy[0] || null;
+
+    if (matchedEntity) {
+      const entityDetail = await getEntityDetail(matchedEntity.id);
+      const portfolio = await getPortfolio(matchedEntity.id);
+      const buyerProfileResult = await query(
+        `
+          SELECT id
+          FROM buyer_profiles
+          WHERE entity_id = $1
+          LIMIT 1
+        `,
+        [matchedEntity.id]
+      );
+      const sellerProfilesResult = await query(
+        `
+          SELECT id, property_id, distress_level, motivation
+          FROM seller_profiles
+          WHERE entity_id = $1
+          ORDER BY distress_level DESC NULLS LAST, created_at DESC
+        `,
+        [matchedEntity.id]
+      );
+
+      return res.json({
+        kind: 'entity',
+        match_type: exact ? 'exact' : 'fuzzy',
+        entity: entityDetail.entity,
+        relationships: entityDetail.relationships,
+        properties: entityDetail.properties,
+        portfolio,
+        buyer_profile_id: buyerProfileResult.rows[0]?.id || null,
+        seller_profiles: sellerProfilesResult.rows,
+        knowledge_entries: await getKnowledgeForEntity(matchedEntity.id)
+      });
+    }
+
+    const propertyResult = await query(
+      `
+        SELECT *,
+               similarity(COALESCE(address, ''), $1) AS score
+        FROM properties
+        WHERE apn = $1
+           OR COALESCE(address, '') ILIKE $2
+           OR similarity(COALESCE(address, ''), $1) >= 0.35
+        ORDER BY
+          CASE WHEN apn = $1 THEN 1 ELSE 2 END,
+          score DESC,
+          address ASC
+        LIMIT 1
+      `,
+      [name, `%${name}%`]
+    );
+      const property = propertyResult.rows[0];
+
+    if (!property) {
+      return res.status(404).json({ error: 'No entity or property found for lookup' });
+    }
+
+    const sellerProfileResult = await query(
+      `
+        SELECT id, distress_level, motivation, foreclosure_stage
+        FROM seller_profiles
+        WHERE property_id = $1
+        LIMIT 1
+      `,
+      [property.id]
+    );
+    const relatedEntitiesResult = await query(
+      `
+        SELECT id, name, entity_type
+        FROM entities
+        WHERE id IN ($1, $2, $3)
+      `,
+      [property.owner_entity_id, property.trustee_entity_id, property.lender_entity_id]
+    );
+
+    return res.json({
+      kind: 'property',
+      property: {
+        id: property.id,
+        apn: property.apn,
+        address: property.address,
+        city: property.city,
+        property_type: property.property_type,
+        assessed_value: property.assessed_value == null ? null : Number(property.assessed_value),
+        foreclosure: property.foreclosure
+      },
+      seller_profile: sellerProfileResult.rows[0] || null,
+      linked_entities: relatedEntitiesResult.rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        type: row.entity_type
+      })),
+      knowledge_entries: await getKnowledgeForProperty(property.id)
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.get('/api/entities/search', async (req, res) => {
   const q = String(req.query.q || '').trim();
