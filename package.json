@@ -19,9 +19,11 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
+    "@chroma-core/default-embed": "^0.1.9",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "csv-parser": "^3.1.0",
     "chromadb": "^3.4.2",
+    "csv-parser": "^3.1.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "multer": "^2.1.1",

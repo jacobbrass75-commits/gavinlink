@@ -61,7 +61,6 @@ async function getKnowledgeCollection() {
       const client = await getChromaClient();
       return client.getOrCreateCollection({
         name: COLLECTION_NAME,
-        embeddingFunction: null,
         metadata: {
           module: 'module_05',
           domain: 'knowledge'
@@ -109,19 +108,20 @@ async function generateEmbedding(text) {
 
 async function storeEmbedding(knowledgeEntryId, text, metadata = {}) {
   const collection = await getKnowledgeCollection();
-  const embedding = await generateEmbedding(text);
   const chromaId = knowledgeEntryId;
+  const entityIds = cleanArray(metadata.entity_ids || []).map(String);
+  const propertyIds = cleanArray(metadata.property_ids || []).map(String);
+  const classifications = cleanArray(metadata.classifications || []).map(String);
   const normalizedMetadata = {
-    entity_ids: cleanArray(metadata.entity_ids || []).map(String),
-    property_ids: cleanArray(metadata.property_ids || []).map(String),
     source: String(metadata.source || 'api'),
-    classifications: cleanArray(metadata.classifications || []).map(String)
+    ...(entityIds.length > 0 ? { entity_ids: entityIds } : {}),
+    ...(propertyIds.length > 0 ? { property_ids: propertyIds } : {}),
+    ...(classifications.length > 0 ? { classifications: classifications } : {})
   };
 
   await collection.add({
     ids: [chromaId],
     documents: [text],
-    embeddings: [embedding],
     metadatas: [normalizedMetadata]
   });
 
