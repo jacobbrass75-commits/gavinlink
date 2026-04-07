@@ -1,6 +1,12 @@
 # ISG Second Brain
 
-Module 1 provides the local infrastructure for the ISG Second Brain: PostgreSQL 16, ChromaDB, the initial schema, migrations, seed data, an Express API scaffold, an inference-provider scaffold, and import/export parsing utilities.
+ISG Second Brain is a local-first commercial real estate intelligence backend. It now includes:
+
+- PostgreSQL + ChromaDB infrastructure
+- entity, buyer, seller, knowledge, and matching workflows
+- foreclosure CSV import with dry-run preview and parcel grouping
+- property document attachment support
+- a narrative `raw/` + `wiki/` layer governed by `CLAUDE.md`
 
 ## Prerequisites
 
@@ -50,6 +56,11 @@ npm test
 ## Endpoints
 
 - `GET /health`
+- `POST /api/import/foreclosure/preview`
+- `POST /api/import/foreclosure`
+- `GET /api/properties/:id`
+- `GET /api/properties/:id/group`
+- `POST /api/properties/:id/documents`
 - `POST /brain/ingest`
 - `GET /brain/search`
 - `GET /brain/entity/:id`
@@ -67,6 +78,8 @@ When all dependencies are reachable, `GET /health` returns:
   "status": "ok",
   "database": "connected",
   "tables": 8,
+  "tables_total": 15,
+  "core_tables_expected": 8,
   "chromadb": "connected",
   "inference_provider": "claude",
   "version": "0.1.0"
@@ -74,3 +87,39 @@ When all dependencies are reachable, `GET /health` returns:
 ```
 
 If PostgreSQL or ChromaDB is unavailable, the route responds with HTTP 503 and the same JSON shape with the failing dependency marked `disconnected`.
+
+## Foreclosure Import
+
+Preview a real foreclosure CSV without writing data:
+
+```bash
+node scripts/import-foreclosure-csv.js /path/to/foreclosures.csv --dry-run
+```
+
+Run the live import:
+
+```bash
+node scripts/import-foreclosure-csv.js /path/to/foreclosures.csv
+```
+
+The importer is UTF-16 aware, deduplicates by `(apn, region)`, records every raw row in `property_import_records`, and groups likely multi-row parcels in `property_groups`.
+
+## Narrative Wiki
+
+The repo includes a Karpathy-inspired narrative layer:
+
+- `raw/` for immutable source material
+- `wiki/` for curated markdown pages
+- `CLAUDE.md` for citation and maintenance rules
+
+Promote a knowledge entry into the wiki:
+
+```bash
+brain promote <knowledge_entry_id>
+```
+
+Lint the wiki for missing citations and stale references:
+
+```bash
+brain lint
+```
