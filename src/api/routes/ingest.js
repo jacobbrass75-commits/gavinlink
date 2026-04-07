@@ -6,6 +6,7 @@ const multer = require('multer');
 const { classifyMessage } = require('../../ingestion/classifier');
 const { routeClassifiedMessage } = require('../../ingestion/router');
 const { processAudioFile } = require('../../knowledge/transcribe');
+const { validateBody, z } = require('../validation');
 
 const router = express.Router();
 const upload = multer({
@@ -14,18 +15,18 @@ const upload = multer({
     fileSize: 25 * 1024 * 1024
   }
 });
+const ingestSchema = z.object({
+  message: z.string().trim().min(1, 'message is required'),
+  source: z.string().trim().min(1).optional()
+});
 
-router.post('/api/ingest', async (req, res, next) => {
+router.post('/api/ingest', validateBody(ingestSchema), async (req, res, next) => {
   try {
-    const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
-
-    if (!message) {
-      return res.status(400).json({ error: 'message is required' });
-    }
+    const { message, source } = req.validatedBody;
 
     const classified = await classifyMessage(message);
     const result = await routeClassifiedMessage(classified, message, {
-      source: typeof req.body?.source === 'string' ? req.body.source : 'api'
+      source: source || 'api'
     });
 
     return res.json({

@@ -28,8 +28,11 @@ async function resetTables() {
   await query(`
     TRUNCATE
       buyer_purchases,
+      property_documents,
+      property_import_records,
       knowledge_entities,
       knowledge_properties,
+      property_groups,
       entity_relationships,
       deals,
       matches,

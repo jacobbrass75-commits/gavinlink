@@ -148,14 +148,17 @@ test('Module 1 integration', async (t) => {
     const response = await requestJson(createApp(), 'GET', '/health');
 
     assert.equal(response.status, 200);
-    assert.deepEqual(response.body, {
-      status: 'ok',
-      database: 'connected',
-      tables: 8,
-      chromadb: 'connected',
-      inference_provider: String(process.env.INFERENCE_PROVIDER || 'claude').trim().toLowerCase(),
-      version: '0.1.0'
-    });
+    assert.equal(response.body.status, 'ok');
+    assert.equal(response.body.database, 'connected');
+    assert.equal(response.body.tables, 8);
+    assert.equal(response.body.chromadb, 'connected');
+    assert.equal(
+      response.body.inference_provider,
+      String(process.env.INFERENCE_PROVIDER || 'claude').trim().toLowerCase()
+    );
+    assert.equal(response.body.version, '0.1.0');
+    assert.ok(response.body.tables_total >= response.body.tables);
+    assert.equal(response.body.core_tables_expected, 8);
   });
 
   await t.test('All stub routes return 501 with the expected payload', async () => {

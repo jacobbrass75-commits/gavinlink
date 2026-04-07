@@ -20,6 +20,9 @@ function runNodeScript(scriptPath, args = []) {
 async function resetTables() {
   await query(`
     TRUNCATE
+      property_documents,
+      property_import_records,
+      property_groups,
       entity_relationships,
       deals,
       matches,

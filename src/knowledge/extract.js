@@ -234,6 +234,82 @@ async function getLinkedProperties(knowledgeEntryId) {
   }));
 }
 
+async function getLinkedEntitiesByKnowledgeEntryIds(knowledgeEntryIds = []) {
+  if (knowledgeEntryIds.length === 0) {
+    return new Map();
+  }
+
+  const result = await query(
+    `
+      SELECT ke.knowledge_entry_id, e.id, e.name, e.entity_type
+      FROM knowledge_entities ke
+      JOIN entities e ON e.id = ke.entity_id
+      WHERE ke.knowledge_entry_id = ANY($1::uuid[])
+      ORDER BY e.name ASC
+    `,
+    [knowledgeEntryIds]
+  );
+  const grouped = new Map(knowledgeEntryIds.map((id) => [id, []]));
+
+  for (const row of result.rows) {
+    grouped.get(row.knowledge_entry_id)?.push({
+      id: row.id,
+      name: row.name,
+      type: row.entity_type
+    });
+  }
+
+  return grouped;
+}
+
+async function getLinkedPropertiesByKnowledgeEntryIds(knowledgeEntryIds = []) {
+  if (knowledgeEntryIds.length === 0) {
+    return new Map();
+  }
+
+  const result = await query(
+    `
+      SELECT kp.knowledge_entry_id, p.id, p.apn, p.address, p.city, p.property_type
+      FROM knowledge_properties kp
+      JOIN properties p ON p.id = kp.property_id
+      WHERE kp.knowledge_entry_id = ANY($1::uuid[])
+      ORDER BY p.address NULLS LAST, p.apn
+    `,
+    [knowledgeEntryIds]
+  );
+  const grouped = new Map(knowledgeEntryIds.map((id) => [id, []]));
+
+  for (const row of result.rows) {
+    grouped.get(row.knowledge_entry_id)?.push({
+      id: row.id,
+      apn: row.apn,
+      address: row.address,
+      city: row.city,
+      property_type: row.property_type
+    });
+  }
+
+  return grouped;
+}
+
+async function hydrateKnowledgeEntries(rows = []) {
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const knowledgeEntryIds = rows.map((row) => row.id);
+  const [entitiesByEntryId, propertiesByEntryId] = await Promise.all([
+    getLinkedEntitiesByKnowledgeEntryIds(knowledgeEntryIds),
+    getLinkedPropertiesByKnowledgeEntryIds(knowledgeEntryIds)
+  ]);
+
+  return rows.map((row) => ({
+    ...toKnowledgeEntry(row),
+    linked_entities: entitiesByEntryId.get(row.id) || [],
+    linked_properties: propertiesByEntryId.get(row.id) || []
+  }));
+}
+
 async function getKnowledgeEntry(id) {
   const result = await query(
     `
@@ -249,11 +325,7 @@ async function getKnowledgeEntry(id) {
     return null;
   }
 
-  return {
-    ...toKnowledgeEntry(row),
-    linked_entities: await getLinkedEntities(id),
-    linked_properties: await getLinkedProperties(id)
-  };
+  return (await hydrateKnowledgeEntries([row]))[0] || null;
 }
 
 async function listKnowledgeEntries(filters = {}) {
@@ -307,7 +379,7 @@ async function listKnowledgeEntries(filters = {}) {
   );
 
   return {
-    results: await Promise.all(rowsResult.rows.map((row) => getKnowledgeEntry(row.id))),
+    results: await hydrateKnowledgeEntries(rowsResult.rows),
     total: countResult.rows[0].count,
     limit,
     offset
