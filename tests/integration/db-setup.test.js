@@ -137,23 +137,28 @@ test('Module 1 integration', async (t) => {
 
     const propertyCountResult = await query('SELECT COUNT(*)::int AS count FROM properties');
     const entityCountResult = await query('SELECT COUNT(*)::int AS count FROM entities');
+    const buyerProfileCountResult = await query('SELECT COUNT(*)::int AS count FROM buyer_profiles');
 
     assert.equal(propertyCountResult.rows[0].count, 10);
     assert.ok(entityCountResult.rows[0].count >= 10);
+    assert.equal(buyerProfileCountResult.rows[0].count, 2);
   });
 
   await t.test('Health endpoint reports dependency status and metadata', async () => {
     const response = await requestJson(createApp(), 'GET', '/health');
 
     assert.equal(response.status, 200);
-    assert.deepEqual(response.body, {
-      status: 'ok',
-      database: 'connected',
-      tables: 8,
-      chromadb: 'connected',
-      inference_provider: String(process.env.INFERENCE_PROVIDER || 'claude').trim().toLowerCase(),
-      version: '0.1.0'
-    });
+    assert.equal(response.body.status, 'ok');
+    assert.equal(response.body.database, 'connected');
+    assert.equal(response.body.tables, 8);
+    assert.equal(response.body.chromadb, 'connected');
+    assert.equal(
+      response.body.inference_provider,
+      String(process.env.INFERENCE_PROVIDER || 'claude').trim().toLowerCase()
+    );
+    assert.equal(response.body.version, '0.1.0');
+    assert.ok(response.body.tables_total >= response.body.tables);
+    assert.equal(response.body.core_tables_expected, 8);
   });
 
   await t.test('All stub routes return 501 with the expected payload', async () => {

@@ -41,7 +41,8 @@ function isPortOpen(host, port, timeoutMs = 2000) {
 async function getDatabaseStatus() {
   try {
     await query('SELECT 1');
-    const tableCountResult = await query(
+    const [tableCountResult, totalTableCountResult] = await Promise.all([
+      query(
       `
         SELECT COUNT(*)::int AS count
         FROM information_schema.tables
@@ -49,16 +50,26 @@ async function getDatabaseStatus() {
           AND table_name = ANY($1::text[])
       `,
       [CORE_TABLES]
-    );
+      ),
+      query(
+        `
+          SELECT COUNT(*)::int AS count
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+        `
+      )
+    ]);
 
     return {
       connected: true,
-      tables: Number(tableCountResult.rows[0].count)
+      tables: Number(tableCountResult.rows[0].count),
+      tables_total: Number(totalTableCountResult.rows[0].count)
     };
   } catch (_error) {
     return {
       connected: false,
-      tables: 0
+      tables: 0,
+      tables_total: 0
     };
   }
 }
@@ -86,6 +97,8 @@ router.get('/health', async (_req, res) => {
     status: ok ? 'ok' : 'error',
     database: databaseStatus.connected ? 'connected' : 'disconnected',
     tables: databaseStatus.connected ? databaseStatus.tables : 0,
+    tables_total: databaseStatus.connected ? databaseStatus.tables_total : 0,
+    core_tables_expected: CORE_TABLES.length,
     chromadb: chromaConnected ? 'connected' : 'disconnected',
     inference_provider: providerName,
     version: packageJson.version

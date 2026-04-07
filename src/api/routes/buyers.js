@@ -17,6 +17,7 @@ const {
   getLenderDetail,
   getLenderOwnerOverlaps
 } = require('../../buyers/lender-report');
+const { validateBody, z } = require('../validation');
 
 const router = express.Router();
 
@@ -35,6 +36,33 @@ function isUuid(value) {
     String(value || '')
   );
 }
+
+const buyerCreateSchema = z.object({
+  entity_name: z.string().trim().min(1, 'entity_name is required'),
+  target_property_types: z.array(z.string().trim().min(1)).optional(),
+  target_cities: z.array(z.string().trim().min(1)).optional(),
+  target_zip_codes: z.array(z.string().trim().min(1)).optional(),
+  min_price: z.coerce.number().nonnegative().optional(),
+  max_price: z.coerce.number().nonnegative().optional(),
+  min_sq_feet: z.coerce.number().nonnegative().optional(),
+  max_sq_feet: z.coerce.number().nonnegative().optional(),
+  min_units: z.coerce.number().nonnegative().optional(),
+  max_units: z.coerce.number().nonnegative().optional(),
+  min_cap_rate: z.coerce.number().optional(),
+  investment_strategy: z.string().trim().min(1).optional(),
+  financing_preference: z.string().trim().min(1).optional(),
+  typical_close_timeline: z.string().trim().min(1).optional(),
+  urgency: z.string().trim().min(1).optional(),
+  sensibilities: z.string().trim().min(1).optional(),
+  notes: z.string().trim().min(1).optional()
+});
+
+const buyerUpdateSchema = buyerCreateSchema
+  .omit({ entity_name: true })
+  .extend({
+    active: z.coerce.boolean().optional()
+  })
+  .partial();
 
 router.get('/api/buyers/search', async (req, res, next) => {
   try {
@@ -111,9 +139,9 @@ router.get('/api/buyers/:id', async (req, res, next) => {
   }
 });
 
-router.post('/api/buyers', async (req, res, next) => {
+router.post('/api/buyers', validateBody(buyerCreateSchema), async (req, res, next) => {
   try {
-    const profile = await createBuyerProfile(req.body || {});
+    const profile = await createBuyerProfile(req.validatedBody || {});
     return res.status(201).json(profile);
   } catch (error) {
     return next(error);
@@ -141,13 +169,13 @@ router.get('/api/buyers', async (req, res, next) => {
   }
 });
 
-router.put('/api/buyers/:id', async (req, res, next) => {
+router.put('/api/buyers/:id', validateBody(buyerUpdateSchema), async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const profile = await updateBuyerProfile(req.params.id, req.body || {});
+    const profile = await updateBuyerProfile(req.params.id, req.validatedBody || {});
     return res.json(profile);
   } catch (error) {
     return next(error);

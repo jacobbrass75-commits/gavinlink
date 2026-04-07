@@ -20,6 +20,9 @@ async function resetTables() {
   await query(`
     TRUNCATE
       buyer_purchases,
+      property_documents,
+      property_import_records,
+      property_groups,
       entity_relationships,
       deals,
       matches,
@@ -113,6 +116,10 @@ test('Module 3 buyer workflow works end to end', async (t) => {
   assert.equal(searchResponse.status, 200);
   assert.equal(searchResponse.body.total, 1);
 
+  const literalWildcardSearchResponse = await requestJson(app, 'GET', '/api/buyers/search?q=%');
+  assert.equal(literalWildcardSearchResponse.status, 200);
+  assert.equal(literalWildcardSearchResponse.body.total, 0);
+
   const lenderResponse = await requestJson(app, 'GET', '/api/lenders');
   assert.equal(lenderResponse.status, 200);
   assert.ok(lenderResponse.body.total > 0);
@@ -143,6 +150,14 @@ test('Module 3 buyer workflow works end to end', async (t) => {
   assert.equal(statsResponse.status, 200);
   assert.equal(statsResponse.body.total_purchases, 1);
   assert.equal(statsResponse.body.total_volume, 3250000);
+
+  const missingStatsResponse = await requestJson(
+    app,
+    'GET',
+    '/api/buyers/00000000-0000-4000-8000-000000000000/stats'
+  );
+  assert.equal(missingStatsResponse.status, 404);
+  assert.deepEqual(missingStatsResponse.body, { error: 'Buyer profile not found' });
 
   const deactivateResponse = await requestJson(app, 'DELETE', `/api/buyers/${buyerId}`);
   assert.equal(deactivateResponse.status, 200);
