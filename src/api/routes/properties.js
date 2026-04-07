@@ -27,6 +27,18 @@ function isUuid(value) {
   );
 }
 
+function parseBoolean(value, fallback = false) {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  return String(value).trim().toLowerCase() === 'true';
+}
+
 router.get('/api/properties/:id', async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
@@ -138,6 +150,9 @@ router.post('/api/properties/:id/documents', requireAdminApiKey, propertyDocumen
       document_type: typeof req.body?.document_type === 'string' ? req.body.document_type : 'other',
       source: typeof req.body?.source === 'string' ? req.body.source : 'manual',
       notes: typeof req.body?.notes === 'string' ? req.body.notes : null,
+      create_knowledge_entry: parseBoolean(req.body?.create_knowledge_entry, true),
+      auto_promote: parseBoolean(req.body?.auto_promote, true),
+      queue_promotion: parseBoolean(req.body?.queue_promotion, true),
       metadata: {
         uploaded_via: 'api',
         original_name: req.file.originalname

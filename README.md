@@ -118,8 +118,24 @@ Promote a knowledge entry into the wiki:
 brain promote <knowledge_entry_id>
 ```
 
+Promote a property PDF or notice into the property wiki page:
+
+```bash
+brain promote-document <property_id> /path/to/notice.pdf --document-type notice_of_sale
+```
+
+Queue high-signal knowledge entries for promotion:
+
+```bash
+brain autopromote --dry-run
+brain autopromote --limit 25
+```
+
 Lint the wiki for missing citations and stale references:
 
 ```bash
 brain lint
+npm run wiki:maintain
 ```
+
+`npm run wiki:maintain` processes the auto-promote queue, writes JSON maintenance reports into `wiki/reports/`, and then lints the wiki for missing citations, missing raw sources, orphan pages, and stale references.

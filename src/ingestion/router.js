@@ -8,6 +8,7 @@ const { createSellerProfile, updateSellerProfile, getSellerProfileByProperty } =
 const { validateClassification } = require('./classifier');
 const { normalizeName } = require('../entities/extract');
 const { buildContainsPattern } = require('../utils/sql');
+const { enqueueKnowledgeEntryPromotion, shouldAutoPromoteEntry } = require('../wiki/queue');
 
 function cleanText(value, fallback = null) {
   if (typeof value !== 'string') {
@@ -289,6 +290,17 @@ async function routeClassifiedMessage(classified, rawMessage, options = {}) {
     );
   } catch (_error) {
     // Keep the ingestion path usable even if Chroma is temporarily unavailable.
+  }
+
+  if (shouldAutoPromoteEntry(knowledgeEntry)) {
+    try {
+      await enqueueKnowledgeEntryPromotion({
+        knowledge_entry_id: knowledgeEntry.id,
+        reason: 'ingestion_high_signal'
+      });
+    } catch (_error) {
+      // Keep ingestion usable even if the narrative queue has a transient issue.
+    }
   }
 
   let matches = [];

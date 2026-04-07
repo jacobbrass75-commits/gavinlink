@@ -13,7 +13,8 @@
     "seed": "node scripts/seed-test-data.js",
     "test": "node --test --test-concurrency=1",
     "brain": "node src/cli/brain.js",
-    "match": "node scripts/run-matching.js"
+    "match": "node scripts/run-matching.js",
+    "wiki:maintain": "node scripts/run-wiki-maintenance.js"
   },
   "engines": {
     "node": ">=20"
