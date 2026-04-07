@@ -3,6 +3,7 @@ const { query } = require('../../db/connection');
 const { getPortfolio, detectPortfolioDistress } = require('../../entities/cluster');
 const { normalizeName } = require('../../entities/extract');
 const { findEntityExact, findEntitiesFuzzy } = require('../../ingestion/merge');
+const { buildContainsPattern } = require('../../utils/sql');
 
 const router = express.Router();
 
@@ -218,7 +219,7 @@ router.get('/api/entities/lookup', async (req, res, next) => {
                similarity(COALESCE(address, ''), $1) AS score
         FROM properties
         WHERE apn = $1
-           OR COALESCE(address, '') ILIKE $2
+           OR COALESCE(address, '') ILIKE $2 ESCAPE '\\'
            OR similarity(COALESCE(address, ''), $1) >= 0.35
         ORDER BY
           CASE WHEN apn = $1 THEN 1 ELSE 2 END,
@@ -226,7 +227,7 @@ router.get('/api/entities/lookup', async (req, res, next) => {
           address ASC
         LIMIT 1
       `,
-      [name, `%${name}%`]
+      [name, buildContainsPattern(name)]
     );
       const property = propertyResult.rows[0];
 
@@ -276,45 +277,50 @@ router.get('/api/entities/lookup', async (req, res, next) => {
   }
 });
 
-router.get('/api/entities/search', async (req, res) => {
-  const q = String(req.query.q || '').trim();
+router.get('/api/entities/search', async (req, res, next) => {
+  try {
+    const q = String(req.query.q || '').trim();
 
-  if (q === '') {
-    return res.status(400).json({
-      error: 'q is required'
+    if (q === '') {
+      return res.status(400).json({
+        error: 'q is required'
+      });
+    }
+
+    const limit = Math.min(parsePositiveInteger(req.query.limit, 25) || 25, 100);
+    const offset = parsePositiveInteger(req.query.offset, 0);
+    const normalizedQuery = normalizeName(q);
+    const result = await query(
+      `
+        SELECT
+          id,
+          name,
+          entity_type,
+          similarity(normalized_name, $1) AS score
+        FROM entities
+        WHERE normalized_name % $1
+           OR normalized_name LIKE $2 ESCAPE '\\'
+        ORDER BY score DESC, name ASC
+        LIMIT $3
+        OFFSET $4
+      `,
+      [normalizedQuery, buildContainsPattern(normalizedQuery), limit, offset]
+    );
+
+    return res.json({
+      results: result.rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        type: row.entity_type,
+        score: Number(row.score)
+      })),
+      total: result.rows.length,
+      limit,
+      offset
     });
+  } catch (error) {
+    return next(error);
   }
-
-  const limit = Math.min(parsePositiveInteger(req.query.limit, 25) || 25, 100);
-  const offset = parsePositiveInteger(req.query.offset, 0);
-  const normalizedQuery = normalizeName(q);
-  const result = await query(
-    `
-      SELECT
-        id,
-        name,
-        entity_type,
-        similarity(normalized_name, $1) AS score
-      FROM entities
-      WHERE normalized_name % $1
-         OR normalized_name LIKE $2
-      ORDER BY score DESC, name ASC
-      LIMIT $3
-      OFFSET $4
-    `,
-    [normalizedQuery, `%${normalizedQuery}%`, limit, offset]
-  );
-
-  return res.json({
-    results: result.rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      type: row.entity_type,
-      score: Number(row.score)
-    })),
-    limit,
-    offset
-  });
 });
 
 router.get('/api/entities/distressed', async (_req, res, next) => {

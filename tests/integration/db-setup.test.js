@@ -137,9 +137,11 @@ test('Module 1 integration', async (t) => {
 
     const propertyCountResult = await query('SELECT COUNT(*)::int AS count FROM properties');
     const entityCountResult = await query('SELECT COUNT(*)::int AS count FROM entities');
+    const buyerProfileCountResult = await query('SELECT COUNT(*)::int AS count FROM buyer_profiles');
 
     assert.equal(propertyCountResult.rows[0].count, 10);
     assert.ok(entityCountResult.rows[0].count >= 10);
+    assert.equal(buyerProfileCountResult.rows[0].count, 2);
   });
 
   await t.test('Health endpoint reports dependency status and metadata', async () => {

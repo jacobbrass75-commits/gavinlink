@@ -215,6 +215,10 @@ test('Module 6 matching pipeline works end to end', async (t) => {
   assert.equal(statusResponse.status, 200);
   assert.equal(statusResponse.body.status, 'contacted');
 
+  const missingStatusResponse = await requestJson(app, 'PUT', `/api/matches/${firstMatchId}/status`, {});
+  assert.equal(missingStatusResponse.status, 400);
+  assert.deepEqual(missingStatusResponse.body, { error: 'status is required' });
+
   const narrativeResponse = await requestJson(app, 'POST', `/api/matches/${firstMatchId}/narrative`, {});
   assert.equal(narrativeResponse.status, 201);
   assert.equal(narrativeResponse.body.narrative.confidence, 'high');

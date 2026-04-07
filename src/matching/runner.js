@@ -4,6 +4,7 @@ const { calculateMatchScore } = require('./scorer');
 const { explainMatch } = require('./explainer');
 const { generateMatchNarrative, batchGenerateNarratives } = require('./narrative');
 const { normalizeName } = require('../entities/extract');
+const { buildContainsPattern } = require('../utils/sql');
 
 const MATCH_STATUS_VALUES = new Set([
   'suggested',
@@ -703,6 +704,7 @@ async function getMatchDistribution() {
 
 async function lookupIdentifier(identifier) {
   const normalized = normalizeName(identifier);
+  const identifierPattern = buildContainsPattern(identifier);
   const buyerResult = await query(
     `
       SELECT bp.entity_id
@@ -712,13 +714,13 @@ async function lookupIdentifier(identifier) {
         AND (
           e.normalized_name = $1
           OR e.normalized_name % $1
-          OR e.name ILIKE $2
+          OR e.name ILIKE $2 ESCAPE '\\'
           OR bp.id = $3::uuid
         )
       ORDER BY similarity(e.normalized_name, $1) DESC, e.name ASC
       LIMIT 1
     `,
-    [normalized, `%${identifier}%`, /^[0-9a-f-]{36}$/i.test(String(identifier || '')) ? identifier : null]
+    [normalized, identifierPattern, /^[0-9a-f-]{36}$/i.test(String(identifier || '')) ? identifier : null]
   );
 
   if (buyerResult.rows[0]) {
@@ -734,7 +736,7 @@ async function lookupIdentifier(identifier) {
       FROM properties
       WHERE apn = $1
          OR id = $2::uuid
-         OR COALESCE(address, '') ILIKE $3
+         OR COALESCE(address, '') ILIKE $3 ESCAPE '\\'
          OR similarity(COALESCE(address, ''), $1) >= 0.35
       ORDER BY
         CASE WHEN apn = $1 THEN 1 ELSE 2 END,
@@ -742,7 +744,7 @@ async function lookupIdentifier(identifier) {
         address ASC
       LIMIT 1
     `,
-    [identifier, /^[0-9a-f-]{36}$/i.test(String(identifier || '')) ? identifier : null, `%${identifier}%`]
+    [identifier, /^[0-9a-f-]{36}$/i.test(String(identifier || '')) ? identifier : null, identifierPattern]
   );
 
   if (propertyResult.rows[0]) {

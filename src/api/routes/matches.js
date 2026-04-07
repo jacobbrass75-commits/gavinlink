@@ -99,6 +99,10 @@ router.put('/api/matches/:id/status', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
+    if (typeof req.body?.status !== 'string' || req.body.status.trim() === '') {
+      return res.status(400).json({ error: 'status is required' });
+    }
+
     const match = await updateMatchStatus(req.params.id, req.body?.status);
     return res.json(match);
   } catch (error) {

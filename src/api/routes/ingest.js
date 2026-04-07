@@ -9,7 +9,10 @@ const { processAudioFile } = require('../../knowledge/transcribe');
 
 const router = express.Router();
 const upload = multer({
-  dest: path.join(os.tmpdir(), 'isg-second-brain-audio')
+  dest: path.join(os.tmpdir(), 'isg-second-brain-audio'),
+  limits: {
+    fileSize: 25 * 1024 * 1024
+  }
 });
 
 router.post('/api/ingest', async (req, res, next) => {
@@ -38,10 +41,10 @@ router.post('/api/ingest/audio', upload.single('audio'), async (req, res, next) 
   const cleanupTargets = [req.file?.path].filter(Boolean);
 
   try {
-    const filePath = req.file?.path || req.body?.file_path;
+    const filePath = req.file?.path;
 
     if (!filePath) {
-      return res.status(400).json({ error: 'audio file is required' });
+      return res.status(400).json({ error: 'audio file upload is required' });
     }
 
     const result = await processAudioFile(filePath, {

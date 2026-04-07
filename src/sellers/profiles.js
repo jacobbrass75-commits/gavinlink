@@ -3,6 +3,7 @@ const { query } = require('../db/connection');
 const { normalizeName, classifyEntityType } = require('../entities/extract');
 const { classifyForeclosureStage } = require('./foreclosure-stage');
 const { getDistressAssessment } = require('./distress-score');
+const { buildContainsPattern } = require('../utils/sql');
 
 const DEFAULT_SORTS = {
   distress_level:
@@ -542,30 +543,32 @@ async function searchSellerProfiles(searchQuery) {
   }
 
   const normalized = normalizeName(q);
+  const searchPattern = buildContainsPattern(q);
+  const normalizedPattern = buildContainsPattern(normalized);
   const result = await query(
     `
       ${SELLER_PROFILE_SELECT},
       GREATEST(
         similarity(COALESCE(e.normalized_name, ''), $1),
         CASE
-          WHEN COALESCE(p.address, '') ILIKE $2 THEN 0.8
-          WHEN COALESCE(p.apn, '') ILIKE $2 THEN 0.8
-          WHEN COALESCE(p.city, '') ILIKE $2 THEN 0.6
+          WHEN COALESCE(p.address, '') ILIKE $2 ESCAPE '\\' THEN 0.8
+          WHEN COALESCE(p.apn, '') ILIKE $2 ESCAPE '\\' THEN 0.8
+          WHEN COALESCE(p.city, '') ILIKE $2 ESCAPE '\\' THEN 0.6
           ELSE 0
         END
       ) AS score
       WHERE sp.active = TRUE
         AND (
           COALESCE(e.normalized_name, '') % $1
-          OR COALESCE(e.normalized_name, '') LIKE $3
-          OR COALESCE(p.address, '') ILIKE $2
-          OR COALESCE(p.apn, '') ILIKE $2
-          OR COALESCE(p.city, '') ILIKE $2
+          OR COALESCE(e.normalized_name, '') LIKE $3 ESCAPE '\\'
+          OR COALESCE(p.address, '') ILIKE $2 ESCAPE '\\'
+          OR COALESCE(p.apn, '') ILIKE $2 ESCAPE '\\'
+          OR COALESCE(p.city, '') ILIKE $2 ESCAPE '\\'
         )
       ORDER BY score DESC, COALESCE(sp.distress_level, 0) DESC, p.address ASC
       LIMIT 50
     `,
-    [normalized, `%${q}%`, `%${normalized}%`]
+    [normalized, searchPattern, normalizedPattern]
   );
 
   return result.rows.map((row) => toApiProfile(row));

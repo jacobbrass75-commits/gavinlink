@@ -279,17 +279,29 @@ async function listKnowledgeEntries(filters = {}) {
   );
   const rowsResult = await query(
     `
-      SELECT DISTINCT ke.*
+      WITH filtered_ids AS (
+        SELECT
+          ke.id,
+          COALESCE(ke.recorded_at, ke.created_at) AS sort_timestamp
+        FROM knowledge_entries ke
+        LEFT JOIN knowledge_entities links_e ON links_e.knowledge_entry_id = ke.id
+        LEFT JOIN knowledge_properties links_p ON links_p.knowledge_entry_id = ke.id
+        WHERE ($1::text IS NULL OR ke.source = $1)
+          AND ($2::uuid IS NULL OR links_e.entity_id = $2)
+          AND ($3::uuid IS NULL OR links_p.property_id = $3)
+          AND ($4::text[] = ARRAY[]::text[] OR ke.ai_classifications && $4::text[])
+        GROUP BY ke.id, sort_timestamp
+      )
+      SELECT ke.*
       FROM knowledge_entries ke
-      LEFT JOIN knowledge_entities links_e ON links_e.knowledge_entry_id = ke.id
-      LEFT JOIN knowledge_properties links_p ON links_p.knowledge_entry_id = ke.id
-      WHERE ($1::text IS NULL OR ke.source = $1)
-        AND ($2::uuid IS NULL OR links_e.entity_id = $2)
-        AND ($3::uuid IS NULL OR links_p.property_id = $3)
-        AND ($4::text[] = ARRAY[]::text[] OR ke.ai_classifications && $4::text[])
-      ORDER BY COALESCE(ke.recorded_at, ke.created_at) DESC, ke.id DESC
-      LIMIT $5
-      OFFSET $6
+      JOIN (
+        SELECT id, sort_timestamp
+        FROM filtered_ids
+        ORDER BY sort_timestamp DESC, id DESC
+        LIMIT $5
+        OFFSET $6
+      ) filtered ON filtered.id = ke.id
+      ORDER BY filtered.sort_timestamp DESC, filtered.id DESC
     `,
     [source, entityId, propertyId, classifications, limit, offset]
   );
