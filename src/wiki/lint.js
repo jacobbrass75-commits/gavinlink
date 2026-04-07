@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { WIKI_ROOT } = require('./promote');
+const { getWikiRoot, getRawRoot } = require('./promote');
 
 const KNOWLEDGE_CITATION_REGEX = /\[ke:([0-9a-f-]{36})\]/gi;
 const RAW_CITATION_REGEX = /\[raw:([^\]]+)\]/gi;
@@ -52,8 +52,8 @@ function countNumericLinesWithoutCitations(content) {
 }
 
 async function lintWiki({
-  wikiRoot = WIKI_ROOT,
-  rawRoot = path.resolve(process.cwd(), 'raw'),
+  wikiRoot = getWikiRoot(),
+  rawRoot = getRawRoot(),
   baseRoot = process.cwd(),
   resolveKnowledgeEntry = null
 } = {}) {

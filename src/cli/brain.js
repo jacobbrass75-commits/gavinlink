@@ -4,6 +4,7 @@ const path = require('path');
 const { startMCPServer } = require('../mcp/server');
 const { promoteKnowledgeEntry } = require('../wiki/promote');
 const { lintWiki } = require('../wiki/lint');
+const { processAutoPromoteQueue } = require('../wiki/queue');
 
 function getApiBaseUrl() {
   return process.env.BRAIN_API_URL || `http://localhost:${process.env.API_PORT || 3100}`;
@@ -49,6 +50,55 @@ async function postAudio(filePath) {
   }
 
   const response = await fetch(`${getApiBaseUrl()}/api/ingest/audio`, {
+    method: 'POST',
+    headers,
+    body: form
+  });
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.error || `API request failed with status ${response.status}`);
+  }
+
+  return payload;
+}
+
+async function postDocument(propertyId, filePath, options = {}) {
+  const absolutePath = path.resolve(filePath);
+  const fileBuffer = await fs.promises.readFile(absolutePath);
+  const file = new File([fileBuffer], path.basename(absolutePath));
+  const form = new FormData();
+
+  form.append('document', file);
+  form.append('source', options.source || 'cli');
+
+  if (options.documentType) {
+    form.append('document_type', options.documentType);
+  }
+
+  if (options.notes) {
+    form.append('notes', options.notes);
+  }
+
+  if (options.autoPromote !== undefined) {
+    form.append('auto_promote', String(options.autoPromote));
+  }
+
+  if (options.queuePromotion !== undefined) {
+    form.append('queue_promotion', String(options.queuePromotion));
+  }
+
+  if (options.createKnowledgeEntry !== undefined) {
+    form.append('create_knowledge_entry', String(options.createKnowledgeEntry));
+  }
+
+  const headers = {};
+
+  if (process.env.ADMIN_API_KEY) {
+    headers['x-api-key'] = process.env.ADMIN_API_KEY;
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/api/properties/${encodeURIComponent(propertyId)}/documents`, {
     method: 'POST',
     headers,
     body: form
@@ -117,6 +167,49 @@ async function lintCommand(args) {
   }
 }
 
+async function autoPromoteCommand(args) {
+  const limitOption = parseOption(args, '--limit');
+  const dryRun = hasFlag(args, '--dry-run');
+  const result = await processAutoPromoteQueue({
+    limit: limitOption.value ? Number(limitOption.value) : 10,
+    dryRun
+  });
+
+  printResult(result);
+
+  if (result.failed > 0) {
+    process.exitCode = 1;
+  }
+}
+
+async function promoteDocumentCommand(args) {
+  const propertyId = args[0];
+  const filePath = args[1];
+
+  if (!propertyId) {
+    throw new Error('property id is required');
+  }
+
+  if (!filePath) {
+    throw new Error('document file path is required');
+  }
+
+  const documentTypeOption = parseOption(args.slice(2), '--document-type');
+  const notesOption = parseOption(documentTypeOption.rest, '--notes');
+  const queueOnly = hasFlag(notesOption.rest, '--queue-only');
+
+  return printResult(
+    await postDocument(propertyId, filePath, {
+      documentType: documentTypeOption.value,
+      notes: notesOption.value,
+      autoPromote: !queueOnly,
+      queuePromotion: true,
+      createKnowledgeEntry: true,
+      source: 'cli'
+    })
+  );
+}
+
 async function main() {
   const [command, ...args] = process.argv.slice(2);
 
@@ -180,6 +273,10 @@ async function main() {
       return printResult(await apiRequest('GET', '/api/daily'));
     case 'promote':
       return promoteCommand(args);
+    case 'promote-document':
+      return promoteDocumentCommand(args);
+    case 'autopromote':
+      return autoPromoteCommand(args);
     case 'lint':
       return lintCommand(args);
     case 'serve':
@@ -187,7 +284,7 @@ async function main() {
       return undefined;
     default:
       throw new Error(
-        'Usage: brain add <message> | brain add --audio <file> | brain search <query> | brain lookup <name> | brain match <identifier> | brain daily | brain promote <knowledge-entry-id> [--page wiki/...md] [--title "..."] | brain lint [--offline] | brain serve'
+        'Usage: brain add <message> | brain add --audio <file> | brain search <query> | brain lookup <name> | brain match <identifier> | brain daily | brain promote <knowledge-entry-id> [--page wiki/...md] [--title "..."] | brain promote-document <property-id> <file> [--document-type type] [--notes text] [--queue-only] | brain autopromote [--limit N] [--dry-run] | brain lint [--offline] | brain serve'
       );
   }
 }

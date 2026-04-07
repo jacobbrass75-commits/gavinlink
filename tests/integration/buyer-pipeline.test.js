@@ -22,6 +22,7 @@ async function resetTables() {
       buyer_purchases,
       property_documents,
       property_import_records,
+      wiki_promotion_queue,
       property_groups,
       entity_relationships,
       deals,

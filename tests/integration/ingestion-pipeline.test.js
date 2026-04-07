@@ -51,6 +51,7 @@ async function resetTables() {
       buyer_purchases,
       property_documents,
       property_import_records,
+      wiki_promotion_queue,
       knowledge_entities,
       knowledge_properties,
       property_groups,
@@ -155,6 +156,13 @@ test('Module 5 ingestion flow works end to end, including CLI and audio ingestio
     await close();
   });
 
+  const tempNarrativeRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'isg-ingestion-wiki-'));
+  const previousWikiRoot = process.env.ISG_WIKI_ROOT;
+  const previousRawRoot = process.env.ISG_RAW_ROOT;
+
+  process.env.ISG_WIKI_ROOT = path.join(tempNarrativeRoot, 'wiki');
+  process.env.ISG_RAW_ROOT = path.join(tempNarrativeRoot, 'raw');
+
   const originalComplete = provider.complete;
   const originalEmbed = provider.embed;
   const originalFetch = global.fetch;
@@ -165,6 +173,8 @@ test('Module 5 ingestion flow works end to end, including CLI and audio ingestio
     provider.embed = originalEmbed;
     global.fetch = originalFetch;
     process.env.OPENAI_API_KEY = originalOpenAiKey;
+    process.env.ISG_WIKI_ROOT = previousWikiRoot;
+    process.env.ISG_RAW_ROOT = previousRawRoot;
   });
 
   const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
@@ -252,6 +262,14 @@ test('Module 5 ingestion flow works end to end, including CLI and audio ingestio
   assert.ok(Array.isArray(knowledgeListResponse.body.results));
   assert.equal(knowledgeListResponse.body.total, 2);
   assert.equal(knowledgeListResponse.body.results.length, 2);
+
+  const queueResponse = await query(
+    `
+      SELECT COUNT(*)::int AS count
+      FROM wiki_promotion_queue
+    `
+  );
+  assert.equal(queueResponse.rows[0].count >= 1, true);
 
   const lookupResponse = await requestJson(
     app,

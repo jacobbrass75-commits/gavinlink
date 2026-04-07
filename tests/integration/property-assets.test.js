@@ -24,6 +24,7 @@ async function resetTables() {
       buyer_purchases,
       property_documents,
       property_import_records,
+      wiki_promotion_queue,
       knowledge_entities,
       knowledge_properties,
       property_groups,
@@ -85,6 +86,21 @@ async function createUtf16Csv() {
 test('foreclosure import preview/import and property documents work end to end', async (t) => {
   t.after(async () => {
     await close();
+  });
+
+  const tempNarrativeRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'isg-property-docs-'));
+  const previousWikiRoot = process.env.ISG_WIKI_ROOT;
+  const previousRawRoot = process.env.ISG_RAW_ROOT;
+  const previousDocumentRoot = process.env.ISG_PROPERTY_DOCUMENT_ROOT;
+
+  process.env.ISG_WIKI_ROOT = path.join(tempNarrativeRoot, 'wiki');
+  process.env.ISG_RAW_ROOT = path.join(tempNarrativeRoot, 'raw');
+  process.env.ISG_PROPERTY_DOCUMENT_ROOT = path.join(tempNarrativeRoot, 'data', 'property-documents');
+
+  t.after(() => {
+    process.env.ISG_WIKI_ROOT = previousWikiRoot;
+    process.env.ISG_RAW_ROOT = previousRawRoot;
+    process.env.ISG_PROPERTY_DOCUMENT_ROOT = previousDocumentRoot;
   });
 
   const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
@@ -150,6 +166,8 @@ test('foreclosure import preview/import and property documents work end to end',
 
   assert.equal(documentResponse.status, 201);
   assert.equal(documentResponse.body.document_type, 'notice_of_sale');
+  assert.ok(documentResponse.body.knowledge_entry_id);
+  assert.match(documentResponse.body.wiki_page_path, /properties\/.+\.md$/);
 
   const documentsResponse = await request(app, 'GET', `/api/properties/${propertyId}/documents`);
   assert.equal(documentsResponse.status, 200);
@@ -158,4 +176,81 @@ test('foreclosure import preview/import and property documents work end to end',
   const propertyResponse = await request(app, 'GET', `/api/properties/${propertyId}`);
   assert.equal(propertyResponse.status, 200);
   assert.equal(propertyResponse.body.documents.length, 1);
+
+  const knowledgeCountResult = await query(
+    `
+      SELECT COUNT(*)::int AS count
+      FROM knowledge_entries
+      WHERE source = 'property_document'
+    `
+  );
+  assert.equal(knowledgeCountResult.rows[0].count, 1);
+
+  const queueCountResult = await query(
+    `
+      SELECT COUNT(*)::int AS count
+      FROM wiki_promotion_queue
+    `
+  );
+  assert.equal(queueCountResult.rows[0].count, 0);
+
+  const promotedPagePath = path.resolve(ROOT, documentResponse.body.wiki_page_path);
+  const promotedPageContent = await fs.promises.readFile(promotedPagePath, 'utf8');
+  assert.match(promotedPageContent, /\[ke:/);
+  assert.match(promotedPageContent, /\[raw:property-documents\//);
+
+  const queuedPdfPath = path.join(pdfTempDir, 'queued-notice.pdf');
+  await fs.promises.writeFile(queuedPdfPath, '%PDF-1.4\nQueued PDF');
+  const queuedDocumentForm = new FormData();
+  queuedDocumentForm.append(
+    'document',
+    new File([await fs.promises.readFile(queuedPdfPath)], 'queued-notice.pdf', { type: 'application/pdf' })
+  );
+  queuedDocumentForm.append('document_type', 'foreclosure_notice');
+  queuedDocumentForm.append('auto_promote', 'false');
+  queuedDocumentForm.append('queue_promotion', 'true');
+
+  const queuedDocumentResponse = await request(
+    app,
+    'POST',
+    `/api/properties/${propertyId}/documents`,
+    queuedDocumentForm
+  );
+
+  assert.equal(queuedDocumentResponse.status, 201);
+  assert.equal(queuedDocumentResponse.body.wiki_page_path, null);
+  assert.ok(queuedDocumentResponse.body.knowledge_entry_id);
+
+  const queuedRowsResult = await query(
+    `
+      SELECT status, reason
+      FROM wiki_promotion_queue
+      ORDER BY created_at DESC
+      LIMIT 1
+    `
+  );
+  assert.equal(queuedRowsResult.rows[0].status, 'pending');
+  assert.equal(queuedRowsResult.rows[0].reason, 'property_document');
+
+  const maintenanceRun = runNodeScript(path.join(ROOT, 'scripts', 'run-wiki-maintenance.js'), ['--limit', '10'], {
+    ...process.env,
+    ISG_WIKI_ROOT: process.env.ISG_WIKI_ROOT,
+    ISG_RAW_ROOT: process.env.ISG_RAW_ROOT,
+    ISG_PROPERTY_DOCUMENT_ROOT: process.env.ISG_PROPERTY_DOCUMENT_ROOT
+  });
+  assert.equal(maintenanceRun.status, 0, maintenanceRun.stderr || maintenanceRun.stdout);
+
+  const processedQueueResult = await query(
+    `
+      SELECT status
+      FROM wiki_promotion_queue
+      ORDER BY created_at DESC
+      LIMIT 1
+    `
+  );
+  assert.equal(processedQueueResult.rows[0].status, 'completed');
+
+  const maintenanceReportPath = path.join(process.env.ISG_WIKI_ROOT, 'reports', 'latest-maintenance.json');
+  const maintenanceReport = JSON.parse(await fs.promises.readFile(maintenanceReportPath, 'utf8'));
+  assert.equal(maintenanceReport.queue.completed >= 1, true);
 });
