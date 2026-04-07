@@ -1,6 +1,12 @@
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../db/connection');
 
+function createHttpError(message, statusCode) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
 function parseDateValue(value) {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new Error('purchase_date is required');
@@ -32,7 +38,7 @@ async function ensureBuyerProfile(buyerProfileId) {
   );
 
   if (!result.rows[0]) {
-    throw new Error('Buyer profile not found');
+    throw createHttpError('Buyer profile not found', 404);
   }
 }
 

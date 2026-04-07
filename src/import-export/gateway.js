@@ -26,19 +26,60 @@ function collectColumns(rows) {
   return columns;
 }
 
+function detectEncoding(buffer) {
+  // Check BOM first
+  if (buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xfe) {
+    return { encoding: 'utf16le', bomBytes: 2 };
+  }
+  if (buffer.length >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff) {
+    return { encoding: 'utf16be', bomBytes: 2 };
+  }
+  // No BOM — check for null-byte pattern (UTF-16 LE without BOM)
+  if (buffer.length >= 4 && buffer[1] === 0x00 && buffer[3] === 0x00) {
+    return { encoding: 'utf16le', bomBytes: 0 };
+  }
+  return { encoding: 'utf8', bomBytes: 0 };
+}
+
 function parseCsv(filePath) {
   return new Promise((resolve, reject) => {
+    const raw = fs.readFileSync(filePath);
+    const { encoding, bomBytes } = detectEncoding(raw);
+    let stream;
+
+    if (encoding === 'utf16le') {
+      const { Readable } = require('stream');
+      const decoded = raw.slice(bomBytes).toString('utf16le');
+      stream = Readable.from([decoded]);
+    } else if (encoding === 'utf16be') {
+      const { Readable } = require('stream');
+      const payload = raw.slice(bomBytes);
+      const swapped = Buffer.alloc(payload.length);
+      for (let i = 0; i < payload.length - 1; i += 2) {
+        swapped[i] = payload[i + 1];
+        swapped[i + 1] = payload[i];
+      }
+      const decoded = swapped.toString('utf16le');
+      stream = Readable.from([decoded]);
+    } else {
+      stream = fs.createReadStream(filePath);
+    }
+
     const rows = [];
     let columns = [];
 
-    fs.createReadStream(filePath)
+    stream
       .on('error', reject)
       .pipe(csvParser())
       .on('headers', (headers) => {
-        columns = headers;
+        columns = headers.map((h) => h.trim());
       })
       .on('data', (row) => {
-        rows.push(row);
+        const cleaned = {};
+        for (const [key, value] of Object.entries(row)) {
+          cleaned[key.trim()] = value;
+        }
+        rows.push(cleaned);
       })
       .on('end', () => {
         resolve({

@@ -1,6 +1,7 @@
 const { query } = require('../db/connection');
 const { getKnowledgeCollection } = require('./embeddings');
 const { getKnowledgeEntry } = require('./extract');
+const { buildContainsPattern } = require('../utils/sql');
 
 function cleanText(value, fallback = null) {
   if (typeof value !== 'string') {
@@ -79,6 +80,7 @@ async function keywordSearch(searchQuery, options = {}) {
   const limit = Math.min(Math.max(Number(options.limit) || 10, 1), 50);
   const entityIds = cleanStringArray(options.entity_ids);
   const entryTypes = cleanStringArray(options.entry_types);
+  const searchPattern = buildContainsPattern(q);
   const rowsResult = await query(
     `
       WITH scored AS (
@@ -89,11 +91,11 @@ async function keywordSearch(searchQuery, options = {}) {
             similarity(COALESCE(ke.title, ''), $1),
             similarity(COALESCE(ke.ai_summary, ''), $1),
             CASE
-              WHEN ke.content ILIKE $2 THEN 0.9
-              WHEN COALESCE(ke.summary, '') ILIKE $2 THEN 0.8
-              WHEN COALESCE(e.name, '') ILIKE $2 THEN 0.8
-              WHEN COALESCE(p.address, '') ILIKE $2 THEN 0.75
-              WHEN COALESCE(p.apn, '') ILIKE $2 THEN 0.75
+              WHEN ke.content ILIKE $2 ESCAPE '\\' THEN 0.9
+              WHEN COALESCE(ke.summary, '') ILIKE $2 ESCAPE '\\' THEN 0.8
+              WHEN COALESCE(e.name, '') ILIKE $2 ESCAPE '\\' THEN 0.8
+              WHEN COALESCE(p.address, '') ILIKE $2 ESCAPE '\\' THEN 0.75
+              WHEN COALESCE(p.apn, '') ILIKE $2 ESCAPE '\\' THEN 0.75
               ELSE 0
             END
           ) AS score
@@ -103,12 +105,12 @@ async function keywordSearch(searchQuery, options = {}) {
         LEFT JOIN knowledge_properties links_p ON links_p.knowledge_entry_id = ke.id
         LEFT JOIN properties p ON p.id = links_p.property_id
         WHERE (
-            ke.content ILIKE $2
-            OR COALESCE(ke.summary, '') ILIKE $2
-            OR COALESCE(ke.ai_summary, '') ILIKE $2
-            OR COALESCE(e.name, '') ILIKE $2
-            OR COALESCE(p.address, '') ILIKE $2
-            OR COALESCE(p.apn, '') ILIKE $2
+            ke.content ILIKE $2 ESCAPE '\\'
+            OR COALESCE(ke.summary, '') ILIKE $2 ESCAPE '\\'
+            OR COALESCE(ke.ai_summary, '') ILIKE $2 ESCAPE '\\'
+            OR COALESCE(e.name, '') ILIKE $2 ESCAPE '\\'
+            OR COALESCE(p.address, '') ILIKE $2 ESCAPE '\\'
+            OR COALESCE(p.apn, '') ILIKE $2 ESCAPE '\\'
             OR similarity(COALESCE(ke.title, ''), $1) >= 0.2
             OR similarity(COALESCE(ke.ai_summary, ''), $1) >= 0.2
           )
@@ -122,7 +124,7 @@ async function keywordSearch(searchQuery, options = {}) {
       FROM scored
       ORDER BY id, score DESC, created_at DESC
     `,
-    [q, `%${q}%`, entityIds, entryTypes]
+    [q, searchPattern, entityIds, entryTypes]
   );
   const orderedRows = rowsResult.rows
     .sort((left, right) => {

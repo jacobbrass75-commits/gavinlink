@@ -6,8 +6,15 @@ const {
   getMatchDistribution,
   lookupIdentifier
 } = require('../../matching/runner');
+const { createRateLimiter, requireAdminApiKey } = require('../guardrails');
+const { validateBody, z } = require('../validation');
 
 const router = express.Router();
+const matchingLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 6,
+  message: 'Too many matching requests. Please wait a minute and try again.'
+});
 
 function parseLimit(value, fallback = 10) {
   const parsed = Number.parseInt(String(value || ''), 10);
@@ -28,13 +35,20 @@ function isUuid(value) {
   );
 }
 
-router.post('/api/match/run', async (req, res, next) => {
+const matchingRunSchema = z.object({
+  minScore: z.coerce.number().min(0).max(100).optional(),
+  dryRun: z.coerce.boolean().optional(),
+  generateNarratives: z.coerce.boolean().optional()
+}).partial();
+
+router.post('/api/match/run', requireAdminApiKey, matchingLimiter, validateBody(matchingRunSchema), async (req, res, next) => {
   try {
+    const body = req.validatedBody || {};
     const result = await runFullMatching({
-      minScore: req.body?.minScore ?? req.query.minScore,
-      dryRun: parseBoolean(req.body?.dryRun ?? req.query.dryRun, false),
+      minScore: body.minScore ?? req.query.minScore,
+      dryRun: parseBoolean(body.dryRun ?? req.query.dryRun, false),
       generateNarratives: parseBoolean(
-        req.body?.generateNarratives ?? req.query.generateNarratives,
+        body.generateNarratives ?? req.query.generateNarratives,
         false
       )
     });
@@ -44,17 +58,18 @@ router.post('/api/match/run', async (req, res, next) => {
   }
 });
 
-router.post('/api/match/run-for-buyer/:buyerId', async (req, res, next) => {
+router.post('/api/match/run-for-buyer/:buyerId', requireAdminApiKey, matchingLimiter, validateBody(matchingRunSchema), async (req, res, next) => {
   try {
     if (!isUuid(req.params.buyerId)) {
       return res.status(400).json({ error: 'buyerId must be a valid UUID' });
     }
 
+    const body = req.validatedBody || {};
     const matches = await runMatchingForBuyer(req.params.buyerId, {
-      minScore: req.body?.minScore ?? req.query.minScore,
-      dryRun: parseBoolean(req.body?.dryRun ?? req.query.dryRun, false),
+      minScore: body.minScore ?? req.query.minScore,
+      dryRun: parseBoolean(body.dryRun ?? req.query.dryRun, false),
       generateNarratives: parseBoolean(
-        req.body?.generateNarratives ?? req.query.generateNarratives,
+        body.generateNarratives ?? req.query.generateNarratives,
         false
       )
     });
@@ -64,17 +79,18 @@ router.post('/api/match/run-for-buyer/:buyerId', async (req, res, next) => {
   }
 });
 
-router.post('/api/match/run-for-property/:propertyId', async (req, res, next) => {
+router.post('/api/match/run-for-property/:propertyId', requireAdminApiKey, matchingLimiter, validateBody(matchingRunSchema), async (req, res, next) => {
   try {
     if (!isUuid(req.params.propertyId)) {
       return res.status(400).json({ error: 'propertyId must be a valid UUID' });
     }
 
+    const body = req.validatedBody || {};
     const matches = await runMatchingForProperty(req.params.propertyId, {
-      minScore: req.body?.minScore ?? req.query.minScore,
-      dryRun: parseBoolean(req.body?.dryRun ?? req.query.dryRun, false),
+      minScore: body.minScore ?? req.query.minScore,
+      dryRun: parseBoolean(body.dryRun ?? req.query.dryRun, false),
       generateNarratives: parseBoolean(
-        req.body?.generateNarratives ?? req.query.generateNarratives,
+        body.generateNarratives ?? req.query.generateNarratives,
         false
       )
     });
@@ -92,7 +108,7 @@ router.get('/api/match/distribution', async (_req, res, next) => {
   }
 });
 
-router.get('/api/match/:identifier', async (req, res, next) => {
+router.get('/api/match/:identifier', matchingLimiter, async (req, res, next) => {
   try {
     const identifier = String(req.params.identifier || '').trim();
 

@@ -7,6 +7,7 @@ const { createBuyerProfile, updateBuyerProfile, getBuyerProfileByEntity } = requ
 const { createSellerProfile, updateSellerProfile, getSellerProfileByProperty } = require('../sellers/profiles');
 const { validateClassification } = require('./classifier');
 const { normalizeName } = require('../entities/extract');
+const { buildContainsPattern } = require('../utils/sql');
 
 function cleanText(value, fallback = null) {
   if (typeof value !== 'string') {
@@ -60,11 +61,11 @@ async function findPropertyByReference(propertyRef) {
              similarity(COALESCE(address, ''), $1) AS score
       FROM properties
       WHERE similarity(COALESCE(address, ''), $1) >= 0.35
-         OR COALESCE(address, '') ILIKE $2
+         OR COALESCE(address, '') ILIKE $2 ESCAPE '\\'
       ORDER BY score DESC, address ASC
       LIMIT 1
     `,
-    [address, `%${address}%`]
+    [address, buildContainsPattern(address)]
   );
 
   return fuzzyAddress.rows[0] || null;

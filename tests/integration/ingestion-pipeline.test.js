@@ -49,8 +49,11 @@ async function resetTables() {
   await query(`
     TRUNCATE
       buyer_purchases,
+      property_documents,
+      property_import_records,
       knowledge_entities,
       knowledge_properties,
+      property_groups,
       entity_relationships,
       deals,
       matches,
@@ -244,6 +247,12 @@ test('Module 5 ingestion flow works end to end, including CLI and audio ingestio
   assert.equal(knowledgeResponse.status, 200);
   assert.equal(knowledgeResponse.body.linked_entities.length >= 1, true);
 
+  const knowledgeListResponse = await requestJson(app, 'GET', '/api/knowledge?limit=10');
+  assert.equal(knowledgeListResponse.status, 200);
+  assert.ok(Array.isArray(knowledgeListResponse.body.results));
+  assert.equal(knowledgeListResponse.body.total, 2);
+  assert.equal(knowledgeListResponse.body.results.length, 2);
+
   const lookupResponse = await requestJson(
     app,
     'GET',
@@ -262,6 +271,19 @@ test('Module 5 ingestion flow works end to end, including CLI and audio ingestio
   const audioResponse = await requestJson(app, 'POST', '/api/ingest/audio', form);
   assert.equal(audioResponse.status, 200);
   assert.equal(audioResponse.body.transcription.text.includes('Mike Chen'), true);
+
+  const blockedPathResponse = await requestJson(
+    app,
+    'POST',
+    '/api/ingest/audio',
+    JSON.stringify({
+      file_path: '/etc/passwd',
+      source: 'voice_memo'
+    }),
+    { 'content-type': 'application/json' }
+  );
+  assert.equal(blockedPathResponse.status, 400);
+  assert.deepEqual(blockedPathResponse.body, { error: 'audio file upload is required' });
 
   const server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));

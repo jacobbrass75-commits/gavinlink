@@ -6,23 +6,27 @@ const multer = require('multer');
 const { classifyMessage } = require('../../ingestion/classifier');
 const { routeClassifiedMessage } = require('../../ingestion/router');
 const { processAudioFile } = require('../../knowledge/transcribe');
+const { validateBody, z } = require('../validation');
 
 const router = express.Router();
 const upload = multer({
-  dest: path.join(os.tmpdir(), 'isg-second-brain-audio')
+  dest: path.join(os.tmpdir(), 'isg-second-brain-audio'),
+  limits: {
+    fileSize: 25 * 1024 * 1024
+  }
+});
+const ingestSchema = z.object({
+  message: z.string().trim().min(1, 'message is required'),
+  source: z.string().trim().min(1).optional()
 });
 
-router.post('/api/ingest', async (req, res, next) => {
+router.post('/api/ingest', validateBody(ingestSchema), async (req, res, next) => {
   try {
-    const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
-
-    if (!message) {
-      return res.status(400).json({ error: 'message is required' });
-    }
+    const { message, source } = req.validatedBody;
 
     const classified = await classifyMessage(message);
     const result = await routeClassifiedMessage(classified, message, {
-      source: typeof req.body?.source === 'string' ? req.body.source : 'api'
+      source: source || 'api'
     });
 
     return res.json({
@@ -38,10 +42,10 @@ router.post('/api/ingest/audio', upload.single('audio'), async (req, res, next) 
   const cleanupTargets = [req.file?.path].filter(Boolean);
 
   try {
-    const filePath = req.file?.path || req.body?.file_path;
+    const filePath = req.file?.path;
 
     if (!filePath) {
-      return res.status(400).json({ error: 'audio file is required' });
+      return res.status(400).json({ error: 'audio file upload is required' });
     }
 
     const result = await processAudioFile(filePath, {

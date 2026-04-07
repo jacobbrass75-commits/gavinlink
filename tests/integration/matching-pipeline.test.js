@@ -28,8 +28,11 @@ async function resetTables() {
   await query(`
     TRUNCATE
       buyer_purchases,
+      property_documents,
+      property_import_records,
       knowledge_entities,
       knowledge_properties,
+      property_groups,
       entity_relationships,
       deals,
       matches,
@@ -214,6 +217,10 @@ test('Module 6 matching pipeline works end to end', async (t) => {
   });
   assert.equal(statusResponse.status, 200);
   assert.equal(statusResponse.body.status, 'contacted');
+
+  const missingStatusResponse = await requestJson(app, 'PUT', `/api/matches/${firstMatchId}/status`, {});
+  assert.equal(missingStatusResponse.status, 400);
+  assert.deepEqual(missingStatusResponse.body, { error: 'status is required' });
 
   const narrativeResponse = await requestJson(app, 'POST', `/api/matches/${firstMatchId}/narrative`, {});
   assert.equal(narrativeResponse.status, 201);

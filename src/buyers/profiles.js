@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const { query } = require('../db/connection');
 const { normalizeName, classifyEntityType } = require('../entities/extract');
 const { getPortfolio } = require('../entities/cluster');
+const { buildContainsPattern } = require('../utils/sql');
 
 const SEARCHABLE_ENTITY_TYPES = ['person', 'llc', 'corporation', 'trust', 'partnership', 'unknown'];
 
@@ -94,12 +95,12 @@ async function findMatchingEntity(entityName) {
       WHERE entity_type = ANY($2::text[])
         AND (
           normalized_name % $1
-          OR normalized_name LIKE $3
+          OR normalized_name LIKE $3 ESCAPE '\\'
         )
       ORDER BY score DESC, name ASC
       LIMIT 1
     `,
-    [normalized, SEARCHABLE_ENTITY_TYPES, `%${normalized}%`]
+    [normalized, SEARCHABLE_ENTITY_TYPES, buildContainsPattern(normalized)]
   );
   const row = result.rows[0];
 
@@ -450,6 +451,7 @@ async function searchBuyerProfiles(searchQuery) {
   }
 
   const normalized = normalizeName(q);
+  const searchPattern = buildContainsPattern(q);
   const result = await query(
     `
       SELECT
@@ -459,11 +461,11 @@ async function searchBuyerProfiles(searchQuery) {
         GREATEST(
           similarity(e.normalized_name, $1),
           CASE
-            WHEN array_to_string(bp.preferred_property_types, ' ') ILIKE $2 THEN 0.8
-            WHEN array_to_string(bp.target_cities, ' ') ILIKE $2 THEN 0.8
-            WHEN COALESCE(bp.investment_strategy, '') ILIKE $2 THEN 0.8
-            WHEN COALESCE(bp.sensibilities, '') ILIKE $2 THEN 0.7
-            WHEN COALESCE(bp.notes, '') ILIKE $2 THEN 0.7
+            WHEN array_to_string(bp.preferred_property_types, ' ') ILIKE $2 ESCAPE '\\' THEN 0.8
+            WHEN array_to_string(bp.target_cities, ' ') ILIKE $2 ESCAPE '\\' THEN 0.8
+            WHEN COALESCE(bp.investment_strategy, '') ILIKE $2 ESCAPE '\\' THEN 0.8
+            WHEN COALESCE(bp.sensibilities, '') ILIKE $2 ESCAPE '\\' THEN 0.7
+            WHEN COALESCE(bp.notes, '') ILIKE $2 ESCAPE '\\' THEN 0.7
             ELSE 0
           END
         ) AS score
@@ -472,21 +474,21 @@ async function searchBuyerProfiles(searchQuery) {
       WHERE bp.active = TRUE
         AND (
           e.normalized_name % $1
-          OR e.normalized_name LIKE $2
-          OR array_to_string(bp.preferred_property_types, ' ') ILIKE $2
-          OR array_to_string(bp.target_cities, ' ') ILIKE $2
-          OR array_to_string(bp.target_zip_codes, ' ') ILIKE $2
-          OR COALESCE(bp.investment_strategy, '') ILIKE $2
-          OR COALESCE(bp.financing_preference, '') ILIKE $2
-          OR COALESCE(bp.typical_close_timeline, '') ILIKE $2
-          OR COALESCE(bp.urgency, '') ILIKE $2
-          OR COALESCE(bp.sensibilities, '') ILIKE $2
-          OR COALESCE(bp.notes, '') ILIKE $2
+          OR e.normalized_name LIKE $2 ESCAPE '\\'
+          OR array_to_string(bp.preferred_property_types, ' ') ILIKE $2 ESCAPE '\\'
+          OR array_to_string(bp.target_cities, ' ') ILIKE $2 ESCAPE '\\'
+          OR array_to_string(bp.target_zip_codes, ' ') ILIKE $2 ESCAPE '\\'
+          OR COALESCE(bp.investment_strategy, '') ILIKE $2 ESCAPE '\\'
+          OR COALESCE(bp.financing_preference, '') ILIKE $2 ESCAPE '\\'
+          OR COALESCE(bp.typical_close_timeline, '') ILIKE $2 ESCAPE '\\'
+          OR COALESCE(bp.urgency, '') ILIKE $2 ESCAPE '\\'
+          OR COALESCE(bp.sensibilities, '') ILIKE $2 ESCAPE '\\'
+          OR COALESCE(bp.notes, '') ILIKE $2 ESCAPE '\\'
         )
       ORDER BY score DESC, e.name ASC
       LIMIT 50
     `,
-    [normalized, `%${q}%`]
+    [normalized, searchPattern]
   );
 
   return result.rows.map((row) => toApiProfile(row));

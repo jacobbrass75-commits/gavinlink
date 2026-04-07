@@ -6,8 +6,15 @@ const {
   updateMatchStatus,
   generateNarrativeForMatch
 } = require('../../matching/runner');
+const { createRateLimiter, requireAdminApiKey } = require('../guardrails');
+const { z } = require('../validation');
 
 const router = express.Router();
+const narrativeLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 4,
+  message: 'Too many narrative requests. Please wait a minute and try again.'
+});
 
 function parseLimit(value, fallback = 50) {
   const parsed = Number.parseInt(String(value || ''), 10);
@@ -24,6 +31,10 @@ function isUuid(value) {
     String(value || '')
   );
 }
+
+const updateStatusSchema = z.object({
+  status: z.string().trim().min(1, 'status is required')
+});
 
 router.get('/api/matches/top', async (req, res, next) => {
   try {
@@ -99,14 +110,30 @@ router.put('/api/matches/:id/status', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const match = await updateMatchStatus(req.params.id, req.body?.status);
+    if (req.body?.status === undefined) {
+      return res.status(400).json({ error: 'status is required' });
+    }
+
+    const parsed = updateStatusSchema.safeParse(req.body || {});
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'Invalid request body',
+        details: parsed.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message
+        }))
+      });
+    }
+
+    const match = await updateMatchStatus(req.params.id, parsed.data.status);
     return res.json(match);
   } catch (error) {
     return next(error);
   }
 });
 
-router.post('/api/matches/:id/narrative', async (req, res, next) => {
+router.post('/api/matches/:id/narrative', requireAdminApiKey, narrativeLimiter, async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });

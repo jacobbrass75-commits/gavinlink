@@ -20,6 +20,9 @@ function runNodeScript(scriptPath, args = []) {
 async function resetTables() {
   await query(`
     TRUNCATE
+      property_documents,
+      property_import_records,
+      property_groups,
       entity_relationships,
       deals,
       matches,
@@ -113,6 +116,10 @@ test('Module 2 import pipeline works end to end with fixture data', async (t) =>
   assert.ok(
     searchResponse.body.results.some((entity) => entity.name === 'MAIE JT & KT DEVELOPMENT LLC')
   );
+
+  const literalWildcardSearchResponse = await requestJson(app, 'GET', '/api/entities/search?q=%');
+  assert.equal(literalWildcardSearchResponse.status, 200);
+  assert.equal(literalWildcardSearchResponse.body.total, 0);
 
   const maieEntityResult = await query(
     `

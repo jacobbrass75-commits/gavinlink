@@ -18,8 +18,15 @@ const {
   findPortfolioDistress,
   findLenderOwnerPatterns
 } = require('../../sellers/portfolio-distress');
+const { createRateLimiter, requireAdminApiKey } = require('../guardrails');
+const { validateBody, z } = require('../validation');
 
 const router = express.Router();
+const sellerLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 6,
+  message: 'Too many seller batch requests. Please wait a minute and try again.'
+});
 
 function parseLimit(value, fallback = 50) {
   const parsed = Number.parseInt(String(value || ''), 10);
@@ -44,6 +51,22 @@ function parseBoolean(value, fallback = false) {
 
   return String(value).trim().toLowerCase() === 'true';
 }
+
+const sellerUpdateSchema = z.object({
+  motivation: z.string().trim().min(1).optional(),
+  distress_level: z.coerce.number().min(1).max(5).optional(),
+  timeline: z.string().trim().min(1).optional(),
+  foreclosure_stage: z.string().trim().min(1).optional(),
+  outstanding_debt: z.coerce.number().nonnegative().optional(),
+  estimated_equity: z.coerce.number().optional(),
+  asking_price: z.coerce.number().nonnegative().optional(),
+  minimum_acceptable: z.coerce.number().nonnegative().optional(),
+  lender_status: z.string().trim().min(1).optional(),
+  legal_issues: z.string().trim().min(1).optional(),
+  sensibilities: z.string().trim().min(1).optional(),
+  notes: z.string().trim().min(1).optional(),
+  active: z.coerce.boolean().optional()
+}).partial();
 
 router.get('/api/sellers/search', async (req, res, next) => {
   try {
@@ -105,7 +128,7 @@ router.get('/api/sellers/distribution', async (_req, res, next) => {
   }
 });
 
-router.post('/api/sellers/auto-generate', async (_req, res, next) => {
+router.post('/api/sellers/auto-generate', requireAdminApiKey, sellerLimiter, async (_req, res, next) => {
   try {
     const result = await autoGenerateSellerProfiles();
     return res.status(201).json(result);
@@ -114,7 +137,7 @@ router.post('/api/sellers/auto-generate', async (_req, res, next) => {
   }
 });
 
-router.post('/api/sellers/score', async (req, res, next) => {
+router.post('/api/sellers/score', requireAdminApiKey, sellerLimiter, async (req, res, next) => {
   try {
     const result = await batchScoreProperties({
       limit: parseLimit(req.query.limit, 0),
@@ -126,7 +149,7 @@ router.post('/api/sellers/score', async (req, res, next) => {
   }
 });
 
-router.post('/api/sellers/infer', async (req, res, next) => {
+router.post('/api/sellers/infer', requireAdminApiKey, sellerLimiter, async (req, res, next) => {
   try {
     const result = await batchInferMotivation({
       limit: parseLimit(req.query.limit, 5)
@@ -180,13 +203,13 @@ router.get('/api/sellers', async (req, res, next) => {
   }
 });
 
-router.put('/api/sellers/:id', async (req, res, next) => {
+router.put('/api/sellers/:id', validateBody(sellerUpdateSchema), async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const profile = await updateSellerProfile(req.params.id, req.body || {});
+    const profile = await updateSellerProfile(req.params.id, req.validatedBody || {});
     return res.json(profile);
   } catch (error) {
     return next(error);
