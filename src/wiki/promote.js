@@ -1,9 +1,27 @@
 const fs = require('fs');
 const path = require('path');
 
-const PROJECT_ROOT = process.cwd();
-const WIKI_ROOT = path.join(PROJECT_ROOT, 'wiki');
-const INDEX_PATH = path.join(WIKI_ROOT, 'index.md');
+function getProjectRoot() {
+  return process.cwd();
+}
+
+function getWikiRoot(options = {}) {
+  return options.wikiRoot
+    ? path.resolve(getProjectRoot(), options.wikiRoot)
+    : path.resolve(getProjectRoot(), process.env.ISG_WIKI_ROOT || 'wiki');
+}
+
+function getIndexPath(options = {}) {
+  return options.indexPath
+    ? path.resolve(getProjectRoot(), options.indexPath)
+    : path.join(getWikiRoot(options), 'index.md');
+}
+
+function getRawRoot(options = {}) {
+  return options.rawRoot
+    ? path.resolve(getProjectRoot(), options.rawRoot)
+    : path.resolve(getProjectRoot(), process.env.ISG_RAW_ROOT || 'raw');
+}
 
 function cleanText(value, fallback = '') {
   if (typeof value !== 'string') {
@@ -32,6 +50,22 @@ function slugify(value, fallback = 'entry') {
 
 function normalizeRelativePath(filePath) {
   return filePath.replace(/\\/g, '/');
+}
+
+function buildRawCitation(sourceFile, options = {}) {
+  if (!cleanText(sourceFile, '')) {
+    return null;
+  }
+
+  const absolutePath = path.resolve(sourceFile);
+  const rawRoot = getRawRoot(options);
+  const relativeToRaw = normalizeRelativePath(path.relative(rawRoot, absolutePath));
+
+  if (!relativeToRaw.startsWith('..')) {
+    return relativeToRaw;
+  }
+
+  return path.basename(absolutePath);
 }
 
 function inferSection(entry = {}) {
@@ -98,14 +132,12 @@ function resolvePageTitle(entry = {}, options = {}) {
 }
 
 function resolvePagePath(entry = {}, options = {}) {
-  const wikiRoot = options.wikiRoot
-    ? path.resolve(PROJECT_ROOT, options.wikiRoot)
-    : WIKI_ROOT;
+  const wikiRoot = getWikiRoot(options);
 
   if (cleanText(options.page, '')) {
     return path.isAbsolute(options.page)
       ? options.page
-      : path.resolve(PROJECT_ROOT, options.page);
+      : path.resolve(getProjectRoot(), options.page);
   }
 
   const section = inferSection(entry);
@@ -113,11 +145,23 @@ function resolvePagePath(entry = {}, options = {}) {
   return path.join(wikiRoot, section, `${slugify(title)}.md`);
 }
 
-function buildSourceLines(entry = {}) {
-  const lines = [`- Knowledge entry [ke:${entry.id}]`];
+function buildPropertyPageRelativePath(property = {}, options = {}) {
+  const title = cleanText(property.address, '') || cleanText(property.apn, '') || cleanText(property.id, 'property');
+  const pagePath = path.join(getWikiRoot(options), 'properties', `${slugify(title)}.md`);
+  return normalizeRelativePath(path.relative(getProjectRoot(), pagePath));
+}
 
-  if (cleanText(entry.source_file, '')) {
-    lines.push(`- Raw source [raw:${path.basename(entry.source_file)}]`);
+function buildDefaultPageRelativePath(entry = {}, options = {}) {
+  const pagePath = resolvePagePath(entry, options);
+  return normalizeRelativePath(path.relative(getProjectRoot(), pagePath));
+}
+
+function buildSourceLines(entry = {}, options = {}) {
+  const lines = [`- Knowledge entry [ke:${entry.id}]`];
+  const rawCitation = buildRawCitation(entry.source_file, options);
+
+  if (rawCitation) {
+    lines.push(`- Raw source [raw:${rawCitation}]`);
   }
 
   for (const property of entry.linked_properties || []) {
@@ -159,14 +203,15 @@ function buildSnapshotLines(entry = {}) {
   return lines;
 }
 
-function buildUpdateBlock(entry = {}, promotedAt = new Date()) {
+function buildUpdateBlock(entry = {}, promotedAt = new Date(), options = {}) {
   const dateLabel = promotedAt.toISOString().slice(0, 10);
   const summary = cleanText(entry.ai_summary, cleanText(entry.summary, cleanText(entry.title, '')));
   const narrative = summary || cleanText(entry.content, '').slice(0, 400);
   const sourceTokens = [`[ke:${entry.id}]`];
+  const rawCitation = buildRawCitation(entry.source_file, options);
 
-  if (cleanText(entry.source_file, '')) {
-    sourceTokens.push(`[raw:${path.basename(entry.source_file)}]`);
+  if (rawCitation) {
+    sourceTokens.push(`[raw:${rawCitation}]`);
   }
 
   const detailLines = [];
@@ -182,9 +227,9 @@ function buildUpdateBlock(entry = {}, promotedAt = new Date()) {
   return [`### ${dateLabel}`, ...detailLines].join('\n');
 }
 
-function buildNewPage(entry = {}, title, updateBlock) {
+function buildNewPage(entry = {}, title, updateBlock, options = {}) {
   const snapshotLines = buildSnapshotLines(entry);
-  const sources = buildSourceLines(entry);
+  const sources = buildSourceLines(entry, options);
 
   return [
     `# ${title}`,
@@ -231,11 +276,7 @@ function prependUpdate(content, updateBlock) {
 }
 
 async function ensureWikiIndex(relativePagePath, title, options = {}) {
-  const indexPath = options.indexPath
-    ? path.resolve(PROJECT_ROOT, options.indexPath)
-    : options.wikiRoot
-      ? path.join(path.resolve(PROJECT_ROOT, options.wikiRoot), 'index.md')
-      : INDEX_PATH;
+  const indexPath = getIndexPath(options);
 
   await fs.promises.mkdir(path.dirname(indexPath), { recursive: true });
 
@@ -247,7 +288,7 @@ async function ensureWikiIndex(relativePagePath, title, options = {}) {
     // Use default content.
   }
 
-  const absolutePagePath = path.resolve(PROJECT_ROOT, relativePagePath);
+  const absolutePagePath = path.resolve(getProjectRoot(), relativePagePath);
   const normalizedPath = normalizeRelativePath(path.relative(path.dirname(indexPath), absolutePagePath));
   const line = `- [${title}](${normalizedPath})`;
 
@@ -264,8 +305,8 @@ async function promoteKnowledgeEntry(entry, options = {}) {
 
   const title = resolvePageTitle(entry, options);
   const pagePath = resolvePagePath(entry, options);
-  const updateBlock = buildUpdateBlock(entry, options.promotedAt || new Date());
-  const sourceLines = buildSourceLines(entry);
+  const updateBlock = buildUpdateBlock(entry, options.promotedAt || new Date(), options);
+  const sourceLines = buildSourceLines(entry, options);
 
   await fs.promises.mkdir(path.dirname(pagePath), { recursive: true });
 
@@ -276,7 +317,7 @@ async function promoteKnowledgeEntry(entry, options = {}) {
     content = await fs.promises.readFile(pagePath, 'utf8');
   } catch (_error) {
     created = true;
-    content = buildNewPage(entry, title, updateBlock);
+    content = buildNewPage(entry, title, updateBlock, options);
     await fs.promises.writeFile(pagePath, content, 'utf8');
   }
 
@@ -286,7 +327,7 @@ async function promoteKnowledgeEntry(entry, options = {}) {
     await fs.promises.writeFile(pagePath, content, 'utf8');
   }
 
-  const relativePagePath = normalizeRelativePath(path.relative(PROJECT_ROOT, pagePath));
+  const relativePagePath = normalizeRelativePath(path.relative(getProjectRoot(), pagePath));
   await ensureWikiIndex(relativePagePath, title, options);
 
   return {
@@ -298,12 +339,16 @@ async function promoteKnowledgeEntry(entry, options = {}) {
 }
 
 module.exports = {
-  WIKI_ROOT,
-  INDEX_PATH,
+  getWikiRoot,
+  getIndexPath,
+  getRawRoot,
   slugify,
   inferSection,
   resolvePageTitle,
   resolvePagePath,
+  buildPropertyPageRelativePath,
+  buildDefaultPageRelativePath,
+  buildRawCitation,
   buildSourceLines,
   promoteKnowledgeEntry
 };

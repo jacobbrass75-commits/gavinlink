@@ -21,6 +21,7 @@ async function resetTables() {
     TRUNCATE
       property_documents,
       property_import_records,
+      wiki_promotion_queue,
       property_groups,
       entity_relationships,
       deals,

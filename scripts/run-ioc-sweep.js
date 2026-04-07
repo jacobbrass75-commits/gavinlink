@@ -2,7 +2,37 @@
 
 require('dotenv').config();
 
+const path = require('path');
+const { spawnSync } = require('child_process');
+const { query, close } = require('../src/db/connection');
+
 const BASE_URL = String(process.env.ISG_API_URL || 'http://localhost:3100').replace(/\/$/, '');
+const ROOT = process.cwd();
+
+function runNodeScript(scriptPath, args = []) {
+  return spawnSync(process.execPath, [scriptPath, ...args], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: process.env
+  });
+}
+
+async function ensureSeedProperties() {
+  const result = await query('SELECT COUNT(*)::int AS count FROM properties');
+
+  if (result.rows[0].count > 0) {
+    return { seeded: false, property_count: result.rows[0].count };
+  }
+
+  const seedRun = runNodeScript(path.join(ROOT, 'scripts', 'seed-test-data.js'));
+
+  if (seedRun.status !== 0) {
+    throw new Error(seedRun.stderr || seedRun.stdout || 'Failed to seed IOC properties');
+  }
+
+  const refreshed = await query('SELECT COUNT(*)::int AS count FROM properties');
+  return { seeded: true, property_count: refreshed.rows[0].count };
+}
 
 function withAdminHeaders(headers = {}) {
   if (!process.env.ADMIN_API_KEY) {
@@ -80,6 +110,15 @@ async function assertStep(name, response, predicate = () => true) {
 
 async function bootstrapLiveData() {
   const steps = [];
+  const seedResult = await ensureSeedProperties();
+
+  steps.push({
+    name: 'Bootstrap seed data',
+    passed: seedResult.property_count > 0,
+    status: 200,
+    route: 'seed-test-data.js',
+    summary: JSON.stringify(seedResult)
+  });
 
   steps.push(
     await assertStep(
@@ -210,4 +249,6 @@ runSweep().catch((error) => {
     error: error.message
   }, null, 2));
   process.exitCode = 1;
+}).finally(async () => {
+  await close();
 });

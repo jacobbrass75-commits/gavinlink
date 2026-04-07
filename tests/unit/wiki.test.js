@@ -7,7 +7,8 @@ const path = require('path');
 const {
   inferSection,
   resolvePagePath,
-  promoteKnowledgeEntry
+  promoteKnowledgeEntry,
+  buildPropertyPageRelativePath
 } = require('../../src/wiki/promote');
 const { lintWiki } = require('../../src/wiki/lint');
 
@@ -40,6 +41,21 @@ test('resolvePagePath builds a property page path when linked property is primar
   );
 
   assert.match(pagePath, /properties\/8122-maie-ave\.md$/);
+});
+
+test('buildPropertyPageRelativePath prefers address and falls back cleanly', () => {
+  const pagePath = buildPropertyPageRelativePath(
+    {
+      id: '11111111-1111-4111-8111-111111111111',
+      address: '324 HORTON PLAZA',
+      apn: 'APN-123'
+    },
+    {
+      wikiRoot: 'wiki-test'
+    }
+  );
+
+  assert.equal(pagePath, 'wiki-test/properties/324-horton-plaza.md');
 });
 
 test('promoteKnowledgeEntry creates a sourced wiki page and updates the index', async () => {
