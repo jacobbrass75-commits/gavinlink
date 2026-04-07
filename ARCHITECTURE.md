@@ -1,11 +1,11 @@
 # ISG Second Brain -- Architecture
 
-> Modules 1-6 built. Matching engine operational. 1,952 matches scored.
+> Modules 1-6 built. Wiki narrative layer operational. Matching engine scoring 1,952 matches.
 > Last updated: 2026-04-06
 
 ## What This Is
 
-ISG Second Brain is the data intelligence backend for Sullivan Link -- a commercial real estate foreclosure platform. It ingests property records, extracts entities (owners, trustees, lenders), builds buyer and seller profiles, scores distress, infers seller motivation using LLMs, and runs a weighted matching engine to pair buyers with seller opportunities.
+ISG Second Brain is the data intelligence backend for Sullivan Link -- a commercial real estate foreclosure platform. It ingests property records, extracts entities (owners, trustees, lenders), builds buyer and seller profiles, scores distress, infers seller motivation using LLMs, and runs a weighted matching engine to pair buyers with seller opportunities. A Karpathy-style wiki narrative layer synthesizes knowledge for broker meeting prep.
 
 **Stack:** Node.js 20+ / Express / PostgreSQL 16 / ChromaDB / Claude|OpenAI|Ollama
 
@@ -27,7 +27,8 @@ ISG Second Brain is the data intelligence backend for Sullivan Link -- a commerc
 +------------------+     +------------------+     +-----------------+     +-----------------+
 |  MCP Server      |     |  CLI (brain)     |     |  Express API    |     |  CSV Import     |
 |  (5 tools)       |     |  add/search/     |     |  (port 3100)    |     |  Script         |
-|  stdio transport |     |  match/daily     |     |  35+ routes     |     |  (UTF-16 aware) |
+|  stdio transport |     |  match/daily/    |     |  56 routes      |     |  (UTF-16 aware) |
+|                  |     |  promote/lint    |     |  rate-limited   |     |                 |
 +--------+---------+     +--------+---------+     +--------+--------+     +--------+--------+
          |                         |                        |                       |
          +------------+------------+------------------------+-----------------------+
@@ -35,6 +36,8 @@ ISG Second Brain is the data intelligence backend for Sullivan Link -- a commerc
               +-------v--------+
               |   Ingestion    |
               |   Pipeline     |
+              |   (classify +  |
+              |    validate)   |
               +-------+--------+
                       |
          +--+---------+----------+--+
@@ -44,26 +47,28 @@ ISG Second Brain is the data intelligence backend for Sullivan Link -- a commerc
    | Extraction  |       | Upsert         |
    | + Classify  |       | (apn+region    |
    | + Normalize |       |  dedup)        |
-   | + Merge     |       +-------+--------+
-   +-----+------+               |
-         |              +-------v--------+
-   +-----v------+       | Seller Auto-   |
-   | Knowledge   |       | Generation     |
-   | Entry +     |       | + Distress     |
-   | Embedding   |       |   Scoring      |
-   +-----+------+       +-------+--------+
-         |                      |
-   +-----v------+       +------v---------+
-   | ChromaDB    |       | Matching       |
-   | (semantic   |       | Engine         |
-   |  vectors)   |       | (weighted,     |
-   +-------------+       |  0-100)        |
-                         +------+---------+
-                                |
-                         +------v---------+
-                         | AI Narrative   |
-                         | Generation     |
-                         | (score >= 75)  |
+   | + Merge     |       | + Documents    |
+   +-----+------+       | + Grouping     |
+         |              +-------+--------+
+   +-----v------+               |
+   | Knowledge   |       +-------v--------+
+   | Entry +     |       | Seller Auto-   |
+   | Embedding   |       | Generation     |
+   +-----+------+       | + Distress     |
+         |              |   Scoring      |
+   +-----v------+       +-------+--------+
+   | ChromaDB    |               |
+   | (semantic   |       +------v---------+
+   |  vectors)   |       | Matching       |
+   +-----+------+       | Engine         |
+         |              | (weighted,     |
+   +-----v------+       |  0-100)        |
+   | Wiki        |       +------+---------+
+   | Narrative   |              |
+   | Layer       |       +------v---------+
+   | (promote +  |       | AI Narrative   |
+   |  lint)      |       | Generation     |
+   +-------------+       | (score >= 75)  |
                          +----------------+
 ```
 
@@ -138,18 +143,28 @@ node scripts/import-foreclosure-csv.js data/foreclosures.csv --skip-sellers
 
 ### Module 1 -- Infrastructure Scaffold [COMPLETE]
 
-Foundation layer. Database, API server, migrations, import parsing, inference abstraction.
+Foundation layer. Database, API server, migrations, import parsing, inference abstraction, guardrails.
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| API Server | `src/api/server.js` | Express app, route registration, port 3100 |
+| API Server | `src/api/server.js` | Express app, route registration, error handling middleware, port 3100 |
+| Guardrails | `src/api/guardrails.js` | IP-based rate limiting (bucket algorithm), admin API key validation |
+| Validation | `src/api/validation.js` | Zod schema validation middleware, formatted error responses |
 | DB Connection | `src/db/connection.js` | Singleton `pg.Pool`, `query()` helper, `close()` teardown |
 | Migrations | `scripts/migrate.js` | Reads `src/db/migrations/*.sql` in order, tracks in `_migrations` |
 | Seed Data | `scripts/seed-test-data.js` | 10 test properties across LA County |
 | Health Check | `src/api/routes/health.js` | DB connectivity, table count, ChromaDB ping, inference status |
 | Import Gateway | `src/import-export/gateway.js` | CSV (UTF-8/16), XLSX, JSON -> uniform `{rows, columns, format}` |
 | Inference Provider | `src/inference/provider.js` | Pluggable LLM: Claude, OpenAI, or Ollama. `complete()` + `embed()` |
+| SQL Utils | `src/utils/sql.js` | SQL LIKE pattern escaping helpers |
 | Docker | `docker-compose.yml` | PostgreSQL 16 + ChromaDB containers |
+
+**Rate Limits:**
+- Search: 12/min per IP
+- Matching: 6/min per IP
+- Narrative generation: 4/min per IP
+- Property document uploads: 10/min per IP
+- Admin endpoints require `x-api-key` header matching `ADMIN_API_KEY` env var
 
 ### Module 2 -- Entity Extraction Pipeline [COMPLETE]
 
@@ -207,7 +222,7 @@ Bonus (base <= 1 AND foreclosure = true):
 **Seller Profile Auto-Generation with Graceful Fallback:**
 Entity resolution chain: `owner_entity_id` -> `findOrCreateOwnerEntity(owner_name)` -> `trustee_entity_id` -> `lender_entity_id` -> skip (graceful). Properties without a resolvable entity are skipped without failing the batch.
 
-### Module 5 -- Knowledge Base & Conversational Ingestion [WORKING]
+### Module 5 -- Knowledge Base & Conversational Ingestion [COMPLETE]
 
 Natural language ingestion, classification, knowledge graph, semantic search.
 
@@ -231,12 +246,13 @@ Message -> buildEntityContext() -> LLM classify (fallback: regex)
   -> create/update buyer_profile or seller_profile
   -> create knowledge_entry
   -> store ChromaDB embedding
+  -> auto-promote to wiki (high-signal entries)
   -> run matching (if buyer_intel)
 ```
 
-**What's partially implemented:** Semantic search works via ChromaDB when available but falls back to keyword search. The `embed()` provider method has a deterministic local fallback (character-based 32-dim vector) when the LLM provider is unavailable.
+**Semantic Search:** Hybrid approach -- ChromaDB vector similarity in parallel with PostgreSQL pg_trgm keyword matching. Results merged by knowledge_entry ID, keeping max score from either method. Falls back to keyword-only when ChromaDB is unavailable. The `embed()` provider has a deterministic local fallback (character-based 32-dim vector) when the LLM provider is unavailable.
 
-### Module 6 -- Matching Engine [WORKING]
+### Module 6 -- Matching Engine [COMPLETE]
 
 Weighted scoring algorithm. AI narrative generation for top matches.
 
@@ -246,6 +262,43 @@ Weighted scoring algorithm. AI narrative generation for top matches.
 | Runner | `src/matching/runner.js` | Orchestrator: fetch buyers/sellers, score pairs, persist, generate narratives |
 | Explainer | `src/matching/explainer.js` | Human-readable reasons for each match score |
 | Narrative | `src/matching/narrative.js` | LLM-generated broker narratives for matches >= 75 |
+
+### Property Intelligence [COMPLETE]
+
+Property documents, grouping, and enrichment.
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Documents | `src/properties/documents.js` | Attach/store property documents (PDF, deed, title reports). Content-addressable (SHA-256) |
+| Grouping | `src/properties/grouping.js` | Group related properties, normalize addresses, property group CRUD |
+| Routes | `src/api/routes/properties.js` | Property detail, documents CRUD, grouping endpoints |
+
+**Document Storage:** Files stored under `data/property-documents/<property-uuid>/<sha256-hash>.ext`. Content-addressable storage avoids duplicate files. Documents auto-create knowledge entries and can trigger wiki promotion.
+
+### Wiki Narrative Layer [COMPLETE]
+
+Karpathy-style narrative synthesis over PostgreSQL. Raw sources + curated wiki pages.
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Promote | `src/wiki/promote.js` | Convert knowledge entries to markdown wiki pages. Slug generation, relative paths |
+| Lint | `src/wiki/lint.js` | Citation checking, broken `[ke:]`/`[raw:]` validation, orphan page detection |
+| Queue | `src/wiki/queue.js` | Auto-promotion workflow queue for high-signal entries |
+
+**Wiki Structure:**
+```
+wiki/
+  index.md                    Main index
+  players/                    People, entities, operators
+  lenders/                    Trustees, servicers, foreclosure ops
+  submarkets/                 Market narratives
+  playbooks/                  Tactical outreach & negotiation
+  patterns/                   Deal archetypes, post-mortems
+  properties/                 Property-specific narratives
+  reports/                    Auto-generated JSON reports
+```
+
+**Citation Rules:** `[ke:<id>]` for knowledge entries, `[raw:<filename>]` for source files. Wiki must never override structured DB truth.
 
 ---
 
@@ -306,7 +359,7 @@ Weighted 0-100 score across 7 dimensions. Each buyer-seller-property triple is s
 ### Search (2 routes)
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/search` | Hybrid semantic + keyword search |
+| POST | `/api/search` | Hybrid semantic + keyword search (rate-limited: 12/min) |
 | GET | `/brain/search` | 501 stub |
 
 ### Entities (7 routes)
@@ -351,6 +404,15 @@ Weighted 0-100 score across 7 dimensions. Each buyer-seller-property triple is s
 | GET | `/api/sellers/lender-patterns` | Lender concentration patterns |
 | GET | `/api/sellers/distribution` | Status/distress/stage/motivation breakdowns |
 
+### Properties (5 routes)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/properties/:id` | Property detail + linked entities + documents |
+| GET | `/api/properties/:id/group` | Property grouping/siblings |
+| GET | `/api/property-groups/:id` | Property group detail |
+| GET | `/api/properties/:id/documents` | List attached documents |
+| POST | `/api/properties/:id/documents` | Attach document + create knowledge entry (admin, rate-limited: 10/min) |
+
 ### Knowledge (3 routes)
 | Method | Path | Description |
 |--------|------|-------------|
@@ -361,7 +423,7 @@ Weighted 0-100 score across 7 dimensions. Each buyer-seller-property triple is s
 ### Matching -- Run (5 routes)
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/match/run` | Run full matching engine. `?dryRun=&generateNarratives=` |
+| POST | `/api/match/run` | Run full matching engine (admin, rate-limited: 6/min). `?dryRun=&generateNarratives=` |
 | POST | `/api/match/run-for-buyer/:buyerId` | Score one buyer against all sellers |
 | POST | `/api/match/run-for-property/:propertyId` | Score one property against all buyers |
 | GET | `/api/match/distribution` | Score distribution + status breakdown |
@@ -376,7 +438,7 @@ Weighted 0-100 score across 7 dimensions. Each buyer-seller-property triple is s
 | GET | `/api/matches/property/:propertyId` | Matches for a property |
 | GET | `/api/matches/:id` | Match detail with buyer, seller, property, breakdown |
 | PUT | `/api/matches/:id/status` | Update match status |
-| POST | `/api/matches/:id/narrative` | Generate AI narrative for match (score >= 75) |
+| POST | `/api/matches/:id/narrative` | Generate AI narrative (admin, rate-limited: 4/min, score >= 75) |
 
 ### Daily (2 routes)
 | Method | Path | Description |
@@ -395,19 +457,21 @@ Weighted 0-100 score across 7 dimensions. Each buyer-seller-property triple is s
 |--------|------|-------------|
 | GET | `/brain/match/:identifier` | 501 stub (superseded by `/api/match/:identifier`) |
 
-**Total: 56 routes (44 implemented, 6 stubs)**
+**Total: 61 routes (50 implemented, 5 stubs)**
 
 ---
 
 ## Database Schema
 
-### Tables (12)
+### Tables (14)
 
 | Table | Purpose |
 |-------|---------|
 | `entities` | People, LLCs, trusts, corporations, lenders. Central identity store |
 | `entity_relationships` | Parent-child links with type, confidence, source |
 | `properties` | Real estate assets: APN, financials, foreclosure data, metadata (JSONB) |
+| `property_documents` | Attached files per property. SHA-256 content-addressable storage |
+| `property_groups` | Related property grouping (multi-parcel, same-owner) |
 | `buyer_profiles` | Linked to entity. Buy-box criteria, strategy, urgency |
 | `buyer_purchases` | Purchase history per buyer |
 | `seller_profiles` | One per property. Distress score, motivation, stage, pricing |
@@ -428,6 +492,8 @@ Weighted 0-100 score across 7 dimensions. Each buyer-seller-property triple is s
 | `004_seller_enhancements.sql` | Distress scoring, motivation, foreclosure stage fields |
 | `005_knowledge_enhancements.sql` | Knowledge AI fields, knowledge_entities + knowledge_properties join tables |
 | `006_match_enhancements.sql` | Match score_breakdown, narrative, status constraints, unique buyer-property index |
+| `007_property_assets.sql` | Property documents table, property groups table |
+| `008_wiki_automation.sql` | Wiki promotion queue, auto-promote tracking |
 
 ### Key Relationships
 
@@ -438,8 +504,10 @@ entities 1--* seller_profiles
 entities 1--* properties (as owner, trustee, or lender)
 entities *--* knowledge_entries (via knowledge_entities)
 properties 1--1 seller_profiles
+properties 1--* property_documents
 properties *--* knowledge_entries (via knowledge_properties)
 properties 1--* matches
+properties *--* property_groups
 buyer_profiles 1--* buyer_purchases
 buyer_profiles 1--* matches
 seller_profiles 1--* matches
@@ -472,6 +540,8 @@ brain match "Mike Chen"          # matches for buyer
 brain match "1234-567-890"       # matches for property APN
 brain daily
 brain serve                      # start MCP server
+brain promote <ke_id>            # promote knowledge entry to wiki
+brain lint                       # lint wiki for broken citations
 ```
 
 ---
@@ -480,13 +550,15 @@ brain serve                      # start MCP server
 
 | Script | Usage | Description |
 |--------|-------|-------------|
-| `scripts/migrate.js` | `npm run migrate` | Apply pending SQL migrations |
-| `scripts/seed-test-data.js` | `npm run seed` | Insert 10 test properties |
+| `scripts/migrate.js` | `npm run migrate` | Apply pending SQL migrations. Transactional with rollback |
+| `scripts/seed-test-data.js` | `npm run seed` | Insert 10 test properties + 2 buyer profiles |
 | `scripts/import-foreclosure-csv.js` | `node scripts/import-foreclosure-csv.js <csv> [--dry-run] [--limit N] [--skip-sellers]` | Full pipeline: parse UTF-16 CSV -> normalize -> dedupe -> upsert -> entities -> sellers |
-| `scripts/import-from-realestatetool.js` | `node scripts/import-from-realestatetool.js --region la_county` | Import from RealEstateTool API or CSV fallback |
-| `scripts/score-sellers.js` | `node scripts/score-sellers.js` | Batch distress-score all unscored seller profiles |
+| `scripts/import-from-realestatetool.js` | `node scripts/import-from-realestatetool.js --region la_county [--csv <path>]` | Import from RealEstateTool API or CSV fallback |
+| `scripts/score-sellers.js` | `node scripts/score-sellers.js [--infer] [--distressed] [--report]` | Batch distress-score, motivation inference, portfolio analysis |
 | `scripts/run-matching.js` | `npm run match` or `node scripts/run-matching.js [--dry-run] [--narratives] [--min-score N] [--buyer UUID] [--property UUID] [--top N] [--distribution]` | Run matching engine with various modes |
-| `scripts/transcribe-folder.js` | `node scripts/transcribe-folder.js <folder> [--once]` | Watch folder for audio files, transcribe + ingest. Moves processed files to `processed/` subdirectory |
+| `scripts/run-wiki-maintenance.js` | `npm run wiki:maintain` | Process auto-promote queue + lint. Output: `wiki/reports/latest-maintenance.json` |
+| `scripts/transcribe-folder.js` | `node scripts/transcribe-folder.js <folder> [--once]` | Watch folder for audio files, transcribe + ingest. Moves processed files to `processed/` |
+| `scripts/run-ioc-sweep.js` | `node scripts/run-ioc-sweep.js` | End-to-end smoke test: seeds data, runs 24+ integration checks, reports pass/fail |
 
 ---
 
@@ -525,6 +597,7 @@ CA_SOS_SEARCH_URL=
 # Server
 API_PORT=3100
 BRAIN_API_URL=                 # MCP/CLI override for API base URL
+ADMIN_API_KEY=                 # Required for admin-protected endpoints
 ```
 
 ---
@@ -533,8 +606,9 @@ BRAIN_API_URL=                 # MCP/CLI override for API base URL
 
 Tests use Node.js built-in test runner (`node --test`).
 
-| File | Tests | Covers |
-|------|-------|--------|
+### Unit Tests (14)
+| File | Covers |
+|------|--------|
 | `tests/unit/connection.test.js` | Pool singleton, query, teardown, env config |
 | `tests/unit/provider.test.js` | Inference provider selection, completion |
 | `tests/unit/extract.test.js` | Name normalization, entity type classification |
@@ -548,10 +622,16 @@ Tests use Node.js built-in test runner (`node --test`).
 | `tests/unit/router.test.js` | Classified message routing |
 | `tests/unit/scorer.test.js` | Match scoring dimensions, caps, edge cases |
 | `tests/unit/explainer.test.js` | Human-readable match explanations |
+| `tests/unit/wiki.test.js` | Wiki citation validation, lint checks |
+
+### Integration Tests (8)
+| File | Covers |
+|------|--------|
 | `tests/integration/db-setup.test.js` | Migration application, table creation |
 | `tests/integration/entity-pipeline.test.js` | End-to-end entity extraction and linking |
 | `tests/integration/buyer-pipeline.test.js` | Buyer creation, purchases, lender reports |
 | `tests/integration/seller-pipeline.test.js` | Auto-generation, scoring, inference mock |
+| `tests/integration/property-assets.test.js` | Property document attachment and retrieval |
 | `tests/integration/ingestion-pipeline.test.js` | Full ingest flow: classify -> route -> store |
 | `tests/integration/matching-pipeline.test.js` | Matching engine integration |
 | `tests/integration/semantic-search.test.js` | Hybrid search with ChromaDB |
@@ -563,6 +643,7 @@ Tests use Node.js built-in test runner (`node --test`).
 ```
 isg-second-brain/
   ARCHITECTURE.md
+  CLAUDE.md
   README.md
   docker-compose.yml
   package.json
@@ -571,6 +652,25 @@ isg-second-brain/
     02-entities.md
     03-buyer-intel.md
     04-seller-intel.md
+    05-knowledge-base.md
+    06-matching-engine.md
+    07-crm-csv-test-report.md
+    codex-audit-prompt.md
+
+  raw/
+    README.md
+
+  wiki/
+    index.md
+    README.md
+    players/
+      mystery-owner-llc.md
+    lenders/
+    submarkets/
+    playbooks/
+    patterns/
+    properties/
+    reports/
 
   scripts/
     migrate.js
@@ -579,11 +679,15 @@ isg-second-brain/
     import-foreclosure-csv.js
     score-sellers.js
     run-matching.js
+    run-wiki-maintenance.js
+    run-ioc-sweep.js
     transcribe-folder.js
 
   src/
     api/
       server.js
+      guardrails.js
+      validation.js
       routes/
         health.js
         ingest.js
@@ -594,11 +698,12 @@ isg-second-brain/
         knowledge.js
         match.js
         matches.js
+        properties.js
         daily.js
         import-export.js       (stub)
 
     cli/
-      brain.js                 (CLI: add, search, lookup, match, daily, serve)
+      brain.js                 (CLI: add, search, lookup, match, daily, serve, promote, lint)
 
     db/
       connection.js
@@ -610,6 +715,8 @@ isg-second-brain/
         004_seller_enhancements.sql
         005_knowledge_enhancements.sql
         006_match_enhancements.sql
+        007_property_assets.sql
+        008_wiki_automation.sql
 
     entities/
       extract.js
@@ -648,8 +755,13 @@ isg-second-brain/
       explainer.js
       narrative.js
 
+    properties/
+      documents.js
+      grouping.js
+
     import-export/
       gateway.js
+      foreclosure-import.js
 
     inference/
       provider.js
@@ -657,6 +769,14 @@ isg-second-brain/
     mcp/
       server.js
       tools.js
+
+    wiki/
+      promote.js
+      lint.js
+      queue.js
+
+    utils/
+      sql.js
 
   tests/
     fixtures/
@@ -675,11 +795,13 @@ isg-second-brain/
       router.test.js
       scorer.test.js
       explainer.test.js
+      wiki.test.js
     integration/
       db-setup.test.js
       entity-pipeline.test.js
       buyer-pipeline.test.js
       seller-pipeline.test.js
+      property-assets.test.js
       ingestion-pipeline.test.js
       matching-pipeline.test.js
       semantic-search.test.js
@@ -690,6 +812,13 @@ isg-second-brain/
 ## Git History
 
 ```
+cf10287 merge(wiki-ops): automate promotions and document narratives
+acc6f56 feat(wiki): automate promotions and property document narratives
+e51eff5 merge(module-06): integrate matching and narrative layer
+9e4a804 feat(wiki): add narrative layer scaffolding
+0441c38 feat(property-intel): harden imports and add parcel grouping
+454712e fix(api): harden ingestion and resolve IOC blockers
+fc806fe docs: update architecture and add codex audit prompt
 5093d7c feat: add dedicated foreclosure CSV importer with UTF-16 support
 4e4f342 fix(module-05): stabilize knowledge ingestion and document csv import findings
 3281383 feat(module-06): implement buyer-seller matching engine
@@ -705,19 +834,18 @@ cd5662a module 1 infrastructure scaffold
 
 ---
 
-## What's Missing / Incomplete for IOC
+## What's Missing / Incomplete
 
 | Gap | Status | Notes |
 |-----|--------|-------|
 | **Deal pipeline** | Not built | `deals` table exists but no CRUD or lifecycle management |
 | **Bulk import/export API** | Stubs only | `/brain/import` and `/brain/export` return 501. CSV import is script-only |
-| **ChromaDB in production** | Fragile | Semantic search falls back to keyword when ChromaDB is down. Deterministic embedding fallback is low-quality |
+| **ChromaDB resilience** | Fragile | Semantic search falls back to keyword when ChromaDB is down. Deterministic embedding fallback is low-quality |
 | **Property enrichment** | Missing | No assessed value, sqft, lot size, or unit count in foreclosure CSV data. Matching scores suffer |
 | **Owner name extraction** | Missing from CSV | Foreclosure CSV has no owner field. Seller profiles link to trustee/lender entity as fallback |
 | **Price data** | Missing | No asking_price or assessed_value from CSV. Price dimension scores 0 for most matches |
 | **Notification/alerts** | Not built | No daily digest push, no email, no webhook on new high-score matches |
-| **Authentication** | None | API is open. No API keys, no RBAC |
-| **Rate limiting** | None | No throttle on LLM-calling endpoints (infer, narrative, ingest) |
+| **Authentication** | Partial | Admin API key for protected endpoints. No user auth or RBAC |
 | **Frontend** | None | API-only. No dashboard or UI |
 | **Property type mapping** | Incomplete | CSV `Use` code not mapped to property_type. All CSV imports get `property_type='other'` |
 | **Deduplication across sources** | Partial | Dedup by APN+region works. No cross-source entity dedup beyond pg_trgm fuzzy matching |
