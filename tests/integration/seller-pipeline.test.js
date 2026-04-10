@@ -65,7 +65,7 @@ async function requestJson(app, method, routePath, body = undefined) {
 }
 
 async function importFixtureData() {
-  const importRun = runNodeScript(path.join(ROOT, 'scripts', 'import-from-realestatetool.js'), [
+  const importRun = runNodeScript(path.join(ROOT, 'scripts', 'imports', 'import-from-realestatetool.js'), [
     '--csv',
     path.join(ROOT, 'tests', 'fixtures', 'sample-properties.json'),
     '--limit',
@@ -157,7 +157,7 @@ test('Module 4 seller workflow works end to end', async (t) => {
     provider.complete = originalComplete;
   });
 
-  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
   assert.equal(migrateRun.status, 0, migrateRun.stderr || migrateRun.stdout);
 
   await resetTables();

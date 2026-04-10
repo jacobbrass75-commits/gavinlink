@@ -13,7 +13,7 @@ Module 4 adds seller profile management, distress scoring, foreclosure stage cla
 - `src/sellers/portfolio-distress.js`
 - `src/api/routes/sellers.js`
 - `src/db/migrations/004_seller_enhancements.sql`
-- `scripts/score-sellers.js`
+- `scripts/ops/score-sellers.js`
 - `tests/unit/distress-score.test.js`
 - `tests/unit/foreclosure-stage.test.js`
 - `tests/integration/seller-pipeline.test.js`

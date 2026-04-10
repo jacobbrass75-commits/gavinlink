@@ -83,7 +83,7 @@ test('semantic and hybrid search return relevant filtered results', async (t) =>
     provider.embed = originalEmbed;
   });
 
-  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
   assert.equal(migrateRun.status, 0, migrateRun.stderr || migrateRun.stdout);
 
   await resetTables();

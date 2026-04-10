@@ -8,7 +8,7 @@ const {
 const {
   cleanZip,
   mapBatchType
-} = require('../../scripts/import-from-realestatetool');
+} = require('../../scripts/imports/import-from-realestatetool');
 
 test('classifyEntityType identifies LLC entities', () => {
   assert.equal(classifyEntityType('MAIE JT & KT DEVELOPMENT LLC'), 'llc');

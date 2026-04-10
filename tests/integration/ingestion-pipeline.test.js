@@ -177,7 +177,7 @@ test('Module 5 ingestion flow works end to end, including CLI and audio ingestio
     process.env.ISG_RAW_ROOT = previousRawRoot;
   });
 
-  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
   assert.equal(migrateRun.status, 0, migrateRun.stderr || migrateRun.stdout);
 
   await resetTables();

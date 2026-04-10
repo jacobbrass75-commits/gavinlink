@@ -22,7 +22,7 @@ Module 2 imports foreclosure properties from `realestatetool`, extracts owner an
 - `src/entities/extract.js`
 - `src/entities/resolve-llc.js`
 - `src/entities/cluster.js`
-- `scripts/import-from-realestatetool.js`
+- `scripts/imports/import-from-realestatetool.js`
 - `tests/unit/extract.test.js`
 - `tests/unit/cluster.test.js`
 - `tests/integration/entity-pipeline.test.js`

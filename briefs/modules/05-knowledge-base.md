@@ -19,7 +19,7 @@ Module 5 adds the conversational ingestion workflow, Chroma-backed knowledge sto
 - `src/mcp/server.js`
 - `src/mcp/tools.js`
 - `src/cli/brain.js`
-- `scripts/transcribe-folder.js`
+- `scripts/imports/transcribe-folder.js`
 - `src/db/migrations/005_knowledge_enhancements.sql`
 
 ## Key Behaviors

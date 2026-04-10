@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-const { close } = require('../src/db/connection');
+const { close } = require('../../src/db/connection');
 const {
   runFullMatching,
   runMatchingForBuyer,
   runMatchingForProperty,
   getTopMatches,
   getMatchDistribution
-} = require('../src/matching/runner');
+} = require('../../src/matching/runner');
 
 function parseArgs(argv) {
   const options = {

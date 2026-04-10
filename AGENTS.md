@@ -1,7 +1,5 @@
 # ISG Narrative Layer
 
-`AGENTS.md` is the canonical copy of these narrative rules. `CLAUDE.md` is retained as a compatibility mirror for tooling that still expects this filename.
-
 This repo uses a Karpathy-style `raw/` + `wiki/` + `AGENTS.md` pattern as a narrative layer over the structured Second Brain.
 
 The inspiration is Andrej Karpathy's lightweight local wiki workflow, adapted here so the wiki is a human-readable synthesis layer while PostgreSQL remains the source of truth for structured facts. Reference: [karpathy/How I use LLMs](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).

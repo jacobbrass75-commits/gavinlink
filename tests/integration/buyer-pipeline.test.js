@@ -66,12 +66,12 @@ test('Module 3 buyer workflow works end to end', async (t) => {
     await close();
   });
 
-  const migrationRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+  const migrationRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
   assert.equal(migrationRun.status, 0, migrationRun.stderr || migrationRun.stdout);
 
   await resetTables();
 
-  const importRun = runNodeScript(path.join(ROOT, 'scripts', 'import-from-realestatetool.js'), [
+  const importRun = runNodeScript(path.join(ROOT, 'scripts', 'imports', 'import-from-realestatetool.js'), [
     '--csv',
     path.join(ROOT, 'tests', 'fixtures', 'sample-properties.json'),
     '--limit',

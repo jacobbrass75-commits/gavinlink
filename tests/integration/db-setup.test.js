@@ -92,10 +92,10 @@ test('Module 1 integration', async (t) => {
   });
 
   await t.test('Migrations run cleanly and are idempotent', async () => {
-    const firstRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+    const firstRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
     assert.equal(firstRun.status, 0, firstRun.stderr || firstRun.stdout);
 
-    const secondRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+    const secondRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
     assert.equal(secondRun.status, 0, secondRun.stderr || secondRun.stdout);
 
     const tablesResult = await query(
@@ -129,10 +129,10 @@ test('Module 1 integration', async (t) => {
   });
 
   await t.test('Seed data inserts and stays idempotent', async () => {
-    const firstRun = runNodeScript(path.join(ROOT, 'scripts', 'seed-test-data.js'));
+    const firstRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'seed-test-data.js'));
     assert.equal(firstRun.status, 0, firstRun.stderr || firstRun.stdout);
 
-    const secondRun = runNodeScript(path.join(ROOT, 'scripts', 'seed-test-data.js'));
+    const secondRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'seed-test-data.js'));
     assert.equal(secondRun.status, 0, secondRun.stderr || secondRun.stdout);
 
     const propertyCountResult = await query('SELECT COUNT(*)::int AS count FROM properties');

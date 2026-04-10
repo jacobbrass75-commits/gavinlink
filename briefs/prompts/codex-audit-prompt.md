@@ -78,8 +78,8 @@ The codebase has 49 passing tests across 20 test files. There are 6 SQL migratio
 ### Import Pipeline
 
 - `src/import-export/gateway.js` -- Parses CSV, XLSX, JSON files. `parseCsv()` reads entire file into memory with `fs.readFileSync()` before piping to csv-parser. `detectEncoding()` checks BOM and null-byte patterns for UTF-16. `parseXlsx()` reads synchronously. `exportToFile()` writes CSV without BOM. No file size limit. No row count limit.
-- `scripts/import-foreclosure-csv.js` -- CLI importer. Uses `parseFile()` then maps, dedupes, and batch-upserts. `upsertProperties()` wraps in transaction. `processPropertyEntities()` wraps in transaction. But seller profile auto-generation is NOT transactional.
-- `scripts/import-from-realestatetool.js` -- HTTP import from external API.
+- `scripts/imports/import-foreclosure-csv.js` -- CLI importer. Uses `parseFile()` then maps, dedupes, and batch-upserts. `upsertProperties()` wraps in transaction. `processPropertyEntities()` wraps in transaction. But seller profile auto-generation is NOT transactional.
+- `scripts/imports/import-from-realestatetool.js` -- HTTP import from external API.
 
 ### Inference Provider
 
@@ -331,7 +331,7 @@ Review `src/import-export/gateway.js`:
 - **CSV column name collision**: If two columns have the same name after trimming, the second overwrites the first.
 - **No row count limit**: A file with 10M rows will consume all available memory.
 
-Review `scripts/import-foreclosure-csv.js`:
+Review `scripts/imports/import-foreclosure-csv.js`:
 
 - **No error handling per row**: If `upsertProperties()` fails on row N, the entire batch is rolled back. There's no option for partial import with error logging.
 - **`processPropertyEntities()` transaction scope**: The function wraps all entity operations in a single transaction. If entity extraction fails for one property, all entities from the batch are rolled back.

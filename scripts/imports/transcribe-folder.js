@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { processAudioFile } = require('../src/knowledge/transcribe');
+const { processAudioFile } = require('../../src/knowledge/transcribe');
 
 const AUDIO_EXTENSIONS = new Set(['.mp3', '.m4a', '.wav', '.ogg', '.webm']);
 

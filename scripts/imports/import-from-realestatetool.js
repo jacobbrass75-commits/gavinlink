@@ -1,11 +1,11 @@
 const path = require('path');
 const dotenv = require('dotenv');
 const { v4: uuidv4 } = require('uuid');
-const { getPool, close } = require('../src/db/connection');
-const { fetchAllProperties, fetchStats } = require('../src/integrations/realestatetool');
-const { processPropertyEntities } = require('../src/entities/extract');
-const { batchResolveLLCs } = require('../src/entities/resolve-llc');
-const { parseFile } = require('../src/import-export/gateway');
+const { getPool, close } = require('../../src/db/connection');
+const { fetchAllProperties, fetchStats } = require('../../src/integrations/realestatetool');
+const { processPropertyEntities } = require('../../src/entities/extract');
+const { batchResolveLLCs } = require('../../src/entities/resolve-llc');
+const { parseFile } = require('../../src/import-export/gateway');
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 

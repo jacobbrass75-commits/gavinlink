@@ -1,8 +1,8 @@
-const { close } = require('../src/db/connection');
-const { batchScoreProperties } = require('../src/sellers/distress-score');
-const { batchInferMotivation } = require('../src/sellers/motivation');
-const { findPortfolioDistress, findLenderOwnerPatterns } = require('../src/sellers/portfolio-distress');
-const { autoGenerateSellerProfiles, getSellerDistribution } = require('../src/sellers/profiles');
+const { close } = require('../../src/db/connection');
+const { batchScoreProperties } = require('../../src/sellers/distress-score');
+const { batchInferMotivation } = require('../../src/sellers/motivation');
+const { findPortfolioDistress, findLenderOwnerPatterns } = require('../../src/sellers/portfolio-distress');
+const { autoGenerateSellerProfiles, getSellerDistribution } = require('../../src/sellers/profiles');
 
 function parseArgs(argv) {
   const args = {

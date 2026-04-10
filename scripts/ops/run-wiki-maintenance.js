@@ -4,10 +4,10 @@ require('dotenv').config();
 
 const fs = require('fs');
 const path = require('path');
-const { processAutoPromoteQueue } = require('../src/wiki/queue');
-const { lintWiki } = require('../src/wiki/lint');
-const { getKnowledgeEntry } = require('../src/knowledge/extract');
-const { getWikiRoot } = require('../src/wiki/promote');
+const { processAutoPromoteQueue } = require('../../src/wiki/queue');
+const { lintWiki } = require('../../src/wiki/lint');
+const { getKnowledgeEntry } = require('../../src/knowledge/extract');
+const { getWikiRoot } = require('../../src/wiki/promote');
 
 function parseFlag(args, name) {
   return args.includes(name);

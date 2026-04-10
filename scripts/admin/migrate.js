@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { getPool, query, close } = require('../src/db/connection');
+const { getPool, query, close } = require('../../src/db/connection');
 
-const migrationsDir = path.join(__dirname, '..', 'src', 'db', 'migrations');
+const migrationsDir = path.join(__dirname, '..', '..', 'src', 'db', 'migrations');
 
 function sortMigrations(a, b) {
   const aMatch = a.match(/^(\d+)/);

@@ -2,19 +2,19 @@
   "name": "isg-second-brain",
   "version": "0.1.0",
   "private": true,
-  "description": "ISG Second Brain backend with infrastructure, entity intelligence, buyer/seller intelligence, and conversational ingestion.",
+  "description": "Sullivan Link Brain backend for distressed commercial real estate intelligence, matching, and narrative knowledge workflows.",
   "main": "src/api/server.js",
   "bin": {
     "brain": "src/cli/brain.js"
   },
   "scripts": {
     "start": "node src/api/server.js",
-    "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed-test-data.js",
+    "migrate": "node scripts/admin/migrate.js",
+    "seed": "node scripts/admin/seed-test-data.js",
     "test": "node --test --test-concurrency=1",
     "brain": "node src/cli/brain.js",
-    "match": "node scripts/run-matching.js",
-    "wiki:maintain": "node scripts/run-wiki-maintenance.js"
+    "match": "node scripts/ops/run-matching.js",
+    "wiki:maintain": "node scripts/ops/run-wiki-maintenance.js"
   },
   "engines": {
     "node": ">=20"

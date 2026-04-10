@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { query, close } = require('../src/db/connection');
+const { query, close } = require('../../src/db/connection');
 
 const BASE_URL = String(process.env.ISG_API_URL || 'http://localhost:3100').replace(/\/$/, '');
 const ROOT = process.cwd();
@@ -24,7 +24,7 @@ async function ensureSeedProperties() {
     return { seeded: false, property_count: result.rows[0].count };
   }
 
-  const seedRun = runNodeScript(path.join(ROOT, 'scripts', 'seed-test-data.js'));
+  const seedRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'seed-test-data.js'));
 
   if (seedRun.status !== 0) {
     throw new Error(seedRun.stderr || seedRun.stdout || 'Failed to seed IOC properties');

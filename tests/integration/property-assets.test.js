@@ -103,7 +103,7 @@ test('foreclosure import preview/import and property documents work end to end',
     process.env.ISG_PROPERTY_DOCUMENT_ROOT = previousDocumentRoot;
   });
 
-  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
   assert.equal(migrateRun.status, 0, migrateRun.stderr || migrateRun.stdout);
 
   await resetTables();
@@ -232,7 +232,7 @@ test('foreclosure import preview/import and property documents work end to end',
   assert.equal(queuedRowsResult.rows[0].status, 'pending');
   assert.equal(queuedRowsResult.rows[0].reason, 'property_document');
 
-  const maintenanceRun = runNodeScript(path.join(ROOT, 'scripts', 'run-wiki-maintenance.js'), ['--limit', '10'], {
+  const maintenanceRun = runNodeScript(path.join(ROOT, 'scripts', 'ops', 'run-wiki-maintenance.js'), ['--limit', '10'], {
     ...process.env,
     ISG_WIKI_ROOT: process.env.ISG_WIKI_ROOT,
     ISG_RAW_ROOT: process.env.ISG_RAW_ROOT,

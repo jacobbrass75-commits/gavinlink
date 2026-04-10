@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const { getPool, close } = require('../src/db/connection');
+const { getPool, close } = require('../../src/db/connection');
 
-const fixturePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-properties.json');
+const fixturePath = path.join(__dirname, '..', '..', 'tests', 'fixtures', 'sample-properties.json');
 const TEST_BUYER_PROFILES = [
   {
     entity_name: 'Mike Chen',

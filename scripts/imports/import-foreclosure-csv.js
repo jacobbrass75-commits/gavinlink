@@ -1,9 +1,9 @@
 const path = require('path');
 const dotenv = require('dotenv');
-const { close } = require('../src/db/connection');
-const { previewForeclosureImport, importForeclosureFile } = require('../src/import-export/foreclosure-import');
+const { close } = require('../../src/db/connection');
+const { previewForeclosureImport, importForeclosureFile } = require('../../src/import-export/foreclosure-import');
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 function parseArgs(argv) {
   const args = argv.slice(2);
@@ -64,7 +64,7 @@ async function main() {
   const options = parseArgs(process.argv);
 
   if (!options.filePath) {
-    console.error('Usage: node scripts/import-foreclosure-csv.js <path-to-csv> [--dry-run] [--limit N] [--skip-sellers]');
+    console.error('Usage: node scripts/imports/import-foreclosure-csv.js <path-to-csv> [--dry-run] [--limit N] [--skip-sellers]');
     process.exit(1);
   }
 
