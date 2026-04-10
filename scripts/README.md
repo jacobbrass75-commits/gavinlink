@@ -10,3 +10,20 @@ This directory holds operator-facing entry points. Product logic should live in 
 - `qa/`: verification sweeps and operational checks
 
 Prefer `npm run ...` when a script is already surfaced there. Add new scripts to the correct bucket instead of dropping them at the root.
+
+Notable import entry points:
+
+- `scripts/imports/import-foreclosure-csv.js`
+- `scripts/imports/import-from-realestatetool.js`
+- `scripts/imports/transcribe-folder.js`
+- `scripts/imports/auth-gmail-pkce.js`
+- `scripts/imports/sync-propertyradar-alerts.js`
+
+Notable ops entry points:
+
+- `scripts/ops/run-matching.js`
+- `scripts/ops/run-telegram-bot.js`
+- `scripts/ops/run-propertyradar-feed.js`
+- `scripts/ops/run-wiki-maintenance.js`
+- `scripts/ops/publish-obsidian-note.js`
+- `scripts/ops/telegram-probe.js`

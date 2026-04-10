@@ -115,6 +115,7 @@ Import or enrich data:
 node scripts/imports/import-foreclosure-csv.js /path/to/foreclosures.csv --dry-run
 node scripts/imports/import-from-realestatetool.js --region la_county --limit 100
 node scripts/imports/transcribe-folder.js /path/to/voice-memos --once
+node scripts/imports/sync-propertyradar-alerts.js --dry-run --max-results 10
 ```
 
 Run operational maintenance:
@@ -123,8 +124,52 @@ Run operational maintenance:
 npm run match
 node scripts/ops/score-sellers.js --report
 npm run wiki:maintain
+npm run obsidian:publish -- briefs/reports/2026-04-10-soleil-current-state.md sullilink-soleil-current-state-2026-04-10.md
 node scripts/qa/run-ioc-sweep.js
 ```
+
+Gmail / PropertyRadar setup:
+
+```bash
+npm run gmail:auth
+npm run propertyradar:sync -- --dry-run --max-results 10
+npm run propertyradar:feed -- --telegram-summary
+npm run propertyradar:feed -- --loop --interval-ms 300000 --telegram-summary
+```
+
+Obsidian note publishing:
+
+```bash
+npm run obsidian:publish -- ./briefs/reports/2026-04-10-soleil-current-state.md status/soleil-current-state.md
+```
+
+Required env vars:
+
+- `OBSIDIAN_API_URL`
+- `OBSIDIAN_API_KEY`
+- `OBSIDIAN_ALLOW_INSECURE_TLS=true` for the common local self-signed setup
+
+Telegram bootstrap:
+
+```bash
+npm run telegram:probe -- --updates
+npm run telegram:probe -- --chat-id <chat-id> --message "Soleil is online."
+npm run telegram:bot -- --once
+npm run telegram:bot
+```
+
+Required env vars:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_DEFAULT_CHAT_ID` for a default destination
+- `TELEGRAM_ALLOWED_CHAT_IDS` to restrict who can use the bot
+- `TELEGRAM_BOT_OFFSET_FILE` to persist `update_id` state between runs
+- `BRAIN_API_URL` if the bot should talk to a non-local brain API
+
+PropertyRadar feed worker env:
+
+- `PROPERTYRADAR_FEED_INTERVAL_MS=300000`
+- `PROPERTYRADAR_FEED_ITERATIONS=` for limited loops during testing
 
 ## Narrative Layer
 

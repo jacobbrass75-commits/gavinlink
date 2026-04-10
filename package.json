@@ -14,7 +14,13 @@
     "test": "node --test --test-concurrency=1",
     "brain": "node src/cli/brain.js",
     "match": "node scripts/ops/run-matching.js",
-    "wiki:maintain": "node scripts/ops/run-wiki-maintenance.js"
+    "telegram:bot": "node scripts/ops/run-telegram-bot.js",
+    "telegram:probe": "node scripts/ops/telegram-probe.js",
+    "propertyradar:feed": "node scripts/ops/run-propertyradar-feed.js",
+    "wiki:maintain": "node scripts/ops/run-wiki-maintenance.js",
+    "obsidian:publish": "node scripts/ops/publish-obsidian-note.js",
+    "propertyradar:sync": "node scripts/imports/sync-propertyradar-alerts.js",
+    "gmail:auth": "node scripts/imports/auth-gmail-pkce.js"
   },
   "engines": {
     "node": ">=20"

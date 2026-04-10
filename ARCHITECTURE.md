@@ -158,7 +158,7 @@ These proxy back to the HTTP API. MCP is an adapter, not a separate backend.
 | Directory | Purpose | Current scripts |
 | --- | --- | --- |
 | `scripts/admin` | bootstrap and local environment setup | `migrate.js`, `seed-test-data.js` |
-| `scripts/imports` | inbound data ingestion | `import-foreclosure-csv.js`, `import-from-realestatetool.js`, `transcribe-folder.js` |
+| `scripts/imports` | inbound data ingestion | `import-foreclosure-csv.js`, `import-from-realestatetool.js`, `transcribe-folder.js`, `sync-propertyradar-alerts.js` |
 | `scripts/ops` | recurring operational tasks | `run-matching.js`, `score-sellers.js`, `run-wiki-maintenance.js` |
 | `scripts/qa` | verification and sweep tools | `run-ioc-sweep.js` |
 
