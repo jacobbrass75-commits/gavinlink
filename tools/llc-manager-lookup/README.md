@@ -10,17 +10,34 @@ Automated pipeline to find **managing members** (not just registered agents) for
 - Uses 2 parallel Safari tabs
 - Saves progress to JSON (resumable)
 
-### Step 2: Contact Lookup (`contact_lookup.py` / `contact_google.py`)
+### Step 2: Contact Lookup
+
+Multiple scripts for different strategies:
+
 - `contact_lookup.py`: RocketReach API → DuckDuckGo → Google via Safari (3-tier)
 - `contact_google.py`: Google via Safari only (when RocketReach is rate-limited)
-- Finds email, phone, LinkedIn for each manager
+- `contact_multi.py`: RocketReach → Bing → Yahoo (pure HTTP, no Safari needed, 4 threads)
+- `realnex_crossref.py`: Cross-reference managers against RealNex CRM contacts (33k+ contacts)
+
+### Step 3 (optional): RealNex CRM Cross-Reference (`realnex_crossref.py`)
+- Pulls all contacts from RealNex CRM via OData pagination
+- Fuzzy-matches manager names against CRM contacts
+- Fills in email/phone from existing CRM data before doing external lookups
 
 ## Requirements
 
-- macOS with Safari
+- macOS with Safari (for SOS lookup and Google fallback)
 - Safari > Develop > Allow JavaScript from Apple Events (must be enabled)
 - Python 3 with: `pypdf`, `requests`, `beautifulsoup4`, `openpyxl`
-- Environment variable: `ROCKETREACH_API_KEY` (for RocketReach lookups)
+- Environment variables:
+  - `ROCKETREACH_API_KEY` — for RocketReach lookups (~15 searches/day, 3600 credits/period)
+  - `REALNEX_API_TOKEN` — for CRM cross-reference (JWT from RealNex User Management)
+
+## RocketReach Limits
+
+- **Credits**: 3,600 per billing period (each lookup uses 1 credit)
+- **Daily search cap**: ~15-20 person searches per day (separate from credits)
+- When rate limited (HTTP 429), scripts auto-switch to web search fallback
 
 ## Input
 
@@ -35,14 +52,17 @@ Excel file with two sheets:
 ## Usage
 
 ```bash
-# Step 1: Collect all manager names (no contact lookup)
+# Step 1: Collect all manager names
 python3 sos_manager_lookup.py --no-contact
 
-# Step 2: Find contacts
-python3 contact_google.py
+# Step 2a: Cross-reference against RealNex CRM first (fast, free)
+REALNEX_API_TOKEN="your_jwt" python3 realnex_crossref.py
 
-# Or with RocketReach + DDG + Google:
-python3 contact_lookup.py
+# Step 2b: Find remaining contacts via RocketReach + Bing (no Safari needed)
+ROCKETREACH_API_KEY="your_key" python3 contact_multi.py
+
+# Step 2c: Google via Safari fallback (when other methods exhausted)
+python3 contact_google.py
 ```
 
-Paths are configured at the top of each script.
+Paths are configured via environment variables or at the top of each script.
