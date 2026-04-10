@@ -6,6 +6,8 @@ const CORPORATION_PATTERN = /\b(?:INC(?:ORPORATED)?|CORP(?:ORATION)?)\b/;
 const TRUST_PATTERN = /\b(?:TRUST|TRUSTEE)\b/;
 const PARTNERSHIP_PATTERN = /\b(?:L\.?\s*P\.?\b|PARTNERS?\b|PARTNERSHIP\b)\b/;
 const LENDER_PATTERN = /\b(?:SERVIC(?:E|ES|ING)|BANK|LENDING|MORTGAGE|FINANCIAL)\b/;
+const ORGANIZATION_HINT_PATTERN =
+  /\b(?:GROUP|HOLDINGS|CAPITAL|PROPERT(?:Y|IES)|COMPANY|CO\.?\b|INDUSTRIAL|LOGISTICS|REALTY|REAL ESTATE|MANAGEMENT|DEVELOPMENT|VENTURES|INVESTMENTS|ASSOCIATES|ADVISORS|PARTNERS?)\b/;
 
 function normalizeName(name) {
   if (typeof name !== 'string') {
@@ -47,6 +49,10 @@ function classifyEntityType(name, sourceField = '') {
     LENDER_PATTERN.test(normalized)
   ) {
     return 'lender';
+  }
+
+  if (ORGANIZATION_HINT_PATTERN.test(normalized)) {
+    return 'unknown';
   }
 
   return 'person';
