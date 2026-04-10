@@ -171,6 +171,21 @@ PropertyRadar feed worker env:
 - `PROPERTYRADAR_FEED_INTERVAL_MS=300000`
 - `PROPERTYRADAR_FEED_ITERATIONS=` for limited loops during testing
 
+PM2 runtime:
+
+```bash
+pm2 start ecosystem.config.cjs
+pm2 status
+pm2 logs sullilink-api
+pm2 logs sullilink-telegram-bot
+pm2 logs sullilink-propertyradar-feed
+```
+
+Use an internal API base for workers when possible:
+
+- `BRAIN_API_URL=http://127.0.0.1:3100`
+- do not point the Telegram bot or feed worker at a public reverse-proxy path unless `/health` and `/api/*` resolve there exactly as they do in the app
+
 ## Narrative Layer
 
 `raw/` and `wiki/` are part of the product, but they are not the source of truth for structured state.

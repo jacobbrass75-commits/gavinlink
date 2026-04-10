@@ -55,6 +55,27 @@ async function callBrainApi(method, endpoint, body) {
   return payload;
 }
 
+async function getBrainHealthPayload() {
+  const response = await fetch(`${getApiBaseUrl()}/health`, {
+    headers: getAdminHeaders()
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    ('status' in payload || 'database' in payload || 'chromadb' in payload)
+  ) {
+    return payload;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Brain API request failed with status ${response.status}`);
+  }
+
+  return payload;
+}
+
 function getOffsetFilePath() {
   return path.resolve(process.cwd(), process.env.TELEGRAM_BOT_OFFSET_FILE || 'data/telegram-bot-offset.json');
 }
@@ -289,7 +310,7 @@ async function handleCommand(command, argument) {
     case 'help':
       return buildHelpText();
     case 'status':
-      return formatStatusPayload(await callBrainApi('GET', '/health'));
+      return formatStatusPayload(await getBrainHealthPayload());
     case 'daily':
       return formatDailyPayload(await callBrainApi('GET', '/api/daily'));
     case 'search':
@@ -446,6 +467,7 @@ module.exports = {
   formatLookupPayload,
   formatMatchPayload,
   formatStatusPayload,
+  getBrainHealthPayload,
   loadOffsetState,
   saveOffsetState,
   processTelegramUpdates,
