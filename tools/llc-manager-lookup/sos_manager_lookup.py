@@ -14,11 +14,11 @@ import threading
 CSV_PATH = "/Users/josephsullivan/Downloads/5+ unit farm.csv"
 PROGRESS_PATH = "/Users/josephsullivan/Downloads/llc_manager_progress.json"
 OUTPUT_PATH = "/Users/josephsullivan/Downloads/LLC_Managers_Contact_Info.xlsx"
-RR_KEY = os.environ.get("ROCKETREACH_API_KEY", "")
+RR_KEY = "5e7018k68acf1cddcba48393924fe3f38f1e756"
 SOS_URL = "https://bizfileonline.sos.ca.gov/search/business"
 HEADERS_HTTP = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'}
 
-NUM_WORKERS = 2
+NUM_WORKERS = 4
 progress_lock = threading.Lock()
 print_lock = threading.Lock()
 
@@ -361,9 +361,26 @@ def worker(tab_idx, work_queue, progress, llc_data, skip_contact, counters, tota
         llc_name_r, entry, msg = process_llc(llc_name, tab_idx, llc_data, skip_contact)
 
         with progress_lock:
-            progress[llc_name_r] = entry
+            existing = progress.get(llc_name_r, {})
             if entry.get('managers'):
+                # SOS found managers — merge: keep existing contact info for matching names
+                existing_by_name = {}
+                for m in existing.get('managers', []):
+                    existing_by_name[m.get('name', '').strip().lower()] = m
+                for m in entry['managers']:
+                    key = m['name'].strip().lower()
+                    if key in existing_by_name:
+                        old = existing_by_name[key]
+                        if old.get('email'): m['email'] = old['email']
+                        if old.get('phone'): m['phone'] = old['phone']
+                        if old.get('linkedin'): m['linkedin'] = old['linkedin']
+                entry['managers'] = entry['managers']
+                progress[llc_name_r] = entry
                 counters['found'] += 1
+            else:
+                # SOS didn't find managers — keep existing data, just mark done
+                existing['done'] = True
+                progress[llc_name_r] = existing
             counters['processed'] += 1
 
             if counters['processed'] % 25 == 0:
