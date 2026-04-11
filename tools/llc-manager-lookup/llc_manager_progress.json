@@ -1359,7 +1359,8 @@
     "managers": [
       {
         "name": "Verdiana A Safari",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "phone": "8608496709"
       }
     ],
     "agent": "VERDIANA A SAFARI",
@@ -4346,7 +4347,10 @@
     "managers": [
       {
         "name": "Amber Keppler Ghilici",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4242819857",
+        "linkedin": null
       }
     ],
     "agent": "Amber Keppler Ghilici",
@@ -4400,7 +4404,10 @@
     "managers": [
       {
         "name": "Raymond Attipa",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9970409135",
+        "linkedin": null
       }
     ],
     "agent": "RAYMOND ATTIPA",
@@ -4460,7 +4467,10 @@
     "managers": [
       {
         "name": "Justin Monempour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "jason.hernandez@lacity.org",
+        "phone": "8056800929",
+        "linkedin": null
       }
     ],
     "agent": "JASMINE FIROOZ",
@@ -4479,7 +4489,8 @@
     "managers": [
       {
         "name": "Parviz Fahimian",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "phone": "3102765669"
       }
     ],
     "agent": "PARVIZ FAHIMIAN",
@@ -4494,7 +4505,10 @@
     "managers": [
       {
         "name": "Max First",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "HALEH.MODARRES@TARTINEBAKERY.Read",
+        "phone": "5642172000",
+        "linkedin": null
       }
     ],
     "agent": "MAX FIRST",
@@ -4522,7 +4536,10 @@
     "managers": [
       {
         "name": "Oscar D Martinez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "media@yankees.com",
+        "phone": "2024883300",
+        "linkedin": null
       }
     ],
     "agent": "Oscar D Martinez",
@@ -4605,7 +4622,8 @@
         "name": "Martha Sanchez-Figueroa",
         "role": "Manager/Member",
         "email": null,
-        "phone": null
+        "phone": "2013004100",
+        "linkedin": null
       }
     ],
     "agent": "MARTHA SANCHEZ-FIGUEROA",
@@ -4616,7 +4634,10 @@
     "managers": [
       {
         "name": "Chia-Wen Wu",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2013126102",
+        "linkedin": null
       }
     ],
     "agent": "CHIA-WEN WU",
@@ -4635,7 +4656,10 @@
     "managers": [
       {
         "name": "Dash K Chopra",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "dashchopra@gmail.Read",
+        "phone": "5038132623",
+        "linkedin": null
       },
       {
         "name": "Renu Chopra",
@@ -4755,7 +4779,10 @@
     "managers": [
       {
         "name": "Harjit K. Hayer",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "thomas.folan@nrg.com",
+        "phone": "3106217581",
+        "linkedin": null
       }
     ],
     "agent": "Harjit K. Hayer",
@@ -4833,7 +4860,10 @@
     "managers": [
       {
         "name": "Cameron Samimi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "Cameron@LyonStahl.com",
+        "phone": "8185482090",
+        "linkedin": null
       }
     ],
     "agent": "NICHOLAS Marier",
@@ -4910,7 +4940,10 @@
     "managers": [
       {
         "name": "William A Hassan",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "5085334070",
+        "linkedin": "https://www.linkedin.com/in/william-a-hassan-b3b38433"
       }
     ],
     "agent": "WILLIAM A HASSAN",
@@ -5060,7 +5093,10 @@
     "managers": [
       {
         "name": "Ross E. Winn",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7147302727",
+        "linkedin": null
       }
     ],
     "agent": "ROSS E. WINN",
@@ -5191,7 +5227,9 @@
     "managers": [
       {
         "name": "Sergio Lozano",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "ideneau@octa.net",
+        "phone": "8102001006"
       }
     ],
     "agent": "Sergio Lozano",
@@ -5429,7 +5467,10 @@
     "managers": [
       {
         "name": "Brett Lightner",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3103795511",
+        "linkedin": null
       },
       {
         "name": "Jennifer Lightner",
@@ -5670,7 +5711,10 @@
     "managers": [
       {
         "name": "Aharon Vahedy",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8187477551",
+        "linkedin": null
       }
     ],
     "agent": "AHARON VAHEDY",
@@ -5793,7 +5837,10 @@
     "managers": [
       {
         "name": "Malkanthi Wedage",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "2110414115@qq.com",
+        "phone": "0236553082",
+        "linkedin": null
       }
     ],
     "agent": "MALKANTHI WEDAGE",
@@ -5835,11 +5882,17 @@
     "managers": [
       {
         "name": "Bruce Edward Ghent",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3103721971",
+        "linkedin": null
       },
       {
         "name": "Robert Maynard Ghent Jr",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8017879562",
+        "linkedin": null
       }
     ],
     "agent": "BRUCE EDWARD GHENT",
@@ -5850,11 +5903,17 @@
     "managers": [
       {
         "name": "Gisele J Perez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3232951713",
+        "linkedin": null
       },
       {
         "name": "Ricardo Perez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "help@prcmanagementservices.com",
+        "phone": "5628621700",
+        "linkedin": null
       },
       {
         "name": "Eric Perez",
@@ -5882,7 +5941,10 @@
       },
       {
         "name": "Julia Levin",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "bids@tips-usa.com",
+        "phone": "8668398477",
+        "linkedin": null
       }
     ],
     "agent": "JULIA LEVIN",
@@ -5944,7 +6006,10 @@
     "managers": [
       {
         "name": "Alex Soofer",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "kcroom@asteptofreedom.org",
+        "phone": "3236969727",
+        "linkedin": null
       }
     ],
     "agent": "ALEX SOOFER",
@@ -5978,7 +6043,10 @@
     "managers": [
       {
         "name": "Anthony Schragger",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "cbblac@acxiom.com",
+        "phone": "0254650036",
+        "linkedin": null
       }
     ],
     "agent": "ANTHONY SCHRAGGER",
@@ -6010,11 +6078,17 @@
     "managers": [
       {
         "name": "Simon Lazar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "asalazar@lachamber.com.Read",
+        "phone": "2135807566",
+        "linkedin": null
       },
       {
         "name": "Jonathan Sedaghat",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9516821015",
+        "linkedin": "https://www.linkedin.com/in/jonathannazarian"
       }
     ],
     "agent": null,
@@ -6044,7 +6118,10 @@
       },
       {
         "name": "Navid Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2132682261",
+        "linkedin": null
       }
     ],
     "agent": "NAVID YADEGAR",
@@ -6067,7 +6144,10 @@
     "managers": [
       {
         "name": "Allen Gozini",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3107514424",
+        "linkedin": "https://www.linkedin.com/in/allen-gozini-7712401a9"
       }
     ],
     "agent": "ALLEN GOZINI",
@@ -6092,7 +6172,10 @@
     "managers": [
       {
         "name": "Leonid Golodnitski",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "mymail@mailservice.com",
+        "phone": "2018086104",
+        "linkedin": "https://www.linkedin.com/in/leonid-golodnitski-705107150#:~:text=Leonid%20Golodnitski%20%2D%20CPA%20at%20Self,Leonid%20Golodnitski"
       }
     ],
     "agent": "Leonid Golodnitski",
@@ -6207,7 +6290,10 @@
     "managers": [
       {
         "name": "David Ahoubim",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "mark@lilahmanagement.com",
+        "phone": "3109611075",
+        "linkedin": null
       }
     ],
     "agent": "DAVID AHOUBIM",
@@ -6277,7 +6363,10 @@
     "managers": [
       {
         "name": "Yaacov Hassidim",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7349953276",
+        "linkedin": "https://www.linkedin.com/in/ariyomtov"
       }
     ],
     "agent": "Yaacov Hassidim",
@@ -6307,7 +6396,10 @@
     "managers": [
       {
         "name": "George Gorgy Po Box",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "jgm@eaglebm.com",
+        "phone": "4436147520",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -6376,7 +6468,10 @@
     "managers": [
       {
         "name": "Lawrence Cannizzaro Larrycann@Yahoo.Com",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021252109",
+        "linkedin": null
       }
     ],
     "agent": "LAWRENCE CANNIZZARO LARRYCANN@YAHOO.COM",
@@ -6406,7 +6501,10 @@
     "managers": [
       {
         "name": "Gerardo Corona",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "rcorona@bancomext.gob.mx",
+        "phone": "8584320090",
+        "linkedin": null
       }
     ],
     "agent": "Gerardo Corona",
@@ -6547,7 +6645,10 @@
     "managers": [
       {
         "name": "Luke Appel",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "AMICHAEL@BSAMAIL.ORG",
+        "phone": "8778298521",
+        "linkedin": null
       }
     ],
     "agent": "LUKE APPEL",
@@ -6600,7 +6701,10 @@
     "managers": [
       {
         "name": "Leonid Golodnitski",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3104746201",
+        "linkedin": null
       }
     ],
     "agent": "Leonid Golodnitski",
@@ -6652,7 +6756,10 @@
     "managers": [
       {
         "name": "Allan Dicastro",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "BETAAG@WINDSTREAM.NET",
+        "phone": "4037779988",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -6752,7 +6859,10 @@
     "managers": [
       {
         "name": "Ian Hollinger",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "ihollinger@brcadvisors.com",
+        "phone": "3109784214",
+        "linkedin": "https://www.linkedin.com/in/ian-hollinger-452ba21a"
       },
       {
         "name": "Nora Hollinger",
@@ -6840,7 +6950,10 @@
     "managers": [
       {
         "name": "David H. Takakawa",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2132485657",
+        "linkedin": null
       }
     ],
     "agent": "Sam H. Grayeli",
@@ -6862,7 +6975,10 @@
       },
       {
         "name": "Sam H Grayeli",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8006131303",
+        "linkedin": null
       }
     ],
     "agent": "SAM H GRAYELI",
@@ -6885,7 +7001,10 @@
     "managers": [
       {
         "name": "Teshera Hull",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "5704834429",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -6908,7 +7027,10 @@
     "managers": [
       {
         "name": "Larry Donahoe",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "GGRAYGOR@GOFEI.COM",
+        "phone": "2104942555",
+        "linkedin": null
       }
     ],
     "agent": "Larry Donahoe",
@@ -6932,7 +7054,10 @@
     "managers": [
       {
         "name": "Larry Donahoe",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "louis.carmona@ca.ngb.army.mil",
+        "phone": "4302355461",
+        "linkedin": null
       }
     ],
     "agent": "Larry Donahoe",
@@ -6962,7 +7087,10 @@
       },
       {
         "name": "Shiva Mehrannia",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3105021460",
+        "linkedin": null
       }
     ],
     "agent": "SHOHREH MEHRANNIA",
@@ -7001,7 +7129,10 @@
     "managers": [
       {
         "name": "Phylliss Bailey Brooks",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "gena01@mail.ru.Read",
+        "phone": "7182862860",
+        "linkedin": null
       }
     ],
     "agent": "PHYLLISS BAILEY BROOKS",
@@ -7075,11 +7206,17 @@
     "managers": [
       {
         "name": "Mumbie Fredson-Cole",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "sales@voxme.com",
+        "phone": "8664546754",
+        "linkedin": null
       },
       {
         "name": "Mavis Olorunshefumi Fredson-Cole",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3106504933",
+        "linkedin": null
       }
     ],
     "agent": "MUMBIE FREDSON-COLE",
@@ -7094,7 +7231,10 @@
     "managers": [
       {
         "name": "Charles Sanders P.O. Box",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8183411727",
+        "linkedin": null
       }
     ],
     "agent": "CHARLES SANDERS",
@@ -7152,7 +7292,10 @@
     "managers": [
       {
         "name": "Adrian Malin",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3234451407",
+        "linkedin": null
       }
     ],
     "agent": "ADRIAN MALIN",
@@ -7169,7 +7312,10 @@
     "managers": [
       {
         "name": "Stephen Gary Darrison",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2012082101",
+        "linkedin": null
       }
     ],
     "agent": "STEPHEN GARY DARRISON",
@@ -7334,7 +7480,10 @@
     "managers": [
       {
         "name": "Shelomoh Lalezarian",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "0328083989",
+        "linkedin": null
       },
       {
         "name": "Payam Shayani",
@@ -7362,7 +7511,10 @@
     "managers": [
       {
         "name": "P. Jacob Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263000700",
+        "linkedin": null
       }
     ],
     "agent": "P. JACOB YADEGAR",
@@ -7503,7 +7655,10 @@
     "managers": [
       {
         "name": "Justin Monempour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021007120",
+        "linkedin": null
       },
       {
         "name": "Sharona Radparvar",
@@ -7823,7 +7978,10 @@
     "managers": [
       {
         "name": "Leonid Golodnitski",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3232955555",
+        "linkedin": null
       }
     ],
     "agent": "Leonid Golodnitski",
@@ -7834,7 +7992,10 @@
     "managers": [
       {
         "name": "Anna Yallourakis",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "hellenic@humnet.ucla.edu",
+        "phone": "3237372424",
+        "linkedin": null
       }
     ],
     "agent": "Anna Yallourakis",
@@ -7845,7 +8006,10 @@
     "managers": [
       {
         "name": "Fardad Danny Monempour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3108017251",
+        "linkedin": "https://www.linkedin.com/in/dannymonempourmonem"
       }
     ],
     "agent": null,
@@ -7856,7 +8020,10 @@
     "managers": [
       {
         "name": "Simcha Bornstein",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4242799572",
+        "linkedin": null
       }
     ],
     "agent": "SIMCHA BORNSTEIN",
@@ -7908,7 +8075,10 @@
     "managers": [
       {
         "name": "Julia Hine",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "gail@sailingconventionforwomen.com",
+        "phone": "8314026729",
+        "linkedin": null
       }
     ],
     "agent": "JULIA HINE",
@@ -8018,7 +8188,10 @@
     "managers": [
       {
         "name": "Stephen Darrison",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3232510021",
+        "linkedin": null
       },
       {
         "name": "Lauren Kest",
@@ -8089,7 +8262,10 @@
       },
       {
         "name": "Stephen Darrison",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4243634197",
+        "linkedin": null
       }
     ],
     "agent": "Stephen DARRISON",
@@ -8100,7 +8276,10 @@
     "managers": [
       {
         "name": "Leonid Golodnitski",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "info@tdipropertiesinc.com",
+        "phone": "8773899277",
+        "linkedin": "https://www.linkedin.com/in/leonid-golodnitski-705107150#:~:text=CPA%20at%20Self%2DEmployed%20%C2%B7%20Experience:%20Self%2DEmployed%20%C2%B7,a%20professional%20community%20of%201%20billion%20members."
       }
     ],
     "agent": "LEONID GOLODNITSKI",
@@ -8166,7 +8345,10 @@
     "managers": [
       {
         "name": "Leonid Golodnitski",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3104746201",
+        "linkedin": null
       }
     ],
     "agent": "Leonid Golodnitski",
@@ -8177,7 +8359,10 @@
     "managers": [
       {
         "name": "Leonid Golodnitski",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "info@tdipropertiesinc.com",
+        "phone": "3104746201",
+        "linkedin": "https://www.linkedin.com/in/leonid-golodnitski-705107150#:~:text=CPA%20at%20Self%2DEmployed%20%C2%B7%20Experience:%20Self%2DEmployed%20%C2%B7,a%20professional%20community%20of%201%20billion%20members."
       }
     ],
     "agent": "Leonid Golodnitski",
@@ -8194,7 +8379,10 @@
       },
       {
         "name": "Doron Ben Shalom",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2132678361",
+        "linkedin": null
       }
     ],
     "agent": "DORON BEN SHALOM",
@@ -8205,7 +8393,10 @@
     "managers": [
       {
         "name": "Charlie Scott",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "info@tdipropertiesinc.com",
+        "phone": "8102001006",
+        "linkedin": null
       }
     ],
     "agent": "Charlie Scott",
@@ -8254,7 +8445,10 @@
     "managers": [
       {
         "name": "Kathy Gardner",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "Kelly@3bconstruction.net",
+        "phone": "9167083324",
+        "linkedin": null
       }
     ],
     "agent": "Kathy B. KATHY B GARDNER AESOPPEN@AOL.COM",
@@ -8284,7 +8478,10 @@
       },
       {
         "name": "Jason Noble",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9362912151",
+        "linkedin": null
       }
     ],
     "agent": "JASON NOBLE",
@@ -8375,7 +8572,10 @@
     "managers": [
       {
         "name": "Samuel Rbibo",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9176980743",
+        "linkedin": "https://www.linkedin.com/in/sammy-rbibo"
       }
     ],
     "agent": null,
@@ -8460,7 +8660,10 @@
     "managers": [
       {
         "name": "Shahryar Sanieoff",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "abayahou@usc.edu",
+        "phone": "6108280290",
+        "linkedin": null
       }
     ],
     "agent": "SHAHRYAR SANIEOFF",
@@ -8520,11 +8723,17 @@
     "managers": [
       {
         "name": "Tharwat Sorour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8009274357",
+        "linkedin": null
       },
       {
         "name": "Selvana Sorour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8669927139",
+        "linkedin": null
       }
     ],
     "agent": "MAGED SIDHOM",
@@ -8565,11 +8774,17 @@
     "managers": [
       {
         "name": "Tawinder Singh Allagh",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9098393000",
+        "linkedin": null
       },
       {
         "name": "Amardeep Kaur Allagh",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3003941755",
+        "linkedin": null
       }
     ],
     "agent": "TAWINDER SINGH ALLAGH",
@@ -8580,7 +8795,10 @@
     "managers": [
       {
         "name": "Joshua Dalton",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "administration@kcera.org.Read",
+        "phone": "6613817700",
+        "linkedin": "https://www.linkedin.com/in/christopherdalton-usc"
       }
     ],
     "agent": "Joshua Dalton",
@@ -8597,7 +8815,10 @@
       },
       {
         "name": "Jose Fredis Ramos Po Box",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "badillomayra@att.net",
+        "phone": "5135435645",
+        "linkedin": null
       }
     ],
     "agent": "EDUARDO G. SANCHEZ",
@@ -8629,11 +8850,17 @@
       },
       {
         "name": "Saman Mostadim",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4245358310",
+        "linkedin": null
       },
       {
         "name": "Jonathan Sedaghat",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "assistant@rhinology.org",
+        "phone": null,
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -8654,7 +8881,10 @@
     "managers": [
       {
         "name": "Natalie Brauchli",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "baldanza@bway.net",
+        "phone": "2126796400",
+        "linkedin": null
       }
     ],
     "agent": "NATALIE BRAUCHLI",
@@ -8677,7 +8907,10 @@
     "managers": [
       {
         "name": "David Takakawa",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "ken.chong@brcloans.com",
+        "phone": "2132268702",
+        "linkedin": null
       }
     ],
     "agent": "Sam H. Grayeli",
@@ -8702,7 +8935,10 @@
       },
       {
         "name": "Kristen Yu",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "A.KAIHO@EDUCONNECTUSA.Read",
+        "phone": "3238992527",
+        "linkedin": "https://www.linkedin.com/in/kristine-yu-28140020b"
       }
     ],
     "agent": "DARRICK YU",
@@ -8747,7 +8983,10 @@
     "managers": [
       {
         "name": "Steven Senemar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "joanne.navin@yaoo.com",
+        "phone": "7146951177",
+        "linkedin": null
       },
       {
         "name": "Lobat Senemar",
@@ -8765,7 +9004,10 @@
     "managers": [
       {
         "name": "Aikwang Ho",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6265231697",
+        "linkedin": null
       }
     ],
     "agent": "SUNTAO YANG",
@@ -8776,11 +9018,17 @@
     "managers": [
       {
         "name": "Mehrdad Nemanpour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3102344041",
+        "linkedin": null
       },
       {
         "name": "Mojgan Aghaeipour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3104028665",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -8791,7 +9039,10 @@
     "managers": [
       {
         "name": "Jason Katz",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "Ocgarvey@uvm.edu",
+        "phone": "9494439101",
+        "linkedin": null
       }
     ],
     "agent": "JASON KATZ",
@@ -8840,7 +9091,10 @@
     "managers": [
       {
         "name": "Chung Suk Kim",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2017282100",
+        "linkedin": null
       }
     ],
     "agent": "CHUNG SUK KIM",
@@ -8886,7 +9140,10 @@
     "managers": [
       {
         "name": "Jae Sung Hong",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2016231102",
+        "linkedin": null
       }
     ],
     "agent": "JAE SUNG HONG",
@@ -8935,7 +9192,10 @@
     "managers": [
       {
         "name": "Edmond Taban",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2018288103",
+        "linkedin": null
       }
     ],
     "agent": "EDMOND TABAN",
@@ -9094,7 +9354,10 @@
     "managers": [
       {
         "name": "Zhilong Ji",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8002899999",
+        "linkedin": null
       }
     ],
     "agent": "ZHILONG JI",
@@ -9143,7 +9406,10 @@
     "managers": [
       {
         "name": "Victoria Venice Vu",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2019119102",
+        "linkedin": null
       }
     ],
     "agent": "VICTORIA VENICE VU",
@@ -9233,7 +9499,10 @@
     "managers": [
       {
         "name": "Kathy Brasher Gardner Ms Po Box",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4046794500",
+        "linkedin": null
       }
     ],
     "agent": "KATHY B. GARDNER",
@@ -9316,7 +9585,10 @@
     "managers": [
       {
         "name": "Shan Lee",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "eyesmith@sbcglobal.net",
+        "phone": null,
+        "linkedin": null
       }
     ],
     "agent": "SHAN LEE",
@@ -9327,7 +9599,10 @@
     "managers": [
       {
         "name": "David Scarry",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9188332614",
+        "linkedin": null
       },
       {
         "name": "Tarek Ibrahim",
@@ -9393,7 +9668,10 @@
     "managers": [
       {
         "name": "Robin Fenig",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9498314600",
+        "linkedin": null
       }
     ],
     "agent": "ROBIN FENIG",
@@ -9431,7 +9709,10 @@
     "managers": [
       {
         "name": "H Scott Cohn",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9094451379",
+        "linkedin": "https://www.linkedin.com/in/hscohn"
       }
     ],
     "agent": "H SCOTT COHN",
@@ -9442,7 +9723,10 @@
     "managers": [
       {
         "name": "Triangle Trading, Ltd",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "RSoto@santa-ana.org",
+        "phone": "9744436674",
+        "linkedin": "https://www.linkedin.com/in/artofthedrink"
       }
     ],
     "agent": null,
@@ -9466,7 +9750,10 @@
     "managers": [
       {
         "name": "Phillip Chien",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "crobertson@alm.com",
+        "phone": "2014129102",
+        "linkedin": null
       }
     ],
     "agent": "PHILLIP CHIEN",
@@ -9500,7 +9787,10 @@
     "managers": [
       {
         "name": "Danny B. Luong",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8102001006",
+        "linkedin": null
       }
     ],
     "agent": "DANNY B LUONG",
@@ -9589,7 +9879,10 @@
     "managers": [
       {
         "name": "Justin Ashok Peters",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "0000000320",
+        "linkedin": null
       },
       {
         "name": "Asha Lauryn Peters",
@@ -9653,7 +9946,10 @@
     "managers": [
       {
         "name": "Verdel LaCour Flores",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "kristinbenefield@alltel.net",
+        "phone": "8002314166",
+        "linkedin": null
       }
     ],
     "agent": "JOSE NATIVIDAD (NATO) FLORES-CORTES",
@@ -9700,7 +9996,10 @@
     "managers": [
       {
         "name": "Meir J. Brunelle",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3524913141",
+        "linkedin": null
       },
       {
         "name": "Daniel Brunelle",
@@ -9735,11 +10034,17 @@
     "managers": [
       {
         "name": "Juan E. Ovalle",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9099229510",
+        "linkedin": null
       },
       {
         "name": "Rhina M. Ovalle",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "unclaimedproperty@tre.state.ma.us",
+        "phone": "9169526723",
+        "linkedin": null
       }
     ],
     "agent": "RHINA M. OVALLE",
@@ -9764,7 +10069,10 @@
     "managers": [
       {
         "name": "Randy Steinberg",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2133059816",
+        "linkedin": null
       }
     ],
     "agent": "MICHAEL STEINBERG",
@@ -9793,7 +10101,10 @@
     "managers": [
       {
         "name": "Hormoz Golian",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8187271800",
+        "linkedin": null
       },
       {
         "name": "Payam Sanjideh",
@@ -9853,7 +10164,10 @@
     "managers": [
       {
         "name": "David NEMANPOUR",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "leasing@pacprop.net",
+        "phone": "2139311909",
+        "linkedin": null
       }
     ],
     "agent": "David M Nemanpour",
@@ -9976,7 +10290,10 @@
     "managers": [
       {
         "name": "Simcha Bornstein",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "0991213203",
+        "linkedin": "https://www.linkedin.com/in/simchabornstein"
       }
     ],
     "agent": "SIMCHA BORNSTEIN",
@@ -9987,11 +10304,17 @@
     "managers": [
       {
         "name": "David Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "rentals@dazian.com.Read",
+        "phone": "2015491000",
+        "linkedin": "https://www.linkedin.com/in/david-yadegar-020a064"
       },
       {
         "name": "Navid Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "Navid@ymsllp.com",
+        "phone": "3109549517",
+        "linkedin": "https://www.linkedin.com/in/navidyadegar"
       }
     ],
     "agent": "NAVID YADEGAR",
@@ -10046,7 +10369,10 @@
     "managers": [
       {
         "name": "Simcha Bornstein",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4242799572",
+        "linkedin": "https://www.linkedin.com/in/simchabornstein"
       }
     ],
     "agent": "SIMCHA BORNSTEIN",
@@ -10077,7 +10403,10 @@
     "managers": [
       {
         "name": "Giora Agam",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9095955512",
+        "linkedin": null
       }
     ],
     "agent": "GIORA AGAM",
@@ -10088,7 +10417,10 @@
     "managers": [
       {
         "name": "Michael Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "michael.bakhshi@trilogyfs.com",
+        "phone": "5626597599",
+        "linkedin": null
       }
     ],
     "agent": "MICHAEL BAKHSHI",
@@ -10132,7 +10464,10 @@
     "managers": [
       {
         "name": "Ramin Kahenassa",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3102101113",
+        "linkedin": null
       }
     ],
     "agent": "RAMIN KAHENASSA",
@@ -10161,7 +10496,10 @@
     "managers": [
       {
         "name": "Paul Andrade",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "tbass@anaheim.net",
+        "phone": "7145365267",
+        "linkedin": null
       }
     ],
     "agent": "Paul Andrade",
@@ -10179,7 +10517,10 @@
       },
       {
         "name": "Azadeh Lavi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3102734519",
+        "linkedin": "https://www.linkedin.com/in/azadeh-saghian-4551302b"
       }
     ],
     "agent": "JOSEPH LAVI",
@@ -10194,7 +10535,10 @@
     "managers": [
       {
         "name": "Rebeca Zamora",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "publiccomments@pusd.org",
+        "phone": "5628688241",
+        "linkedin": null
       }
     ],
     "agent": "DORA NELLY PERZ",
@@ -10205,7 +10549,10 @@
     "managers": [
       {
         "name": "Bijan Javidzad",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263557135",
+        "linkedin": null
       }
     ],
     "agent": "BIJAN JAVIDZAD",
@@ -10216,7 +10563,10 @@
     "managers": [
       {
         "name": "Gil Eytan",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "aalerte@uchc.edu",
+        "phone": "1588676860",
+        "linkedin": null
       }
     ],
     "agent": "GIL EYTAN",
@@ -10286,7 +10636,10 @@
       },
       {
         "name": "Behzad Zahab",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2010323101",
+        "linkedin": null
       }
     ],
     "agent": "EDWARD ZAHAB",
@@ -10297,7 +10650,10 @@
     "managers": [
       {
         "name": "Simcha Bornstein",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2019122106",
+        "linkedin": null
       }
     ],
     "agent": "SIMCHA BORNSTEIN",
@@ -10397,7 +10753,10 @@
       },
       {
         "name": "Dorit Pakdaman",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2017306104",
+        "linkedin": null
       }
     ],
     "agent": "DORIT PAKDAMAN",
@@ -10510,7 +10869,10 @@
     "managers": [
       {
         "name": "Mercedes Anaya",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2009313100",
+        "linkedin": null
       },
       {
         "name": "Onwuka Ochuru Agwu",
@@ -10528,7 +10890,10 @@
     "managers": [
       {
         "name": "Tenemos Que Reclamar Y Unidos Salvar La Tierra South La",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2015310101",
+        "linkedin": null
       }
     ],
     "agent": "ARRENS CASTRO",
@@ -10590,7 +10955,10 @@
     "managers": [
       {
         "name": "Tharwat Sorour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022529188",
+        "linkedin": null
       }
     ],
     "agent": "MAGED SIDHOM",
@@ -10653,7 +11021,10 @@
     "managers": [
       {
         "name": "Sean Sooferian",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "1588140537",
+        "linkedin": null
       }
     ],
     "agent": "SEAN SOOFERIAN",
@@ -10678,7 +11049,10 @@
     "managers": [
       {
         "name": "Dario Luis Jaramillo",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2020141105",
+        "linkedin": null
       }
     ],
     "agent": "Matias Stofenmacher",
@@ -10704,7 +11078,10 @@
     "managers": [
       {
         "name": "Ilia Mitelman",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2013170103",
+        "linkedin": null
       }
     ],
     "agent": "ILIA MITELMAN",
@@ -10768,7 +11145,10 @@
     "managers": [
       {
         "name": "Javanshir Rad",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8884561351",
+        "linkedin": null
       }
     ],
     "agent": "JAVANSHIR RAD",
@@ -10818,7 +11198,10 @@
     "managers": [
       {
         "name": "Danny Bahng",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2138200459",
+        "linkedin": null
       }
     ],
     "agent": "DANNY BAHNG",
@@ -10836,7 +11219,10 @@
       },
       {
         "name": "Selvana Sorour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7733602053",
+        "linkedin": null
       }
     ],
     "agent": "MAGED SIDHOM",
@@ -10877,11 +11263,17 @@
     "managers": [
       {
         "name": "Mehrnoosh Salehian",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "ofm@amazon.com",
+        "phone": null,
+        "linkedin": null
       },
       {
         "name": "Shahram Salehian",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021007104",
+        "linkedin": null
       }
     ],
     "agent": "SHAHRAM SALEHIAN",
@@ -10918,7 +11310,10 @@
     "managers": [
       {
         "name": "Behzad Zahab",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2011337101",
+        "linkedin": null
       },
       {
         "name": "Edward Zahab",
@@ -10962,7 +11357,10 @@
     "managers": [
       {
         "name": "Monique Evans",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "evansquita@sbcglobal.net",
+        "phone": "2011125102",
+        "linkedin": null
       }
     ],
     "agent": "MONIQUE EVANS",
@@ -10997,7 +11395,10 @@
     "managers": [
       {
         "name": "Willie T Tan",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022506120",
+        "linkedin": null
       }
     ],
     "agent": "ANDREW SAY",
@@ -11008,7 +11409,10 @@
     "managers": [
       {
         "name": "Tharwat Sorour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8663391626",
+        "linkedin": null
       },
       {
         "name": "Selvana Sorour",
@@ -11088,7 +11492,10 @@
     "managers": [
       {
         "name": "Kevin Bernotas",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2018248101",
+        "linkedin": null
       }
     ],
     "agent": "KEVIN BERNOTAS",
@@ -11175,7 +11582,10 @@
     "managers": [
       {
         "name": "Matthew Shadsirat",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8009564442",
+        "linkedin": null
       }
     ],
     "agent": "MATTHEW SHADSIRAT",
@@ -11293,7 +11703,10 @@
     "managers": [
       {
         "name": "Navid Barahmand",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2020198102",
+        "linkedin": null
       }
     ],
     "agent": "Navid Barahmand",
@@ -11319,7 +11732,10 @@
     "managers": [
       {
         "name": "Howard Han",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8189681231",
+        "linkedin": null
       }
     ],
     "agent": "HOWARD HAN",
@@ -11459,7 +11875,10 @@
     "managers": [
       {
         "name": "Wen Hsi Chiu",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021124104",
+        "linkedin": null
       },
       {
         "name": "Yu-Chin Chiu",
@@ -11478,7 +11897,10 @@
     "managers": [
       {
         "name": "Frank Thomas Sheets",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263000700",
+        "linkedin": null
       }
     ],
     "agent": "Kyle Ransford",
@@ -11513,7 +11935,10 @@
     "managers": [
       {
         "name": "Javanshir Rad",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2110512050",
+        "linkedin": null
       }
     ],
     "agent": "JAVANSHIR RAD",
@@ -11580,7 +12005,10 @@
     "managers": [
       {
         "name": "Jutta H. Romero",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021041109",
+        "linkedin": null
       }
     ],
     "agent": "JUTTA H. ROMERO",
@@ -11619,7 +12047,10 @@
     "managers": [
       {
         "name": "Greg Eckhardt",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022038108",
+        "linkedin": null
       }
     ],
     "agent": "GREG ECKHARDT",
@@ -11641,7 +12072,10 @@
     "managers": [
       {
         "name": "Syed Hussain",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4083385444",
+        "linkedin": null
       }
     ],
     "agent": "George Ma",
@@ -11675,7 +12109,10 @@
     "managers": [
       {
         "name": "Joubin Manoochehri",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8009628074",
+        "linkedin": null
       }
     ],
     "agent": "Joubin Manoochehri",
@@ -11686,7 +12123,10 @@
     "managers": [
       {
         "name": "Jose A Segovia",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2003046101",
+        "linkedin": null
       }
     ],
     "agent": "JOSE A SEGOVIA",
@@ -11697,7 +12137,10 @@
     "managers": [
       {
         "name": "Neville Asherson",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "CS@OrangeConnex.com",
+        "phone": null,
+        "linkedin": null
       },
       {
         "name": "Anna A Darbinian",
@@ -11737,7 +12180,10 @@
     "managers": [
       {
         "name": "Kyle Ransford",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "kyle@cardinalinvestments.com",
+        "phone": "6979398381",
+        "linkedin": null
       }
     ],
     "agent": "Kyle Ransford",
@@ -11756,7 +12202,10 @@
     "managers": [
       {
         "name": "Marc Nicolas",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2012151102",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -11767,7 +12216,10 @@
     "managers": [
       {
         "name": "Kevin Bernotas",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "liseth.romero-martinez@lacity.org",
+        "phone": "2137324570",
+        "linkedin": null
       }
     ],
     "agent": "KEVIN BERNOTAS",
@@ -11778,7 +12230,10 @@
     "managers": [
       {
         "name": "Sabas Carrillo",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2011123101",
+        "linkedin": null
       }
     ],
     "agent": "SABAS D CARRILLO",
@@ -11793,7 +12248,10 @@
       },
       {
         "name": "Preeti Agarwal",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9972611003",
+        "linkedin": null
       },
       {
         "name": "Pavan Agarwal",
@@ -11837,7 +12295,10 @@
       },
       {
         "name": "Sunder Parameswaran",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4082304937",
+        "linkedin": null
       }
     ],
     "agent": "Sunder Parameswaran",
@@ -11888,11 +12349,17 @@
     "managers": [
       {
         "name": "Navid Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9502338439",
+        "linkedin": null
       },
       {
         "name": "David Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021246108",
+        "linkedin": null
       }
     ],
     "agent": "NAVID YADEGAR",
@@ -12000,7 +12467,10 @@
     "managers": [
       {
         "name": "Nitanth Reddy Vangala",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6192160650",
+        "linkedin": null
       },
       {
         "name": "Divya Santhanam",
@@ -12023,7 +12493,10 @@
       },
       {
         "name": "Lila Jessica Wiggs-Laviano",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2016124101",
+        "linkedin": null
       }
     ],
     "agent": "GEOFFREY ROBERT GROSSMAN",
@@ -12041,7 +12514,10 @@
       },
       {
         "name": "Hector Eduardo Avila",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3107477109",
+        "linkedin": null
       },
       {
         "name": "David Avila",
@@ -12118,7 +12594,10 @@
     "managers": [
       {
         "name": "Lucila Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023602133",
+        "linkedin": null
       },
       {
         "name": "Michael Bakhshi",
@@ -12193,7 +12672,10 @@
       },
       {
         "name": "Kyle Rodillas",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3107870900",
+        "linkedin": null
       }
     ],
     "agent": "JOHN DAVID",
@@ -12208,7 +12690,10 @@
     "managers": [
       {
         "name": "Navid Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2015222103",
+        "linkedin": null
       }
     ],
     "agent": "NAVID YADEGAR",
@@ -12261,7 +12746,10 @@
       },
       {
         "name": "Marcel Robinson Hodge",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "EventsMarcel@rocketfarmrestaurants.com",
+        "phone": null,
+        "linkedin": null
       }
     ],
     "agent": "RICHARD M ROSENTHAL",
@@ -12383,7 +12871,10 @@
     "managers": [
       {
         "name": "Siavash Kahen",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4214203831",
+        "linkedin": null
       }
     ],
     "agent": "Siavash Kahen",
@@ -12408,7 +12899,10 @@
     "managers": [
       {
         "name": "Johnny Jimenez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2018057104",
+        "linkedin": null
       }
     ],
     "agent": "JOHNNY JIMENEZ",
@@ -12442,7 +12936,10 @@
     "managers": [
       {
         "name": "Wani Elizabeth Wynne",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "info@wanilaw.com",
+        "phone": "7035566626",
+        "linkedin": null
       }
     ],
     "agent": "WANI ELIZABETH WYNNE",
@@ -12490,7 +12987,10 @@
     "managers": [
       {
         "name": "Michael Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2025003936",
+        "linkedin": null
       }
     ],
     "agent": "MICHAEL BAKHSHI",
@@ -12549,7 +13049,10 @@
       },
       {
         "name": "E Michael Loboda",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7182818284",
+        "linkedin": null
       }
     ],
     "agent": "STEPHEN DARRISON",
@@ -12560,7 +13063,10 @@
     "managers": [
       {
         "name": "James K. Perkins Esq",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8102001008",
+        "linkedin": null
       }
     ],
     "agent": "James K. Perkins Esq",
@@ -12571,7 +13077,10 @@
     "managers": [
       {
         "name": "Coalition for Responsible Community Development",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2013036103",
+        "linkedin": null
       }
     ],
     "agent": "MARK WILSON",
@@ -12604,7 +13113,10 @@
     "managers": [
       {
         "name": "Joompong Kongchareon",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022526138",
+        "linkedin": null
       }
     ],
     "agent": "Joompong Kongchareon",
@@ -12615,7 +13127,10 @@
     "managers": [
       {
         "name": "Jean Chang",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8453868082",
+        "linkedin": null
       }
     ],
     "agent": "Jean Chang",
@@ -12626,11 +13141,17 @@
     "managers": [
       {
         "name": "Abraham Bak",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2015233103",
+        "linkedin": null
       },
       {
         "name": "Menachem Gastwirth",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7183270897",
+        "linkedin": null
       }
     ],
     "agent": "ABRAHAM BAK",
@@ -12653,7 +13174,10 @@
     "managers": [
       {
         "name": "David R. Zimmerman",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2024609158",
+        "linkedin": null
       }
     ],
     "agent": "DAVID R. ZIMMERMAN",
@@ -12700,7 +13224,10 @@
     "managers": [
       {
         "name": "Siavash Kahen",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3106252566",
+        "linkedin": null
       }
     ],
     "agent": "Siavash Kahen",
@@ -12726,7 +13253,10 @@
     "managers": [
       {
         "name": "Ulysses Lopez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2008172100",
+        "linkedin": null
       }
     ],
     "agent": "ULYSSES LOPEZ",
@@ -12753,7 +13283,10 @@
     "managers": [
       {
         "name": "Annie Rajan",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2019317100",
+        "linkedin": null
       }
     ],
     "agent": "RAJAN CHACKO",
@@ -12764,7 +13297,10 @@
     "managers": [
       {
         "name": "Gilad Shapira",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9012052640",
+        "linkedin": null
       }
     ],
     "agent": "GILAD SHAPIRA",
@@ -12789,7 +13325,10 @@
     "managers": [
       {
         "name": "Mercedes Anaya",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2010005100",
+        "linkedin": null
       },
       {
         "name": "Onwuka Ochuru",
@@ -12815,7 +13354,10 @@
     "managers": [
       {
         "name": "Shalom Gozlan",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2012042104",
+        "linkedin": null
       }
     ],
     "agent": "SHALOM GOZLAN",
@@ -12837,7 +13379,10 @@
     "managers": [
       {
         "name": "George Gorgy Po Box",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "ggorgy@cfl.rr.com",
+        "phone": "2005323101",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -12867,7 +13412,10 @@
     "managers": [
       {
         "name": "Michael Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021116104",
+        "linkedin": null
       },
       {
         "name": "Lucila Bakhshi",
@@ -12885,7 +13433,10 @@
     "managers": [
       {
         "name": "Michelle Lewis",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8443064159",
+        "linkedin": null
       },
       {
         "name": "Deena Wachtel",
@@ -12936,7 +13487,10 @@
     "managers": [
       {
         "name": "Gail Cyprus",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "leslie@pds-sf.com",
+        "phone": "4153463200",
+        "linkedin": null
       }
     ],
     "agent": "Gail Cyprus",
@@ -12947,7 +13501,10 @@
     "managers": [
       {
         "name": "Chaka Jingles Sr",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2016132101",
+        "linkedin": null
       }
     ],
     "agent": "CHAKA JINGLES",
@@ -12958,7 +13515,10 @@
     "managers": [
       {
         "name": "Navid Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263000700",
+        "linkedin": null
       }
     ],
     "agent": "NAVID YADEGAR",
@@ -12969,7 +13529,10 @@
     "managers": [
       {
         "name": "Navid Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2019086102",
+        "linkedin": null
       }
     ],
     "agent": "NAVID YADEGAR",
@@ -12980,7 +13543,10 @@
     "managers": [
       {
         "name": "Jacob Unger",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263000700",
+        "linkedin": null
       }
     ],
     "agent": "Jacob Unger",
@@ -13065,7 +13631,10 @@
     "managers": [
       {
         "name": "Jason William Hurst",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2018136102",
+        "linkedin": null
       }
     ],
     "agent": "SAWKO HURST",
@@ -13088,7 +13657,10 @@
     "managers": [
       {
         "name": "James K. Perkins",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "leslie@pds-sf.com",
+        "phone": "4153463200",
+        "linkedin": null
       }
     ],
     "agent": "JAMES K. PERKINS",
@@ -13099,7 +13671,10 @@
     "managers": [
       {
         "name": "Ezequiel R De Lima",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8002899999",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -13118,7 +13693,10 @@
     "managers": [
       {
         "name": "Rabbie Banafsheha",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7012222700",
+        "linkedin": null
       }
     ],
     "agent": "DAVID LAZAR",
@@ -13133,7 +13711,10 @@
     "managers": [
       {
         "name": "Sanjeev Bhatia",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022013112",
+        "linkedin": null
       }
     ],
     "agent": "SANJEEV BHATIA",
@@ -13174,7 +13755,10 @@
     "managers": [
       {
         "name": "Issac Zakon",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7734634684",
+        "linkedin": null
       }
     ],
     "agent": "ISSAC ZAKON",
@@ -13260,7 +13844,10 @@
     "managers": [
       {
         "name": "Gilad Shapira",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "ofm@amazon.com",
+        "phone": null,
+        "linkedin": null
       }
     ],
     "agent": "GILAD SHAPIRA",
@@ -13271,7 +13858,10 @@
     "managers": [
       {
         "name": "Simon Lazar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2016305103",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -13332,7 +13922,10 @@
     "managers": [
       {
         "name": "Arcelia Navar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021029109",
+        "linkedin": null
       },
       {
         "name": "Ezequiel Navar",
@@ -13373,7 +13966,10 @@
     "managers": [
       {
         "name": "Hengky Mualim",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "info@parstv.tv",
+        "phone": "8187761061",
+        "linkedin": null
       },
       {
         "name": "Teguh Mualim",
@@ -13399,7 +13995,10 @@
     "managers": [
       {
         "name": "Ariel Namvar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2013172101",
+        "linkedin": null
       },
       {
         "name": "Marc Shouhed",
@@ -13415,7 +14014,10 @@
     "managers": [
       {
         "name": "David Cheung",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2016207100",
+        "linkedin": null
       }
     ],
     "agent": "DAVID CHEUNG",
@@ -13430,7 +14032,10 @@
     "managers": [
       {
         "name": "Parviz Banayan",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3102762623",
+        "linkedin": null
       }
     ],
     "agent": "PARVIZ BANAYAN",
@@ -13484,7 +14089,10 @@
       },
       {
         "name": "Ikenna Ebigbo",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021230105",
+        "linkedin": null
       },
       {
         "name": "Ifeanyichukwu Ebigbo",
@@ -13527,7 +14135,10 @@
     "managers": [
       {
         "name": "Tharwat Sorour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2318765805",
+        "linkedin": null
       }
     ],
     "agent": "MAGED SIDHOM",
@@ -13538,7 +14149,10 @@
     "managers": [
       {
         "name": "Simon Lazar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "deanna.bell@crosswinds.net",
+        "phone": "8152629353",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -13616,7 +14230,10 @@
     "managers": [
       {
         "name": "Chrissie Chau",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9167825999",
+        "linkedin": null
       }
     ],
     "agent": "CHRISSIE CHAU",
@@ -13627,7 +14244,10 @@
     "managers": [
       {
         "name": "Saman Mostadim",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023560119",
+        "linkedin": null
       },
       {
         "name": "Jonathan Sedaghat",
@@ -13703,7 +14323,10 @@
     "managers": [
       {
         "name": "Saly Antoon",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7248460609",
+        "linkedin": null
       },
       {
         "name": "Sherif Antoon",
@@ -13737,7 +14360,10 @@
     "managers": [
       {
         "name": "David Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "REIYUKAI@REIYUKAI-USA.ORG",
+        "phone": "6263000700",
+        "linkedin": null
       },
       {
         "name": "Navid Yadegar",
@@ -13807,7 +14433,10 @@
     "managers": [
       {
         "name": "Omer Harel",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263000700",
+        "linkedin": null
       }
     ],
     "agent": "Omer Harel",
@@ -13818,7 +14447,10 @@
     "managers": [
       {
         "name": "Cecilia A Quail",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "dalycity@celiasrestaurants.com",
+        "phone": "9257541355",
+        "linkedin": null
       }
     ],
     "agent": "Cecilia A Quail",
@@ -13897,7 +14529,10 @@
     "managers": [
       {
         "name": "Rodolfo Concha P.O. Box",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2019255100",
+        "linkedin": null
       }
     ],
     "agent": "Mike Iryami",
@@ -13935,7 +14570,10 @@
       },
       {
         "name": "David Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021271107",
+        "linkedin": null
       }
     ],
     "agent": "NAVID YADEGAR",
@@ -13972,11 +14610,17 @@
     "managers": [
       {
         "name": "Blair Shasha",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8443064159",
+        "linkedin": null
       },
       {
         "name": "Saul Shasha",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8009564442",
+        "linkedin": null
       }
     ],
     "agent": "SAUL SHASHA",
@@ -13987,7 +14631,10 @@
     "managers": [
       {
         "name": "James A Jenkins",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2012188100",
+        "linkedin": null
       },
       {
         "name": "Danisha D Hoston",
@@ -14002,7 +14649,10 @@
     "managers": [
       {
         "name": "Anthony Oyatayo",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "7472164669",
+        "linkedin": null
       }
     ],
     "agent": null,
@@ -14017,7 +14667,10 @@
     "managers": [
       {
         "name": "Ronald Mollis",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "ronald@mollislaw.com",
+        "phone": "9492220736",
+        "linkedin": null
       }
     ],
     "agent": "RONALD MOLLIS",
@@ -14051,7 +14704,10 @@
     "managers": [
       {
         "name": "Kevin Bernotas",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2019358104",
+        "linkedin": null
       }
     ],
     "agent": "KEVIN BERNOTAS",
@@ -14069,7 +14725,10 @@
       },
       {
         "name": "Carmen M Gutierrez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263000700",
+        "linkedin": null
       },
       {
         "name": "Lazaro Gutierrez",
@@ -14122,7 +14781,10 @@
     "managers": [
       {
         "name": "Joompong Kongchareon",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2011342100",
+        "linkedin": null
       }
     ],
     "agent": "JOOMPONG KONGCHAREON",
@@ -14133,7 +14795,10 @@
     "managers": [
       {
         "name": "Ed Mustafa",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "0555092012",
+        "linkedin": null
       },
       {
         "name": "Guy Coons",
@@ -14158,7 +14823,10 @@
       },
       {
         "name": "Steven Levine",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "drattie@peoplepc.com",
+        "phone": "9524243849",
+        "linkedin": null
       }
     ],
     "agent": "JAMES K. PERKINS",
@@ -14221,7 +14889,10 @@
     "managers": [
       {
         "name": "Moeiz Koshki",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2015353103",
+        "linkedin": null
       }
     ],
     "agent": "MOEIZ KOSHKI",
@@ -14295,7 +14966,10 @@
     "managers": [
       {
         "name": "Sonia Huitron",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023593148",
+        "linkedin": null
       }
     ],
     "agent": "Sonia Huitron",
@@ -14314,15 +14988,24 @@
       },
       {
         "name": "Minjung Kim",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8666266004",
+        "linkedin": null
       },
       {
         "name": "Sarah Dai",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2144929865",
+        "linkedin": null
       },
       {
         "name": "Daniel Huang",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "dhuang@amity-systems.com",
+        "phone": "8443064159",
+        "linkedin": null
       }
     ],
     "agent": "TROY KIEM",
@@ -14351,7 +15034,10 @@
     "managers": [
       {
         "name": "Eliezer Engel",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022533138",
+        "linkedin": null
       }
     ],
     "agent": "Eliezer Engel",
@@ -14439,7 +15125,10 @@
     "managers": [
       {
         "name": "Ari Praw",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8002481955",
+        "linkedin": null
       }
     ],
     "agent": "yisroel millstein",
@@ -14465,7 +15154,10 @@
     "managers": [
       {
         "name": "Phyllis Blue PO BOX",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2016053101",
+        "linkedin": null
       }
     ],
     "agent": "PHYLLIS BLUE",
@@ -14476,7 +15168,10 @@
     "managers": [
       {
         "name": "Kevin J. Moore",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8102001007",
+        "linkedin": null
       }
     ],
     "agent": "Kevin J. Moore",
