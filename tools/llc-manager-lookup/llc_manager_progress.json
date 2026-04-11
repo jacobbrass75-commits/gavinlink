@@ -15245,11 +15245,17 @@
     "managers": [
       {
         "name": "Ricky Thai",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2007083100",
+        "linkedin": null
       },
       {
         "name": "Anthony Van Thai",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2007083100",
+        "linkedin": null
       }
     ],
     "agent": "RICKY THAI",
@@ -15293,7 +15299,10 @@
     "managers": [
       {
         "name": "Gerald Poindexter",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022519134",
+        "linkedin": null
       }
     ],
     "agent": "Gerald Poindexter-Jones",
@@ -15424,7 +15433,10 @@
     "managers": [
       {
         "name": "Mike Iryami",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2025012011",
+        "linkedin": null
       }
     ],
     "agent": "Mike Iryami",
@@ -15468,7 +15480,10 @@
     "managers": [
       {
         "name": "Joyce T Wu",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "qwu@localnet.com",
+        "phone": "2819037458",
+        "linkedin": null
       }
     ],
     "agent": "JOYCE T WU",
@@ -15479,7 +15494,10 @@
     "managers": [
       {
         "name": "Jerry Keeton",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8443064159",
+        "linkedin": null
       }
     ],
     "agent": "STEVEN K LEDBETTER",
@@ -15519,7 +15537,10 @@
     "managers": [
       {
         "name": "Tharwat Sorour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023542185",
+        "linkedin": null
       }
     ],
     "agent": "MAGED SIDHOM",
@@ -15530,7 +15551,10 @@
     "managers": [
       {
         "name": "Joubin Manoochehri",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2012140100",
+        "linkedin": null
       }
     ],
     "agent": "JOUBIN MANOOCHEHRI",
@@ -15573,7 +15597,10 @@
     "managers": [
       {
         "name": "Myra E. Lovelace",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2018136101",
+        "linkedin": null
       },
       {
         "name": "Malvyn L. Stegall",
@@ -15591,7 +15618,10 @@
     "managers": [
       {
         "name": "Eliezer Engel",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023574181",
+        "linkedin": null
       }
     ],
     "agent": "Eliezer Engel",
@@ -15627,7 +15657,10 @@
     "managers": [
       {
         "name": "Matthew Salib",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2013154100",
+        "linkedin": null
       }
     ],
     "agent": "MATTHEW SALIB",
@@ -15642,7 +15675,10 @@
     "managers": [
       {
         "name": "Owen Smith",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2025015230",
+        "linkedin": null
       }
     ],
     "agent": "Owen Smith",
@@ -15667,7 +15703,10 @@
     "managers": [
       {
         "name": "Harvey Holt Jr",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021350105",
+        "linkedin": null
       },
       {
         "name": "Trayvon Holt",
@@ -15685,11 +15724,17 @@
     "managers": [
       {
         "name": "David Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263000700",
+        "linkedin": null
       },
       {
         "name": "Navid Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2013226101",
+        "linkedin": null
       }
     ],
     "agent": "NAVID YADEGAR",
@@ -15770,7 +15815,10 @@
     "managers": [
       {
         "name": "Andrew S. Jacobson",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2024645193",
+        "linkedin": null
       }
     ],
     "agent": "Kira Masteller",
@@ -15781,7 +15829,10 @@
     "managers": [
       {
         "name": "Linda Ibrahim",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2011166100",
+        "linkedin": null
       }
     ],
     "agent": "Linda Ibrahim",
@@ -15804,7 +15855,10 @@
     "managers": [
       {
         "name": "Neda Amin",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023571185",
+        "linkedin": null
       },
       {
         "name": "Edmond Hakakha",
@@ -15873,7 +15927,10 @@
     "managers": [
       {
         "name": "Savanna Marshall",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3312480976",
+        "linkedin": null
       }
     ],
     "agent": "TATUM Y MARSHALL",
@@ -15914,7 +15971,10 @@
       },
       {
         "name": "Behnam Shahramzad",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3106662840",
+        "linkedin": null
       },
       {
         "name": "Bahram Shahramzad",
@@ -15980,7 +16040,10 @@
     "managers": [
       {
         "name": "Lula Mouton",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021109103",
+        "linkedin": null
       }
     ],
     "agent": "LULA MOUTON",
@@ -16034,7 +16097,10 @@
     "managers": [
       {
         "name": "Lauren M. Doyle",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022512171",
+        "linkedin": null
       }
     ],
     "agent": "LAUREN M. DOYLE",
@@ -16045,7 +16111,10 @@
     "managers": [
       {
         "name": "gregory thomas malley",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023581116",
+        "linkedin": null
       }
     ],
     "agent": "gregory thomas malley",
@@ -16075,7 +16144,10 @@
     "managers": [
       {
         "name": "Jay Kaplan",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3102736072",
+        "linkedin": null
       }
     ],
     "agent": "Jay Kaplan",
@@ -16086,7 +16158,10 @@
     "managers": [
       {
         "name": "Carlyle T. Downs",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023567140",
+        "linkedin": null
       }
     ],
     "agent": "CARLYLE T. DOWNS",
@@ -16097,7 +16172,10 @@
     "managers": [
       {
         "name": "Danielle Hoston",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8443064159",
+        "linkedin": null
       }
     ],
     "agent": "DANIELLE HOSTON",
@@ -16126,7 +16204,10 @@
     "managers": [
       {
         "name": "Tharwat Sorour",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023542183",
+        "linkedin": null
       }
     ],
     "agent": "MAGED SIDHOM",
@@ -16159,7 +16240,10 @@
     "managers": [
       {
         "name": "Adrian Malin",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3239865500",
+        "linkedin": null
       }
     ],
     "agent": "ADRIAN MALIN",
@@ -16170,7 +16254,10 @@
     "managers": [
       {
         "name": "Evette Santana",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "evie-s@peoplepc.com",
+        "phone": "9544046643",
+        "linkedin": null
       }
     ],
     "agent": "Evette Santana",
@@ -16193,7 +16280,10 @@
     "managers": [
       {
         "name": "Mercedes Anaya",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2005223100",
+        "linkedin": null
       }
     ],
     "agent": "MERCEDES ANAYA",
@@ -16216,7 +16306,10 @@
     "managers": [
       {
         "name": "Masoud Manesh",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "4258853030",
+        "linkedin": null
       }
     ],
     "agent": "MASOUD MANESH",
@@ -16269,7 +16362,10 @@
     "managers": [
       {
         "name": "Navid Yadegar",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "6263000700",
+        "linkedin": null
       }
     ],
     "agent": "Navid Yadegar",
@@ -16295,7 +16391,10 @@
     "managers": [
       {
         "name": "Luis Sandor",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2024648125",
+        "linkedin": null
       }
     ],
     "agent": "Luis Sandor",
@@ -16354,7 +16453,10 @@
     "managers": [
       {
         "name": "Nannette M. Fuentez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2020157101",
+        "linkedin": null
       }
     ],
     "agent": "NANNETTE M FUENTEZ",
@@ -16390,7 +16492,10 @@
     "managers": [
       {
         "name": "Bianca Brianne Espinoza-Deleon",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2015042101",
+        "linkedin": null
       },
       {
         "name": "Jonathan Richard Deleon",
@@ -16409,7 +16514,10 @@
     "managers": [
       {
         "name": "Michael Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021062105",
+        "linkedin": null
       }
     ],
     "agent": "MICHAEL BAKHSHI",
@@ -16522,7 +16630,10 @@
     "managers": [
       {
         "name": "Salvador Raygoza",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2014008100",
+        "linkedin": null
       }
     ],
     "agent": "SALVADOR RAYGOZA",
@@ -16553,7 +16664,10 @@
     "managers": [
       {
         "name": "Eduardo Uriarte",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2023583173",
+        "linkedin": null
       },
       {
         "name": "Carlos Uriarte Po Box",
@@ -16625,7 +16739,10 @@
       },
       {
         "name": "Michael Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2024618190",
+        "linkedin": null
       }
     ],
     "agent": "MICHAEL BAKHSHI",
@@ -16673,7 +16790,10 @@
     "managers": [
       {
         "name": "Pedram Sooferi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2012131102",
+        "linkedin": null
       },
       {
         "name": "Shahram Peikar",
@@ -16699,7 +16819,10 @@
     "managers": [
       {
         "name": "Andrew Dean Hansen",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8443064159",
+        "linkedin": null
       }
     ],
     "agent": "ANDREW DEAN HANSEN",
@@ -16744,7 +16867,10 @@
     "managers": [
       {
         "name": "Ashish Kapur",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2016336100",
+        "linkedin": null
       }
     ],
     "agent": "ASHISH KAPUR",
@@ -16815,7 +16941,10 @@
     "managers": [
       {
         "name": "Ulysses Lopez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2008172100",
+        "linkedin": null
       }
     ],
     "agent": "ULYSSES LOPEZ",
@@ -16874,7 +17003,10 @@
     "managers": [
       {
         "name": "Leonor Martinez",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "9256259345",
+        "linkedin": null
       }
     ],
     "agent": "ABEL MARTINEZ",
@@ -17009,7 +17141,10 @@
     "managers": [
       {
         "name": "Linda Azucena Germain",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "3104293004",
+        "linkedin": null
       }
     ],
     "agent": "LINDA AZUCENA GERMAIN",
@@ -17031,7 +17166,10 @@
       },
       {
         "name": "Nelson Castillo",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2013362101",
+        "linkedin": null
       }
     ],
     "agent": "Luis Castillo",
@@ -17078,7 +17216,10 @@
     "managers": [
       {
         "name": "Lucila Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "8002899999",
+        "linkedin": null
       },
       {
         "name": "Michael Bakhshi",
@@ -17108,11 +17249,17 @@
     "managers": [
       {
         "name": "Michael Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022056102",
+        "linkedin": null
       },
       {
         "name": "Lucila Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2022056102",
+        "linkedin": null
       }
     ],
     "agent": "MICHAEL BAKHSHI",
@@ -17205,7 +17352,10 @@
     "managers": [
       {
         "name": "Michael Bakhshi",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2021221102",
+        "linkedin": null
       }
     ],
     "agent": "MICHAEL BAKHSHI",
@@ -17220,7 +17370,10 @@
     "managers": [
       {
         "name": "Christopher K MORA",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "2019161104",
+        "linkedin": null
       }
     ],
     "agent": "Christopher K MORA",
@@ -17231,11 +17384,17 @@
     "managers": [
       {
         "name": "Eduardo Lares",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": null,
+        "phone": "5626883483",
+        "linkedin": null
       },
       {
         "name": "Maria Lares",
-        "role": "Manager/Member"
+        "role": "Manager/Member",
+        "email": "ljulian@rcn.com",
+        "phone": "5626957417",
+        "linkedin": null
       }
     ],
     "agent": "WENDY LARES",
