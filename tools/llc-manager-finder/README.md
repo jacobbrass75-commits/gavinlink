@@ -1,4 +1,4 @@
-# Property Manager Finder
+# LLC Manager Finder
 
 Finds managing members of LLC property owners and their contact info using free public sources. No paid APIs required.
 
