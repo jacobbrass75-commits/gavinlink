@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { createRealNexClient } = require('../../src/integrations/realnex');
 const {
   createRealNexService,
+  disambiguateLocalEntityAgainstRealNex,
   disambiguateRealNexRecords,
   scoreCandidate
 } = require('../../src/app/realnex');
@@ -174,4 +175,38 @@ test('disambiguateRealNexRecords ranks the best match first and stays bounded', 
   assert.equal(result.contacts.length, 1);
   assert.equal(result.companies.length, 1);
   assert.ok(result.best_match.score >= result.matches[1].score);
+});
+
+test('disambiguateLocalEntityAgainstRealNex composes local lookup with shared service', async () => {
+  const result = await disambiguateLocalEntityAgainstRealNex(
+    {
+      name: 'Shelly Garcia',
+      email: 'sgarcia@lee-re.com',
+      company: 'Lee Associates'
+    },
+    {
+      context: {
+        entity: null,
+        disambiguation_input: {
+          name: 'Shelly Garcia',
+          email: 'sgarcia@lee-re.com',
+          phone: null,
+          company: 'Lee Associates'
+        }
+      },
+      service: {
+        disambiguate: async (input) => ({
+          input,
+          contacts: [],
+          companies: [],
+          matches: [{ id: 'contact-1', score: 80 }],
+          best_match: { id: 'contact-1', score: 80 }
+        })
+      }
+    }
+  );
+
+  assert.equal(result.entity, null);
+  assert.equal(result.best_match.id, 'contact-1');
+  assert.equal(result.input.email, 'sgarcia@lee-re.com');
 });

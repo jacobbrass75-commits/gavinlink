@@ -3,8 +3,10 @@ const assert = require('node:assert/strict');
 
 const {
   createChannelService,
+  buildChannelIngestMessage,
   normalizeOmiPayload,
-  normalizeHermesPayload
+  normalizeHermesPayload,
+  normalizeVermesPayload
 } = require('../../src/app/channels');
 
 test('normalizeOmiPayload extracts common string payload shapes', () => {
@@ -64,6 +66,28 @@ test('normalizeHermesPayload falls back across nested shapes', () => {
   assert.deepEqual(normalized.actor, {
     name: 'Hermes Relay',
     email: 'relay@example.com'
+  });
+});
+
+test('normalizeVermesPayload preserves the vermes channel/provider defaults', () => {
+  const payload = {
+    event_type: 'conversation.created',
+    payload: {
+      text: 'Need a summary for 8122 Maie Ave.'
+    },
+    sender: {
+      name: 'Vermes Agent'
+    }
+  };
+
+  const normalized = normalizeVermesPayload(payload, { source: 'vermes-bus' });
+
+  assert.equal(normalized.channel, 'vermes');
+  assert.equal(normalized.provider, 'vermes');
+  assert.equal(normalized.source, 'vermes-bus');
+  assert.equal(normalized.message, 'Need a summary for 8122 Maie Ave.');
+  assert.deepEqual(normalized.actor, {
+    name: 'Vermes Agent'
   });
 });
 
@@ -135,4 +159,23 @@ test('createChannelService uses the factory ingestFn when no override is provide
   assert.equal(calls[0].normalized.channel, 'hermes');
   assert.equal(calls[0].options.source, undefined);
   assert.deepEqual(result.ingest_result, { accepted: true });
+});
+
+test('buildChannelIngestMessage includes subject, actor, timestamp, and tags', () => {
+  const message = buildChannelIngestMessage({
+    message: 'Need a summary for 8122 Maie Ave.',
+    subject: 'Vermes summary request',
+    actor: {
+      name: 'Vermes Agent',
+      email: 'vermes@example.com'
+    },
+    occurred_at: '2026-04-12T00:00:00.000Z',
+    tags: ['summary', 'property']
+  });
+
+  assert.match(message, /Subject: Vermes summary request/);
+  assert.match(message, /Need a summary for 8122 Maie Ave./);
+  assert.doesNotMatch(message, /Actor:/);
+  assert.doesNotMatch(message, /Occurred At:/);
+  assert.doesNotMatch(message, /Tags:/);
 });

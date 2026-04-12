@@ -1,5 +1,10 @@
 const express = require('express');
-const { createChannelService } = require('../../app/channels');
+const {
+  createChannelService,
+  buildChannelIngestMessage,
+  looksLikeAssistantRequest
+} = require('../../app/channels');
+const assistantApp = require('../../app/assistant');
 const brainApp = require('../../app/brain');
 const { requireAdminApiKey } = require('../guardrails');
 
@@ -48,48 +53,37 @@ function requireChannelAccess(secretEnvNames = []) {
   };
 }
 
-function buildChannelMessage(normalized) {
-  const lines = [];
-
-  if (normalized.subject && normalized.subject !== normalized.message) {
-    lines.push(`Subject: ${normalized.subject}`);
-  }
-
-  if (normalized.message) {
-    lines.push(normalized.message);
-  }
-
-  if (normalized.actor?.name) {
-    lines.push(`Actor: ${normalized.actor.name}`);
-  }
-
-  if (normalized.actor?.email) {
-    lines.push(`Actor Email: ${normalized.actor.email}`);
-  }
-
-  if (normalized.occurred_at) {
-    lines.push(`Occurred At: ${normalized.occurred_at}`);
-  }
-
-  if (Array.isArray(normalized.tags) && normalized.tags.length > 0) {
-    lines.push(`Tags: ${normalized.tags.join(', ')}`);
-  }
-
-  return lines.filter(Boolean).join('\n');
-}
-
 function createIngestFn(defaultSource) {
   return async (_ingestable, normalized) => {
-    const message = buildChannelMessage(normalized);
+    if (looksLikeAssistantRequest(normalized)) {
+      return {
+        mode: 'assistant',
+        ...(await assistantApp.answerMessage({
+          message: normalized.message,
+          source: normalized.source || defaultSource,
+          surface: 'assistant',
+          allowSave: false,
+          limit: 5
+        }))
+      };
+    }
+
+    const message = buildChannelIngestMessage(normalized);
 
     if (!message) {
       throw brainApp.createAppError(400, 'No usable message content found in payload');
     }
 
-    return brainApp.ingestMessage({
-      message,
-      source: normalized.source || defaultSource
-    });
+    return {
+      mode: 'ingest',
+      ...(await brainApp.ingestChannelEvent({
+        message,
+        source: normalized.source || defaultSource,
+        metadata: normalized.metadata,
+        channel: normalized.channel,
+        raw: normalized.raw
+      }))
+    };
   };
 }
 
@@ -115,6 +109,7 @@ function buildChannelResponse(result) {
     tags: result.tags,
     actor: result.actor,
     metadata: result.metadata,
+    processor_mode: result.ingest_result?.mode || 'ingest',
     ingest_result: result.ingest_result
   };
 }
@@ -156,11 +151,9 @@ router.post(
   requireChannelAccess(['VERMES_WEBHOOK_SECRET', 'HERMES_WEBHOOK_SECRET']),
   async (req, res, next) => {
     try {
-      const result = await getChannelService(process.env.VERMES_DEFAULT_SOURCE || 'vermes').ingestChannelPayload(
-        'vermes',
+      const result = await getChannelService(process.env.VERMES_DEFAULT_SOURCE || 'vermes').ingestVermesPayload(
         req.body,
         {
-          provider: 'vermes',
           source: process.env.VERMES_DEFAULT_SOURCE || 'vermes'
         }
       );

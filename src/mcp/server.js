@@ -13,6 +13,25 @@ async function createMCPServer() {
   });
 
   server.registerTool(
+    'brain_answer',
+    {
+      description: TOOLS.find((tool) => tool.name === 'brain_answer').description,
+      inputSchema: {
+        message: z.string().describe('Natural language request for Soleil'),
+        limit: z.number().optional(),
+        allowSave: z.boolean().optional()
+      }
+    },
+    async ({ message, limit, allowSave }) => {
+      const result = await callTool('brain_answer', { message, limit, allowSave });
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
+        structuredContent: result.payload
+      };
+    }
+  );
+
+  server.registerTool(
     'brain_add',
     {
       description: TOOLS.find((tool) => tool.name === 'brain_add').description,

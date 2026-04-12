@@ -10,6 +10,7 @@ Use Soleil as an operational commercial real estate brain, not as a generic note
 
 The system already has dedicated tools and routes for:
 
+- assistant-style orchestration
 - entity/property lookup
 - fuzzy recall across knowledge
 - buyer-property matching
@@ -19,6 +20,17 @@ The system already has dedicated tools and routes for:
 Use the right one.
 
 ## Tool Selection Rules
+
+### Use `brain_answer`
+
+As the default front door for normal assistant conversation:
+
+- "Who is Mike Chen?"
+- "What should I do today?"
+- "Find me Carson industrial buyers"
+- "Save this: Mike Chen wants 30k sqft in Carson"
+
+Use specialist tools below when you need a deterministic single-purpose call or tighter control over the exact operation.
 
 ### Use `brain_lookup`
 
@@ -94,7 +106,7 @@ If the user asks a question and also includes new facts, answer the question fir
 Telegram should mirror the same policy:
 
 - slash commands are explicit
-- plain text should be intent-routed first
+- plain text should go through `brain_answer`-style intent routing first
 - explicit save language should be required for note capture when intent is ambiguous
 
 Good:

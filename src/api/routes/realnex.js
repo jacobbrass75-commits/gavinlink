@@ -1,6 +1,8 @@
 const express = require('express');
-const { createRealNexService } = require('../../app/realnex');
-const { lookupLocalEntityForRealNex } = require('../../app/brain');
+const {
+  createRealNexService,
+  disambiguateLocalEntityAgainstRealNex
+} = require('../../app/realnex');
 const { requireAdminApiKey } = require('../guardrails');
 const { validateBody, z } = require('../validation');
 
@@ -75,24 +77,15 @@ router.post(
   async (req, res, next) => {
     try {
       const body = req.validatedBody || {};
-      const context = await lookupLocalEntityForRealNex({
-        entityId: body.entityId,
-        name: body.name,
-        email: body.email,
-        phone: body.phone,
-        company: body.company
-      });
-      const disambiguation = await getRealNexService().disambiguate(context.disambiguation_input, {
-        limit: body.limit,
-        pageSize: body.pageSize,
-        contactLimit: body.contactLimit,
-        companyLimit: body.companyLimit
-      });
-
-      return res.json({
-        entity: context.entity,
-        ...disambiguation
-      });
+      return res.json(
+        await disambiguateLocalEntityAgainstRealNex(body, {
+          service: getRealNexService(),
+          limit: body.limit,
+          pageSize: body.pageSize,
+          contactLimit: body.contactLimit,
+          companyLimit: body.companyLimit
+        })
+      );
     } catch (error) {
       return next(error);
     }

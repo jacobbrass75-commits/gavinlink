@@ -1,4 +1,5 @@
 const { createRealNexClient } = require('../integrations/realnex');
+const { lookupLocalEntityForRealNex } = require('./brain');
 
 function cleanText(value, fallback = null) {
   if (typeof value !== 'string') {
@@ -449,8 +450,28 @@ function createRealNexService(options = {}) {
   };
 }
 
+async function disambiguateLocalEntityAgainstRealNex(input = {}, options = {}) {
+  const service = options.service || createRealNexService(options.serviceOptions || {});
+  const context =
+    options.context ||
+    (await lookupLocalEntityForRealNex({
+      entityId: input.entityId,
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      company: input.company
+    }));
+  const disambiguation = await service.disambiguate(context.disambiguation_input, options);
+
+  return {
+    entity: context.entity,
+    ...disambiguation
+  };
+}
+
 module.exports = {
   createRealNexService,
+  disambiguateLocalEntityAgainstRealNex,
   scoreCandidate,
   rankCandidates,
   disambiguateRealNexRecords,

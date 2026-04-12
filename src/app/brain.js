@@ -182,7 +182,15 @@ async function getKnowledgeForProperty(propertyId) {
   }));
 }
 
-async function ingestMessage({ message, source = 'app' }) {
+async function ingestMessage({
+  message,
+  source = 'app',
+  sourceFile = null,
+  metadata = null,
+  channel = null,
+  runMatching,
+  raw = null
+}) {
   const normalizedMessage = String(message || '').trim();
 
   if (!normalizedMessage) {
@@ -190,7 +198,24 @@ async function ingestMessage({ message, source = 'app' }) {
   }
 
   const classified = await classifier.classifyMessage(normalizedMessage);
-  return ingestionRouter.routeClassifiedMessage(classified, normalizedMessage, { source });
+  return ingestionRouter.routeClassifiedMessage(classified, normalizedMessage, {
+    source,
+    source_file: sourceFile,
+    metadata,
+    channel,
+    runMatching,
+    raw
+  });
+}
+
+async function ingestChannelEvent({ message, source = 'app', metadata = null, channel = null, raw = null }) {
+  return ingestMessage({
+    message,
+    source,
+    metadata,
+    channel,
+    raw
+  });
 }
 
 async function ingestAudio({ filePath, source = 'voice_memo' }) {
@@ -453,6 +478,7 @@ module.exports = {
   toNumber,
   getEntityDetail,
   ingestMessage,
+  ingestChannelEvent,
   ingestAudio,
   searchBrain,
   lookupBrain,

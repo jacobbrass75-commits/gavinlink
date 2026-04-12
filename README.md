@@ -22,6 +22,7 @@ The software is built to help a brokerage team move from raw market signals to a
 - MCP server: started with `brain serve`, implemented in `src/mcp/`
 - Telegram bot: worker in `src/ops/telegram-bot.js`
 - Channel ingress: `/api/channels/{omi,hermes,vermes}`
+- Assistant answer surface: `/api/answer`, `brain answer ...`, and MCP `brain_answer`
 - Recurring workers: PM2-managed jobs such as the PropertyRadar feed under `src/ops/`
 - Ops scripts: grouped under `scripts/admin`, `scripts/imports`, `scripts/ops`, and `scripts/qa`
 
@@ -48,6 +49,7 @@ If something in `tools/` becomes product-critical, move the adapter into `src/in
 
 Soleil is designed to be used by assistants through the MCP surface, not just by humans reading docs.
 
+- Use `brain_answer` as the default conversational front door.
 - Use `brain_lookup` for specific entity or property questions.
 - Use `brain_search` for fuzzy recall and broad memory questions.
 - Use `brain_match` for buyer-property fit and counterpart discovery.
@@ -157,6 +159,7 @@ Run the core runtime surfaces:
 ```bash
 npm start
 brain search "industrial Carson"
+brain answer "who is Mike Chen"
 brain match "Mike Chen"
 brain serve
 ```
@@ -215,7 +218,7 @@ npm run telegram:bot
 Telegram behavior:
 
 - slash commands are supported
-- plain text is intent-routed first
+- plain text is routed through the shared assistant service first
 - use `/add ...` or `save: ...` when you explicitly want note capture
 - casual text should not be treated as automatic memory writes anymore
 

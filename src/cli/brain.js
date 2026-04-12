@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { startMCPServer } = require('../mcp/server');
 const brainApp = require('../app/brain');
+const assistantApp = require('../app/assistant');
 const { promoteKnowledgeEntry } = require('../wiki/promote');
 const { lintWiki } = require('../wiki/lint');
 const { processAutoPromoteQueue } = require('../wiki/queue');
@@ -270,6 +271,27 @@ async function main() {
           : await brainApp.searchBrain({ query })
       );
     }
+    case 'answer': {
+      const message = args.join(' ').trim();
+
+      if (!message) {
+        throw new Error('message is required');
+      }
+
+      return printResult(
+        useHttpTransport()
+          ? await apiRequest('POST', '/api/answer', {
+              message,
+              source: 'cli',
+              surface: 'assistant'
+            })
+          : await assistantApp.answerMessage({
+              message,
+              source: 'cli',
+              surface: 'assistant'
+            })
+      );
+    }
     case 'lookup': {
       const name = args.join(' ').trim();
 
@@ -313,7 +335,7 @@ async function main() {
       return undefined;
     default:
       throw new Error(
-        'Usage: brain add <message> | brain add --audio <file> | brain search <query> | brain lookup <name> | brain match <identifier> | brain daily | brain promote <knowledge-entry-id> [--page wiki/...md] [--title "..."] | brain promote-document <property-id> <file> [--document-type type] [--notes text] [--queue-only] | brain autopromote [--limit N] [--dry-run] | brain lint [--offline] | brain serve'
+        'Usage: brain add <message> | brain add --audio <file> | brain answer <message> | brain search <query> | brain lookup <name> | brain match <identifier> | brain daily | brain promote <knowledge-entry-id> [--page wiki/...md] [--title "..."] | brain promote-document <property-id> <file> [--document-type type] [--notes text] [--queue-only] | brain autopromote [--limit N] [--dry-run] | brain lint [--offline] | brain serve'
       );
   }
 }

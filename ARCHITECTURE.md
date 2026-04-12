@@ -101,7 +101,7 @@ These are the user-facing or operator-facing entry points:
 | --- | --- | --- |
 | HTTP API | `src/api` | Primary runtime surface |
 | CLI | `src/cli/brain.js` | Operator and broker-facing adapter over shared app services plus wiki commands |
-| MCP | `src/mcp` | Five MCP tools for Claude/Codex-style assistants |
+| MCP | `src/mcp` | Assistant tool adapter over shared app services |
 | Telegram bot | `src/ops/telegram-bot.js` | Chat front door with command and plain-text intent routing |
 | Channel ingress | `src/api/routes/channels.js` | Hermes, Omi, and Vermes webhook-style ingress |
 | Ops scripts | `scripts/` | Support setup, import, maintenance, and QA |
@@ -113,6 +113,7 @@ These are the user-facing or operator-facing entry points:
 The Express server in `src/api/server.js` mounts route families for:
 
 - health
+- answer
 - ingest
 - search
 - entities
@@ -133,6 +134,7 @@ The Express server in `src/api/server.js` mounts route families for:
 `brain` is a thin adapter over the API for the core actions:
 
 - `add`
+- `answer`
 - `search`
 - `lookup`
 - `match`
@@ -150,6 +152,7 @@ It also owns local narrative operations:
 
 The MCP server currently exposes these operator tools:
 
+- `brain_answer`
 - `brain_add`
 - `brain_search`
 - `brain_lookup`
@@ -160,14 +163,14 @@ The MCP server currently exposes these operator tools:
 
 These call shared app services by default and can fall back to HTTP when `BRAIN_TRANSPORT=http`. MCP is an adapter, not a separate backend.
 
-The operator contract for assistants lives in `CLAUDE_SKILL.md` and the assistant sections of `AGENTS.md` / `CLAUDE.md`. The short version is: use lookup/search/match/daily for questions, and reserve add for explicit memory writes.
+The operator contract for assistants lives in `CLAUDE_SKILL.md` and the assistant sections of `AGENTS.md` / `CLAUDE.md`. The short version is: `brain_answer` is the default conversational front door, specialist tools remain available for deterministic operations, and `brain_add` stays reserved for explicit memory writes.
 
 ### Telegram
 
 Telegram is a broker-facing front door, not a separate brain:
 
-- slash commands map directly to shared app services
-- plain text is intent-routed first
+- slash commands map into the shared assistant service
+- plain text is routed through the same shared assistant service
 - explicit save requests still flow into note ingestion
 - the bot should not be treated as a generic open-ended chatbot unless the routing layer is upgraded further
 

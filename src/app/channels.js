@@ -462,6 +462,47 @@ function normalizeHermesPayload(payload, defaults = {}) {
   });
 }
 
+function normalizeVermesPayload(payload, defaults = {}) {
+  return normalizeWebhookPayload(payload, {
+    channel: 'vermes',
+    provider: 'vermes',
+    ...(Object.prototype.hasOwnProperty.call(defaults, 'source') ? { source: defaults.source } : {}),
+    ...(Object.prototype.hasOwnProperty.call(defaults, 'eventType') ? { eventType: defaults.eventType } : {}),
+    ...defaults
+  });
+}
+
+function buildChannelIngestMessage(normalized = {}) {
+  const lines = [];
+
+  if (normalized.subject && normalized.subject !== normalized.message) {
+    lines.push(`Subject: ${normalized.subject}`);
+  }
+
+  if (normalized.message) {
+    lines.push(normalized.message);
+  }
+
+  return lines.filter(Boolean).join('\n');
+}
+
+function looksLikeAssistantRequest(normalized = {}) {
+  const channel = cleanText(normalized.channel, '').toLowerCase();
+  const message = cleanText(normalized.message, '');
+
+  if (!message || channel === 'omi') {
+    return false;
+  }
+
+  if (message.includes('?')) {
+    return true;
+  }
+
+  return /^(who|what|when|where|why|how|find|search|lookup|match|show|tell|give me|pull up|need|can you|should i)\b/i.test(
+    message
+  );
+}
+
 async function callIngestFn(ingestFn, normalized, options = {}) {
   if (typeof ingestFn !== 'function') {
     return null;
@@ -513,13 +554,20 @@ function createChannelService({ ingestFn = null } = {}) {
     async ingestHermesPayload(payload, options = {}) {
       const normalized = normalizeHermesPayload(payload, options);
       return ingestNormalized(normalized, options);
+    },
+    async ingestVermesPayload(payload, options = {}) {
+      const normalized = normalizeVermesPayload(payload, options);
+      return ingestNormalized(normalized, options);
     }
   };
 }
 
 module.exports = {
   createChannelService,
+  buildChannelIngestMessage,
+  looksLikeAssistantRequest,
   normalizeWebhookPayload,
   normalizeOmiPayload,
-  normalizeHermesPayload
+  normalizeHermesPayload,
+  normalizeVermesPayload
 };

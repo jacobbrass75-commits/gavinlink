@@ -1,8 +1,26 @@
 const brainApp = require('../app/brain');
 const runtimeApp = require('../app/runtime');
-const { createRealNexService } = require('../app/realnex');
+const {
+  createRealNexService,
+  disambiguateLocalEntityAgainstRealNex
+} = require('../app/realnex');
+const assistantApp = require('../app/assistant');
 
 const TOOLS = [
+  {
+    name: 'brain_answer',
+    description:
+      'Ask Soleil a natural-language question or instruction. Use this as the default assistant entrypoint for normal conversation, status checks, daily priorities, lookups, searches, matches, and explicit save requests.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', description: 'Natural language request for Soleil' },
+        limit: { type: 'number', description: 'Max items to use for search/match style answers', default: 5 },
+        allowSave: { type: 'boolean', description: 'Whether explicit save/capture requests are allowed', default: true }
+      },
+      required: ['message']
+    }
+  },
   {
     name: 'brain_add',
     description:
@@ -139,6 +157,13 @@ async function callLocal(handler) {
 async function callTool(name, args = {}) {
   if (useHttpTransport()) {
     switch (name) {
+      case 'brain_answer':
+        return callApi('POST', '/api/answer', {
+          message: args.message,
+          source: 'mcp',
+          limit: args.limit,
+          allowSave: args.allowSave
+        });
       case 'brain_add':
         return callApi('POST', '/api/ingest', {
           message: args.message,
@@ -175,6 +200,16 @@ async function callTool(name, args = {}) {
   }
 
   switch (name) {
+    case 'brain_answer':
+      return callLocal(() =>
+        assistantApp.answerMessage({
+          message: args.message,
+          source: 'mcp',
+          surface: 'assistant',
+          limit: args.limit,
+          allowSave: args.allowSave
+        })
+      );
     case 'brain_add':
       return callLocal(() => brainApp.ingestMessage({ message: args.message, source: 'mcp' }));
     case 'brain_search':
@@ -189,25 +224,23 @@ async function callTool(name, args = {}) {
       return callLocal(() => runtimeApp.getRuntimeStatus());
     case 'brain_realnex_disambiguate':
       return callLocal(async () => {
-        const context = await brainApp.lookupLocalEntityForRealNex({
+        const service = createRealNexService();
+        return disambiguateLocalEntityAgainstRealNex(
+          {
           entityId: args.entityId,
           name: args.name,
           email: args.email,
           phone: args.phone,
           company: args.company
-        });
-        const service = createRealNexService();
-        const disambiguation = await service.disambiguate(context.disambiguation_input, {
-          limit: args.limit,
-          pageSize: args.pageSize,
-          contactLimit: args.contactLimit,
-          companyLimit: args.companyLimit
-        });
-
-        return {
-          entity: context.entity,
-          ...disambiguation
-        };
+          },
+          {
+            service,
+            limit: args.limit,
+            pageSize: args.pageSize,
+            contactLimit: args.contactLimit,
+            companyLimit: args.companyLimit
+          }
+        );
       });
     default:
       throw new Error(`Unknown MCP tool: ${name}`);

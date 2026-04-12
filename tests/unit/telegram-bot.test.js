@@ -25,14 +25,16 @@ test('parseTelegramCommand strips bot mentions from slash commands', () => {
 test('classifyPlainTextHeuristically routes casual status checks away from add', () => {
   assert.deepEqual(classifyPlainTextHeuristically('yo you working bro'), {
     name: 'status',
-    argument: ''
+    argument: '',
+    route: 'heuristic'
   });
 });
 
 test('classifyPlainTextHeuristically cancels explicit do-not-save messages', () => {
   assert.deepEqual(classifyPlainTextHeuristically("nah don't save"), {
     name: 'cancel',
-    argument: ''
+    argument: '',
+    route: 'heuristic'
   });
 });
 
@@ -41,7 +43,8 @@ test('classifyPlainTextHeuristically still allows explicit note capture', () => 
     classifyPlainTextHeuristically('save: Mike Chen wants Carson industrial'),
     {
       name: 'add',
-      argument: 'Mike Chen wants Carson industrial'
+      argument: 'Mike Chen wants Carson industrial',
+      route: 'heuristic'
     }
   );
 });

@@ -27,6 +27,33 @@ function cleanStringArray(values = []) {
   return [...new Set(values.map((value) => cleanText(value, null)).filter(Boolean))];
 }
 
+async function findExistingKnowledgeEntryForIngest(source, options = {}) {
+  const messageId = cleanText(options.metadata?.message_id, null);
+  const channel = cleanText(options.channel, null);
+
+  if (!messageId) {
+    return null;
+  }
+
+  const result = await query(
+    `
+      SELECT id, title, ai_summary
+      FROM knowledge_entries
+      WHERE source = $1
+        AND metadata -> 'ingest_context' ->> 'message_id' = $2
+        AND (
+          $3::text IS NULL
+          OR metadata ->> 'channel' = $3
+        )
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [source, messageId, channel]
+  );
+
+  return result.rows[0] || null;
+}
+
 async function findPropertyByReference(propertyRef) {
   if (!propertyRef) {
     return null;
@@ -170,6 +197,23 @@ async function safeRunMatching(entityId) {
 async function routeClassifiedMessage(classified, rawMessage, options = {}) {
   const normalized = validateClassification(classified);
   const source = cleanText(options.source, 'api');
+  const existingKnowledgeEntry = await findExistingKnowledgeEntryForIngest(source, options);
+
+  if (existingKnowledgeEntry) {
+    return {
+      created: [],
+      updated: [
+        `Skipped duplicate ingest event for message ${cleanText(options.metadata?.message_id, 'unknown')}`
+      ],
+      linked: [],
+      matches: [],
+      action_items: [],
+      knowledge_entry_id: existingKnowledgeEntry.id,
+      summary: existingKnowledgeEntry.ai_summary || existingKnowledgeEntry.title || null,
+      deduplicated: true
+    };
+  }
+
   const created = [];
   const updated = [];
   const linked = [];
@@ -252,7 +296,9 @@ async function routeClassifiedMessage(classified, rawMessage, options = {}) {
     metadata: {
       classifications: normalized.classifications,
       property_ref: normalized.property_ref,
-      routed_by: 'module_05'
+      routed_by: 'module_05',
+      ...(options.channel ? { channel: options.channel } : {}),
+      ...(options.metadata ? { ingest_context: options.metadata } : {})
     },
     ai_summary: normalized.summary,
     ai_action_items: normalized.action_items,

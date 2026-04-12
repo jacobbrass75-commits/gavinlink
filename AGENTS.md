@@ -102,6 +102,7 @@ brain lint --offline
 
 When an assistant is operating Soleil through the API, CLI, MCP, or Telegram-facing adapters:
 
+- Prefer `brain_answer` as the default conversational front door.
 - Prefer `brain_lookup` for specific person, company, LLC, lender, or property questions.
 - Prefer `brain_search` for fuzzy recall, conversation history, and broad "what do we know about..." requests.
 - Prefer `brain_match` for buyer-property fit or who-matches-this questions.
