@@ -131,6 +131,21 @@ The Express server in `src/api/server.js` mounts route families for:
 
 Protected write surfaces fail closed unless explicit secrets are configured. Administrative routes use `ADMIN_API_KEY`. Channel ingress uses route-specific shared secrets instead of a global admin fallback.
 
+### Compatibility And Legacy Surface
+
+The compatibility story is intentionally narrow:
+
+- `/api/*` is canonical.
+- public deploys may reverse-proxy the app under `/api/brain/*`
+- direct `/brain/*` routes exist only as a compatibility fragment for older clients
+
+Current direct `/brain/*` reality:
+
+- live compatibility shims: `answer`, `ingest`, `search`, `daily`, `match`, `entity`
+- explicit deprecations: `import`, `export`
+
+The repo should not add new product behavior under direct `/brain/*`. New capability belongs under `/api/*`, with compatibility shims added only when required.
+
 ### CLI
 
 `brain` is a thin adapter over the API for the core actions:
@@ -167,6 +182,8 @@ These call shared app services by default and can fall back to HTTP when `BRAIN_
 
 The operator contract for assistants lives in `CLAUDE_SKILL.md` and the assistant sections of `AGENTS.md` / `CLAUDE.md`. The short version is: `brain_answer` is the default conversational front door, specialist tools remain available for deterministic operations, and `brain_add` stays reserved for explicit memory writes.
 
+Today `brain_answer` is best described as a single-turn intent router with a few enrichment fallbacks, not a general multi-step broker agent. The docs and operator expectations should stay aligned with that reality until a planner/executor layer exists above it.
+
 ### Telegram
 
 Telegram is a broker-facing front door, not a separate brain:
@@ -175,6 +192,19 @@ Telegram is a broker-facing front door, not a separate brain:
 - plain text is routed through the same shared assistant service
 - explicit save requests still flow into note ingestion
 - the bot should not be treated as a generic open-ended chatbot unless the routing layer is upgraded further
+
+### Runtime State And Ops Artifacts
+
+Runtime state and operational artifacts live outside the durable domain model:
+
+| Path | Purpose | Notes |
+| --- | --- | --- |
+| `data/telegram-bot-offset.json` | Telegram polling checkpoint | runtime state, not business truth |
+| `data/propertyradar-feed-state.json` | PropertyRadar Gmail checkpoint state | runtime state, not business truth |
+| PM2 logs | operational diagnostics | clear or rotate routinely; do not treat as product data |
+| deploy finisher output | deployment diagnostics | useful for ops, not for product truth |
+
+These files should stay out of the narrative layer and out of source-of-truth discussions.
 
 ## Operational Layout
 
@@ -206,6 +236,8 @@ Telegram is a broker-facing front door, not a separate brain:
 | `tools/realnex-crm` | Python RealNex client plus CRM dump for batch workflows | standalone utility |
 
 If a tool becomes part of the product, its adapter belongs under `src/integrations`, its orchestration under `src/app`, and its runtime entry points under `src/api`, `src/cli`, `src/mcp`, or `src/ops`.
+
+Generated exports under `tools/` are not authoritative product data. They should be treated as transient artifacts and moved to private storage if they need to persist.
 
 ## Major Data Flows
 

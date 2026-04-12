@@ -101,7 +101,7 @@ briefs/           module notes, reports, and prompt artifacts
 2. Start infrastructure:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 3. Install dependencies:
@@ -151,6 +151,16 @@ npm run local:up:pm2
 - CLI, MCP, and Telegram default to local shared app calls.
 - Set `BRAIN_TRANSPORT=http` only when you explicitly want those surfaces to target a remote HTTP API.
 - `/brain/*` is a mixed compatibility layer, not the canonical product API.
+- Standalone `tools/*` outputs are not source of truth and should not be treated like live runtime data.
+
+## Test Modes
+
+- `npm run test:unit`
+  Fast local unit coverage for routing, helpers, assistant behavior, and adapters.
+- `npm run test:integration`
+  Full integration coverage. This expects local Postgres and Chroma to be available.
+- `npm test`
+  Runs the whole suite sequentially.
 
 ## Common Workflows
 

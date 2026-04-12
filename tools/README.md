@@ -25,3 +25,5 @@ If a tool becomes part of the product, do not leave it here indefinitely.
 ## Handling Rule
 
 Some tool folders contain bulky exports or sensitive operational data. Treat them as working material, not polished product surfaces.
+
+Do not commit fresh generated exports, progress files, or contact dumps back into the main app repo. If a tool needs persistent outputs, move them to private storage, encrypted git, or another artifact bucket and keep only the code and small redacted fixtures here.

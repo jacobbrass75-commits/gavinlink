@@ -177,12 +177,28 @@ router.get('/api/entities', async (req, res, next) => {
   }
 });
 
-router.get('/brain/entity/:id', (_req, res) => {
-  res.status(501).json({
-    status: 'not_implemented',
-    module: 'Module 2',
-    message: 'This endpoint will be implemented in Module 2: Entity Extraction'
-  });
+router.get('/brain/entity/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!isUuid(id)) {
+      return res.status(400).json({
+        error: 'id must be a valid UUID'
+      });
+    }
+
+    const entityDetail = await getEntityDetail(id);
+
+    if (!entityDetail) {
+      return res.status(404).json({
+        error: 'Entity not found'
+      });
+    }
+
+    return res.json(entityDetail);
+  } catch (error) {
+    return next(error);
+  }
 });
 
 module.exports = router;

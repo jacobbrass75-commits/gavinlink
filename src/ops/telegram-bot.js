@@ -155,11 +155,13 @@ async function processTelegramUpdates(options = {}) {
   let nextUpdateId = state.next_update_id;
 
   for (const update of updates) {
+    let outcome;
+
     try {
-      outcomes.push({
+      outcome = {
         update_id: update.update_id,
         ...(await processUpdate(update))
-      });
+      };
     } catch (error) {
       const chatId = cleanText(
         update?.message?.chat?.id != null ? String(update.message.chat.id) : null,
@@ -173,12 +175,18 @@ async function processTelegramUpdates(options = {}) {
         }).catch(() => {});
       }
 
-      outcomes.push({
+      outcome = {
         update_id: update.update_id,
         processed: false,
         reason: 'error',
         error: error.message
-      });
+      };
+    }
+
+    outcomes.push(outcome);
+
+    if (outcome.processed === false && outcome.reason === 'error') {
+      break;
     }
 
     if (Number.isInteger(update.update_id)) {

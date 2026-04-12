@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const {
   createChannelService,
   buildChannelIngestMessage,
+  looksLikeAssistantRequest,
   normalizeOmiPayload,
   normalizeHermesPayload,
   normalizeVermesPayload
@@ -89,6 +90,24 @@ test('normalizeVermesPayload preserves the vermes channel/provider defaults', ()
   assert.deepEqual(normalized.actor, {
     name: 'Vermes Agent'
   });
+});
+
+test('looksLikeAssistantRequest requires explicit assistant intent for webhook channels', () => {
+  assert.equal(
+    looksLikeAssistantRequest({
+      channel: 'vermes',
+      message: 'Need a summary for 8122 Maie Ave.'
+    }),
+    false
+  );
+
+  assert.equal(
+    looksLikeAssistantRequest({
+      channel: 'vermes',
+      message: 'ask: Need a summary for 8122 Maie Ave.'
+    }),
+    true
+  );
 });
 
 test('createChannelService calls a pluggable ingest function with normalized metadata', async () => {

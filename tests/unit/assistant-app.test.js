@@ -96,6 +96,60 @@ test('answerMessage routes lookup questions into lookupBrain', async (t) => {
   assert.match(result.reply, /Entity: Mike Chen/);
 });
 
+test('answerMessage routes summary phrasing into lookupBrain', async (t) => {
+  const originalLookupBrain = brainApp.lookupBrain;
+
+  t.after(() => {
+    brainApp.lookupBrain = originalLookupBrain;
+  });
+
+  brainApp.lookupBrain = async ({ name }) => ({
+    kind: 'property',
+    property: {
+      address: name,
+      property_type: 'industrial',
+      foreclosure: true
+    },
+    seller_profile: null
+  });
+
+  const result = await assistantApp.answerMessage({
+    message: 'need a summary for 8122 Maie Ave',
+    source: 'unit_test'
+  });
+
+  assert.equal(result.intent, 'lookup');
+  assert.equal(result.argument, '8122 Maie Ave');
+  assert.match(result.reply, /Property: 8122 Maie Ave/);
+});
+
+test('answerMessage strips assistant wrapper prefixes before routing', async (t) => {
+  const originalLookupBrain = brainApp.lookupBrain;
+
+  t.after(() => {
+    brainApp.lookupBrain = originalLookupBrain;
+  });
+
+  brainApp.lookupBrain = async ({ name }) => ({
+    kind: 'property',
+    property: {
+      address: name,
+      property_type: 'industrial',
+      foreclosure: true
+    },
+    seller_profile: null
+  });
+
+  const result = await assistantApp.answerMessage({
+    message: 'ask: need a summary for 8122 Maie Ave',
+    source: 'unit_test'
+  });
+
+  assert.equal(result.intent, 'lookup');
+  assert.equal(result.argument, '8122 Maie Ave');
+  assert.match(result.reply, /Property: 8122 Maie Ave/);
+});
+
 test('answerMessage falls back to RealNex import on local lookup miss', async (t) => {
   const originalLookupBrain = brainApp.lookupBrain;
   const originalSyncRealNexMatch = realNexApp.syncRealNexMatch;
@@ -144,4 +198,34 @@ test('answerMessage falls back to RealNex import on local lookup miss', async (t
   assert.match(result.reply, /Entity: Shelly Garcia/);
   assert.match(result.reply, /Synced from RealNex/);
   assert.match(result.reply, /Linked company: Lee Associates/);
+});
+
+test('answerMessage does not sync RealNex when saves are disabled', async (t) => {
+  const originalLookupBrain = brainApp.lookupBrain;
+  const originalSyncRealNexMatch = realNexApp.syncRealNexMatch;
+
+  t.after(() => {
+    brainApp.lookupBrain = originalLookupBrain;
+    realNexApp.syncRealNexMatch = originalSyncRealNexMatch;
+  });
+
+  brainApp.lookupBrain = async () => {
+    const error = new Error('not found');
+    error.statusCode = 404;
+    throw error;
+  };
+  realNexApp.syncRealNexMatch = async () => {
+    throw new Error('should not sync when allowSave is false');
+  };
+
+  const result = await assistantApp.answerMessage({
+    message: 'who is Shelly Garcia from Lee Associates',
+    source: 'unit_test',
+    allowSave: false
+  });
+
+  assert.equal(result.intent, 'lookup');
+  assert.equal(result.saved, false);
+  assert.equal(result.route, 'heuristic:not_found');
+  assert.match(result.reply, /No entity or property found/);
 });

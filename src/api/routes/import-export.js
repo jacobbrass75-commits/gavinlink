@@ -102,18 +102,14 @@ router.post('/api/import/foreclosure', requireAdminApiKey, importLimiter, upload
 });
 
 router.post('/brain/import', (_req, res) => {
-  res.status(501).json({
-    status: 'not_implemented',
-    module: 'Module 2',
-    message: 'This endpoint will be implemented in Module 2: Entity Extraction'
+  res.status(410).json({
+    error: 'Legacy /brain/import is deprecated. Use /api/import/foreclosure or the CLI import commands.'
   });
 });
 
 router.get('/brain/export', (_req, res) => {
-  res.status(501).json({
-    status: 'not_implemented',
-    module: 'Module 2',
-    message: 'This endpoint will be implemented in Module 2: Entity Extraction'
+  res.status(410).json({
+    error: 'Legacy /brain/export is deprecated. Use the CLI or direct /api resources instead.'
   });
 });
 

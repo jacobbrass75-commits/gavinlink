@@ -1,8 +1,10 @@
-# Soleil / Sullivan Link Brain - Current State And Next Steps
+# Historical Report: Soleil / Sullivan Link Brain - Current State And Next Steps
 
 Date: 2026-04-10
 
-> Historical report. Some adapter gaps listed below are now partially built or promoted into the live runtime, including Telegram, Obsidian publishing, RealNex runtime routes, and Hermes/Omi/Vermes channel ingress. Use `README.md` and `ARCHITECTURE.md` for the current repo boundary map.
+> Historical report only. It does not describe the current live runtime contract anymore.
+> Telegram, Obsidian publishing, RealNex runtime routes, `brain_answer`, and Hermes/Omi/Vermes channel ingress are now built.
+> Use `README.md` and `ARCHITECTURE.md` for the current runtime shape.
 
 ## Executive Summary
 

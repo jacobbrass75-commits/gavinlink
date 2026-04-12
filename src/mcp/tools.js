@@ -100,6 +100,23 @@ const TOOLS = [
         companyLimit: { type: 'number', description: 'Max company candidates to scan', default: 25 }
       }
     }
+  },
+  {
+    name: 'brain_realnex_sync',
+    description:
+      'Sync a person or company from RealNex into Soleil and create/update the linked local entity graph when the user wants the CRM record brought into the brain.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entityId: { type: 'string', description: 'Optional local Soleil entity UUID' },
+        name: { type: 'string', description: 'Person or company name' },
+        email: { type: 'string', description: 'Known email address' },
+        phone: { type: 'string', description: 'Known phone number' },
+        company: { type: 'string', description: 'Known company name' },
+        minScore: { type: 'number', description: 'Minimum acceptable RealNex match score', default: 72 },
+        createKnowledge: { type: 'boolean', description: 'Whether to create a linked knowledge entry for the sync', default: true }
+      }
+    }
   }
 ];
 
@@ -194,6 +211,16 @@ async function callTool(name, args = {}) {
           contactLimit: args.contactLimit,
           companyLimit: args.companyLimit
         });
+      case 'brain_realnex_sync':
+        return callApi('POST', '/api/realnex/sync', {
+          entityId: args.entityId,
+          name: args.name,
+          email: args.email,
+          phone: args.phone,
+          company: args.company,
+          minScore: args.minScore,
+          createKnowledge: args.createKnowledge
+        });
       default:
         throw new Error(`Unknown MCP tool: ${name}`);
     }
@@ -242,6 +269,22 @@ async function callTool(name, args = {}) {
           }
         );
       });
+    case 'brain_realnex_sync':
+      return callLocal(() =>
+        realNexApp.syncRealNexMatch(
+          {
+            entityId: args.entityId,
+            name: args.name,
+            email: args.email,
+            phone: args.phone,
+            company: args.company
+          },
+          {
+            minScore: args.minScore,
+            createKnowledge: args.createKnowledge
+          }
+        )
+      );
     default:
       throw new Error(`Unknown MCP tool: ${name}`);
   }

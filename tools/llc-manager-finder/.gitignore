@@ -1,1 +1,4 @@
 *.pyc
+*.xlsx
+*_progress.json
+*_contacts.json

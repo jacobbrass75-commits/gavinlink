@@ -26,6 +26,19 @@ function stripBotMention(commandToken) {
   return String(commandToken || '').replace(/@\w+$/, '');
 }
 
+function stripAssistantPromptPrefix(text) {
+  const normalized = cleanText(text, '');
+
+  if (!normalized || normalized.startsWith('/')) {
+    return normalized;
+  }
+
+  return normalized
+    .replace(/^(?:ask:|question:|assistant:|soleil:)\s*/i, '')
+    .replace(/^@soleil[\s,:-]*/i, '')
+    .trim();
+}
+
 function parseAssistantCommand(text) {
   const normalized = cleanText(text, '');
 
@@ -150,7 +163,7 @@ function classifyPlainTextHeuristically(text) {
 
   const lookupMatch =
     normalized.match(/^(?:who is|who's|what do we know about|tell me about|lookup)\s+(.+)$/i) ||
-    normalized.match(/^(?:pull up|show me)\s+(.+)$/i);
+    normalized.match(/^(?:pull up|show me|summary for|need a summary for|give me a summary for|brief me on)\s+(.+)$/i);
 
   if (lookupMatch) {
     return {
@@ -292,19 +305,20 @@ async function classifyPlainTextWithInference(text) {
 }
 
 async function resolveAssistantIntent(text) {
-  const parsedCommand = parseAssistantCommand(text);
+  const normalizedText = stripAssistantPromptPrefix(text);
+  const parsedCommand = parseAssistantCommand(normalizedText);
 
   if (parsedCommand.name !== 'plain') {
     return parsedCommand;
   }
 
-  const heuristic = classifyPlainTextHeuristically(text);
+  const heuristic = classifyPlainTextHeuristically(normalizedText);
 
   if (heuristic.name !== 'unknown') {
     return heuristic;
   }
 
-  const inferred = await classifyPlainTextWithInference(text);
+  const inferred = await classifyPlainTextWithInference(normalizedText);
 
   if (inferred && inferred.name !== 'unknown') {
     return inferred;
@@ -312,8 +326,8 @@ async function resolveAssistantIntent(text) {
 
   return {
     name: 'unknown',
-    argument: cleanText(text, ''),
-    route: inferred ? 'inference_unknown' : 'fallback_unknown'
+      argument: cleanText(normalizedText, ''),
+      route: inferred ? 'inference_unknown' : 'fallback_unknown'
   };
 }
 
@@ -607,6 +621,17 @@ async function answerMessage(options = {}) {
         };
       } catch (error) {
         if (error?.statusCode === 404) {
+          if (!allowSave) {
+            return {
+              intent: 'lookup',
+              argument: resolved.argument,
+              route: `${resolved.route}:not_found`,
+              saved: false,
+              reply: `No entity or property found for "${resolved.argument}".`,
+              payload: null
+            };
+          }
+
           try {
             const imported = await realNexApp.syncRealNexMatch(
               {
@@ -767,5 +792,6 @@ module.exports = {
   formatLookupPayload,
   formatMatchPayload,
   formatStatusPayload,
-  buildHelpText
+  buildHelpText,
+  stripAssistantPromptPrefix
 };

@@ -17,6 +17,8 @@
     "local:check": "node scripts/admin/dev-runtime.js check",
     "local:down": "node scripts/admin/dev-runtime.js down",
     "test": "node --test --test-concurrency=1",
+    "test:unit": "node --test --test-concurrency=1 tests/unit/*.test.js",
+    "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js",
     "brain": "node src/cli/brain.js",
     "match": "node scripts/ops/run-matching.js",
     "telegram:bot": "node scripts/ops/run-telegram-bot.js",

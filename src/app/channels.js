@@ -489,18 +489,28 @@ function buildChannelIngestMessage(normalized = {}) {
 function looksLikeAssistantRequest(normalized = {}) {
   const channel = cleanText(normalized.channel, '').toLowerCase();
   const message = cleanText(normalized.message, '');
+  const eventType = cleanText(normalized.event_type, '').toLowerCase();
+  const subject = cleanText(normalized.subject, '').toLowerCase();
+  const mode = cleanText(normalized?.metadata?.mode, '').toLowerCase();
+  const intent = cleanText(normalized?.metadata?.intent, '').toLowerCase();
 
   if (!message || channel === 'omi') {
     return false;
   }
 
-  if (message.includes('?')) {
+  if (mode === 'assistant' || intent === 'assistant' || intent === 'ask') {
     return true;
   }
 
-  return /^(who|what|when|where|why|how|find|search|lookup|match|show|tell|give me|pull up|need|can you|should i)\b/i.test(
-    message
-  );
+  if (eventType === 'assistant.request' || eventType === 'assistant_query') {
+    return true;
+  }
+
+  if (subject === 'assistant' || subject === 'soleil') {
+    return true;
+  }
+
+  return /^(\/|ask:|question:|assistant:|soleil:|@soleil\b)/i.test(message);
 }
 
 async function callIngestFn(ingestFn, normalized, options = {}) {

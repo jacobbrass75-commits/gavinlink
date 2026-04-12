@@ -134,7 +134,7 @@ test('POST /api/channels/omi normalizes and ingests through the shared brain lay
   assert.equal(payload.ingest_result.echoed.channel, 'omi');
 });
 
-test('POST /api/channels/vermes uses the Vermes adapter path', async (t) => {
+test('POST /api/channels/vermes uses explicit assistant mode when requested', async (t) => {
   const originalIngestChannelEvent = brainApp.ingestChannelEvent;
   const originalAnswerMessage = assistantApp.answerMessage;
 
@@ -171,7 +171,7 @@ test('POST /api/channels/vermes uses the Vermes adapter path', async (t) => {
     body: JSON.stringify({
       event_type: 'conversation.created',
       payload: {
-        text: 'Need a summary for 8122 Maie Ave.'
+        text: 'ask: Need a summary for 8122 Maie Ave.'
       }
     })
   });
@@ -182,7 +182,7 @@ test('POST /api/channels/vermes uses the Vermes adapter path', async (t) => {
   assert.equal(payload.provider, 'vermes');
   assert.equal(payload.processor_mode, 'assistant');
   assert.equal(payload.ingest_result.intent, 'search');
-  assert.equal(payload.ingest_result.reply, 'handled:Need a summary for 8122 Maie Ave.');
+  assert.equal(payload.ingest_result.reply, 'handled:ask: Need a summary for 8122 Maie Ave.');
 });
 
 test('POST /api/realnex/disambiguate uses the shared RealNex app service', async (t) => {

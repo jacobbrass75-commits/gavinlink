@@ -1068,10 +1068,9 @@ async function importPropertyRadarAlerts({
         html: bodies.html
       });
 
-      messagesProcessed += 1;
-      processedMessageIds.push(messageMeta.id || summary.id);
-
       if (parsed.rows.length === 0) {
+        messagesProcessed += 1;
+        processedMessageIds.push(messageMeta.id || summary.id);
         results.push({
           message_id: messageMeta.id,
           status: 'skipped',
@@ -1115,6 +1114,9 @@ async function importPropertyRadarAlerts({
           ...outcome
         });
       }
+
+      messagesProcessed += 1;
+      processedMessageIds.push(messageMeta.id || summary.id);
     } catch (error) {
       errors.push({
         message_id: summary.id,

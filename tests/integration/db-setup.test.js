@@ -11,11 +11,6 @@ const { createApp } = require('../../src/api/server');
 const { parseFile } = require('../../src/import-export/gateway');
 
 const ROOT = path.join(__dirname, '..', '..');
-const STUB_RESPONSE = {
-  status: 'not_implemented',
-  module: 'Module 2',
-  message: 'This endpoint will be implemented in Module 2: Entity Extraction'
-};
 const CORE_TABLES = [
   'entities',
   'entity_relationships',
@@ -76,7 +71,7 @@ async function requestJson(app, method, routePath) {
   }
 }
 
-test('Module 1 integration', async (t) => {
+test('Core runtime integration', async (t) => {
   t.after(async () => {
     await close();
   });
@@ -161,23 +156,26 @@ test('Module 1 integration', async (t) => {
     assert.equal(response.body.core_tables_expected, 8);
   });
 
-  await t.test('All stub routes return 501 with the expected payload', async () => {
+  await t.test('Legacy /brain routes are explicit compatibility or deprecation surfaces', async () => {
     const app = createApp();
-    const routes = [
-      ['POST', '/brain/ingest'],
-      ['GET', '/brain/search'],
-      ['GET', '/brain/entity/123'],
-      ['GET', '/brain/match/example'],
-      ['GET', '/brain/daily'],
-      ['POST', '/brain/import'],
-      ['GET', '/brain/export']
-    ];
+    const entityResponse = await requestJson(app, 'GET', '/brain/entity/123');
+    const importResponse = await requestJson(app, 'POST', '/brain/import');
+    const exportResponse = await requestJson(app, 'GET', '/brain/export');
 
-    for (const [method, routePath] of routes) {
-      const response = await requestJson(app, method, routePath);
-      assert.equal(response.status, 501);
-      assert.deepEqual(response.body, STUB_RESPONSE);
-    }
+    assert.equal(entityResponse.status, 400);
+    assert.deepEqual(entityResponse.body, {
+      error: 'id must be a valid UUID'
+    });
+
+    assert.equal(importResponse.status, 410);
+    assert.deepEqual(importResponse.body, {
+      error: 'Legacy /brain/import is deprecated. Use /api/import/foreclosure or the CLI import commands.'
+    });
+
+    assert.equal(exportResponse.status, 410);
+    assert.deepEqual(exportResponse.body, {
+      error: 'Legacy /brain/export is deprecated. Use the CLI or direct /api resources instead.'
+    });
   });
 
   await t.test('Import/export gateway parses CSV and JSON fixtures', async () => {

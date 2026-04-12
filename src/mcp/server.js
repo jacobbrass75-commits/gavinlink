@@ -12,6 +12,22 @@ async function createMCPServer() {
     version: packageJson.version
   });
 
+  function toToolResponse(result) {
+    if (!result?.ok) {
+      const message =
+        result?.payload?.error ||
+        `Tool call failed${result?.status ? ` with status ${result.status}` : ''}`;
+      const error = new Error(message);
+      error.statusCode = result?.status || 500;
+      throw error;
+    }
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
+      structuredContent: result.payload
+    };
+  }
+
   server.registerTool(
     'brain_answer',
     {
@@ -24,10 +40,7 @@ async function createMCPServer() {
     },
     async ({ message, limit, allowSave }) => {
       const result = await callTool('brain_answer', { message, limit, allowSave });
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
-        structuredContent: result.payload
-      };
+      return toToolResponse(result);
     }
   );
 
@@ -41,10 +54,7 @@ async function createMCPServer() {
     },
     async ({ message }) => {
       const result = await callTool('brain_add', { message });
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
-        structuredContent: result.payload
-      };
+      return toToolResponse(result);
     }
   );
 
@@ -59,10 +69,7 @@ async function createMCPServer() {
     },
     async ({ query, limit }) => {
       const result = await callTool('brain_search', { query, limit });
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
-        structuredContent: result.payload
-      };
+      return toToolResponse(result);
     }
   );
 
@@ -76,10 +83,7 @@ async function createMCPServer() {
     },
     async ({ name }) => {
       const result = await callTool('brain_lookup', { name });
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
-        structuredContent: result.payload
-      };
+      return toToolResponse(result);
     }
   );
 
@@ -93,10 +97,7 @@ async function createMCPServer() {
     },
     async ({ identifier }) => {
       const result = await callTool('brain_match', { identifier });
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
-        structuredContent: result.payload
-      };
+      return toToolResponse(result);
     }
   );
 
@@ -108,10 +109,7 @@ async function createMCPServer() {
     },
     async () => {
       const result = await callTool('brain_daily', {});
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
-        structuredContent: result.payload
-      };
+      return toToolResponse(result);
     }
   );
 
@@ -123,10 +121,7 @@ async function createMCPServer() {
     },
     async () => {
       const result = await callTool('brain_status', {});
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
-        structuredContent: result.payload
-      };
+      return toToolResponse(result);
     }
   );
 
@@ -148,10 +143,27 @@ async function createMCPServer() {
     },
     async (args) => {
       const result = await callTool('brain_realnex_disambiguate', args);
-      return {
-        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
-        structuredContent: result.payload
-      };
+      return toToolResponse(result);
+    }
+  );
+
+  server.registerTool(
+    'brain_realnex_sync',
+    {
+      description: TOOLS.find((tool) => tool.name === 'brain_realnex_sync').description,
+      inputSchema: {
+        entityId: z.string().optional(),
+        name: z.string().optional(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        company: z.string().optional(),
+        minScore: z.number().optional(),
+        createKnowledge: z.boolean().optional()
+      }
+    },
+    async (args) => {
+      const result = await callTool('brain_realnex_sync', args);
+      return toToolResponse(result);
     }
   );
 
