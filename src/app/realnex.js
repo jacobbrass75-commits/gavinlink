@@ -115,6 +115,14 @@ function extractCandidateCompany(candidate = {}) {
   ]);
 }
 
+function extractCandidateCompanyKey(candidate = {}) {
+  return pickFirstString([
+    candidate.CompanyKey,
+    candidate.companyKey,
+    candidate.company_key
+  ]);
+}
+
 function extractCandidateEmail(candidate = {}) {
   return pickFirstString([
     candidate.Email,
@@ -457,6 +465,80 @@ function disambiguateRealNexRecords(input = {}, { contacts = [], companies = [],
     matches,
     best_match: matches[0] || null
   };
+}
+
+async function findLinkedCompanyContactMatch(input = {}, contacts = [], service, { limit = 5 } = {}) {
+  const normalizedInput = normalizeInput(input);
+
+  if (
+    !service ||
+    !cleanText(normalizedInput.name, null) ||
+    !cleanText(normalizedInput.company, null) ||
+    !Array.isArray(contacts) ||
+    contacts.length === 0
+  ) {
+    return null;
+  }
+
+  let best = null;
+
+  for (const candidate of contacts.slice(0, Math.max(1, Number(limit) || 1))) {
+    const candidateId = cleanText(candidate?.id ?? candidate?.Key ?? candidate?.key, null);
+    const candidateName = candidate?.name || candidate?.raw?.FullName || candidate?.raw?.fullName;
+    const nameMatch = scoreTextMatch(normalizedInput.name, candidateName);
+
+    if (!candidateId || nameMatch.score < 24) {
+      continue;
+    }
+
+    let fullContact;
+    try {
+      fullContact = await service.getContact(candidateId);
+    } catch (_error) {
+      continue;
+    }
+
+    const companyKey = extractCandidateCompanyKey(fullContact);
+
+    if (!companyKey) {
+      continue;
+    }
+
+    let companyRecord;
+    try {
+      companyRecord = await service.getCompany(companyKey);
+    } catch (_error) {
+      continue;
+    }
+
+    const companyName = extractCandidateName(companyRecord) || extractCandidateCompany(companyRecord);
+
+    if (!companyName) {
+      continue;
+    }
+
+    const scored = scoreCandidate(normalizedInput, {
+      ...fullContact,
+      CompanyName: companyName,
+      companyName: companyName,
+      kind: 'contact'
+    });
+
+    if (!best || scored.score > best.match.score) {
+      best = {
+        match: scored,
+        contact: {
+          ...fullContact,
+          CompanyName: companyName,
+          companyName: companyName,
+          kind: 'contact'
+        },
+        company: companyRecord
+      };
+    }
+  }
+
+  return best;
 }
 
 async function findEntityById(entityId) {
@@ -849,6 +931,7 @@ async function importRealNexMatchToBrain(input = {}, options = {}) {
   const minScore = Math.max(1, Math.min(100, Number(options.minScore ?? input.minScore ?? 70) || 70));
   const kind = cleanText(input.kind, null)?.toLowerCase() || null;
   const key = cleanText(input.key, null);
+  const normalizedInput = normalizeInput(input);
 
   if (key && kind) {
     const candidate =
@@ -868,20 +951,40 @@ async function importRealNexMatchToBrain(input = {}, options = {}) {
   }
 
   const disambiguation = await disambiguateLocalEntityAgainstRealNex(input, options);
-  const bestMatch = disambiguation.best_match;
+  let bestMatch = disambiguation.best_match;
+  let candidate = null;
+  let topCompanyCandidate =
+    bestMatch?.kind === 'contact'
+      ? (disambiguation.companies || []).find((company) => Number(company.score || 0) >= minScore)
+      : null;
+
+  if (!bestMatch || Number(bestMatch.score || 0) < minScore) {
+    const linkedCompanyMatch = await findLinkedCompanyContactMatch(
+      normalizedInput,
+      disambiguation.contacts || [],
+      service,
+      {
+        limit: Math.min(5, Math.max(1, Number(options.limit ?? input.limit ?? 5) || 5))
+      }
+    );
+
+    if (linkedCompanyMatch && Number(linkedCompanyMatch.match.score || 0) >= minScore) {
+      bestMatch = linkedCompanyMatch.match;
+      candidate = linkedCompanyMatch.contact;
+      topCompanyCandidate = linkedCompanyMatch.company;
+    }
+  }
 
   if (!bestMatch || Number(bestMatch.score || 0) < minScore) {
     throw createAppError(404, 'No confident RealNex match found');
   }
 
-  const candidate =
-    bestMatch.kind === 'company'
-      ? await service.getCompany(bestMatch.id)
-      : await service.getContact(bestMatch.id);
-  const topCompanyCandidate =
-    bestMatch.kind === 'contact'
-      ? (disambiguation.companies || []).find((company) => Number(company.score || 0) >= minScore)
-      : null;
+  if (!candidate) {
+    candidate =
+      bestMatch.kind === 'company'
+        ? await service.getCompany(bestMatch.id)
+        : await service.getContact(bestMatch.id);
+  }
   let companyCandidateFromKey = null;
 
   if (

@@ -150,12 +150,6 @@ EXIT_FILE="\${LOG_DIR}/finish.exit"
 mkdir -p "\${LOG_DIR}"
 exec >>"\${LOG_FILE}" 2>&1
 
-if [[ -f /root/.profile ]]; then
-  source /root/.profile
-fi
-if [[ -f /root/.bashrc ]]; then
-  source /root/.bashrc
-fi
 export PATH="/usr/local/bin:/usr/bin:/bin:\${PATH}"
 
 notify() {
