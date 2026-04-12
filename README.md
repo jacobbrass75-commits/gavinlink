@@ -1,6 +1,6 @@
 # Sullivan Link Brain
 
-Sullivan Link Brain is the backend and broker memory system behind Sullivan Link. It ingests distressed commercial real estate signals, turns them into structured intelligence, and gives the team three working surfaces on top of the same core brain: an API, a CLI, and an MCP server.
+Sullivan Link Brain is the backend and broker memory system behind Sullivan Link. It ingests distressed commercial real estate signals, turns them into structured intelligence, and exposes that brain through an API, a CLI, an MCP server, Telegram, webhook-style channels, and recurring workers.
 
 Historical internal names such as `isg-second-brain` still appear in package metadata, container names, and some prompts. The product-level intent in this repo is Sullivan Link Brain.
 
@@ -20,15 +20,48 @@ The software is built to help a brokerage team move from raw market signals to a
 - API: Express server in `src/api/`, started with `npm start`
 - CLI: `brain`, implemented in `src/cli/brain.js`
 - MCP server: started with `brain serve`, implemented in `src/mcp/`
+- Telegram bot: worker in `src/ops/telegram-bot.js`
+- Channel ingress: `/api/channels/{omi,hermes,vermes}`
+- Recurring workers: PM2-managed jobs such as the PropertyRadar feed under `src/ops/`
 - Ops scripts: grouped under `scripts/admin`, `scripts/imports`, `scripts/ops`, and `scripts/qa`
 
-API, CLI, and MCP all sit on top of the same `src/` codebase. The scripts are support tools for setup, imports, maintenance, and verification.
+API, CLI, MCP, Telegram, and the recurring workers all sit on top of the same `src/` codebase and shared `src/app/` orchestration layer. The scripts are support tools for setup, imports, maintenance, and verification.
+
+## Runtime Vs Standalone Tools
+
+The live product runtime is:
+
+- `src/`
+- `scripts/` entry points
+- `ecosystem.config.cjs`
+- PostgreSQL + ChromaDB
+
+The `tools/` directory is different. It contains standalone utilities, bulk exports, and investigative workflows that are useful, but not part of the default PM2/API runtime.
+
+- `tools/broker-email-lookup`: one-off outreach enrichment tooling
+- `tools/llc-manager-finder`: standalone LLC manager and contact discovery pipeline
+- `tools/realnex-crm`: Python RealNex client and local CRM export workflows
+
+If something in `tools/` becomes product-critical, move the adapter into `src/integrations`, the orchestration into `src/app`, and the entry point into the API/CLI/MCP/ops surfaces.
+
+## Claude / Assistant Use
+
+Soleil is designed to be used by assistants through the MCP surface, not just by humans reading docs.
+
+- Use `brain_lookup` for specific entity or property questions.
+- Use `brain_search` for fuzzy recall and broad memory questions.
+- Use `brain_match` for buyer-property fit and counterpart discovery.
+- Use `brain_daily` for priorities and next actions.
+- Use `brain_add` only when the user is explicitly providing information to store.
+
+Do not treat casual chat, corrections, or "don't save that" messages as ingestion. The assistant-facing operating rules live in [CLAUDE_SKILL.md](/Users/yakub/Desktop/sullilink/CLAUDE_SKILL.md), [AGENTS.md](/Users/yakub/Desktop/sullilink/AGENTS.md), and [CLAUDE.md](/Users/yakub/Desktop/sullilink/CLAUDE.md).
 
 ## Repo Map
 
 ```text
 src/
   api/            HTTP routes and request validation
+  app/            shared application services and orchestration
   buyers/         Buyer profiles, activity, lender analytics
   cli/            brain CLI entry point
   db/             PostgreSQL connection, schema, migrations
@@ -39,7 +72,8 @@ src/
   integrations/   External data adapters
   knowledge/      Knowledge entries, embeddings, search, transcription
   matching/       Buyer-seller-property scoring and narratives
-  mcp/            MCP tool adapter over the API
+  mcp/            MCP tool adapter over Soleil services
+  ops/            long-running workers and chat/webhook front doors
   properties/     Property documents and grouping
   sellers/        Seller profiles, distress, motivation, portfolio patterns
   wiki/           Wiki promotion, queueing, linting
@@ -108,6 +142,14 @@ npm run local:up:pm2
 
 `local:up:seed` brings up Docker services, runs migrations, seeds sample data, and prints a readiness summary. Add `npm run local:up:pm2` if you want it to start the API, Telegram worker, and PropertyRadar feed under PM2 in one step.
 
+## Transport Model
+
+- The app itself serves `/health` and `/api/*`.
+- Public deployments may reverse-proxy that app under a prefix such as `/api/brain/*`.
+- CLI, MCP, and Telegram default to local shared app calls.
+- Set `BRAIN_TRANSPORT=http` only when you explicitly want those surfaces to target a remote HTTP API.
+- `/brain/*` is a mixed compatibility layer, not the canonical product API.
+
 ## Common Workflows
 
 Run the core runtime surfaces:
@@ -170,6 +212,13 @@ npm run telegram:bot -- --once
 npm run telegram:bot
 ```
 
+Telegram behavior:
+
+- slash commands are supported
+- plain text is intent-routed first
+- use `/add ...` or `save: ...` when you explicitly want note capture
+- casual text should not be treated as automatic memory writes anymore
+
 Required env vars:
 
 - `TELEGRAM_BOT_TOKEN`
@@ -209,6 +258,7 @@ Runtime adapters:
 
 - RealNex API routes: `/api/realnex/contacts`, `/api/realnex/contacts/:key`, `/api/realnex/companies/:key`, `/api/realnex/properties/:key`, `/api/realnex/disambiguate`
 - Channel ingest routes: `/api/channels/omi`, `/api/channels/hermes`, `/api/channels/vermes`
+- Telegram bot is a runtime worker, not just a probe script
 
 Additional env vars:
 
@@ -232,5 +282,6 @@ Follow the narrative rules in `AGENTS.md`. `CLAUDE.md` is kept as a compatibilit
 
 - `src/` is the core runtime. Prefer adding product logic there, not into one-off scripts.
 - `scripts/` is for operational entry points, not for hiding product features.
+- `tools/` is for standalone utilities and historical workflows. Treat it as adjacent to the product, not as the main app.
 - `briefs/` is design/history context, not executable truth.
 - `ARCHITECTURE.md` explains the current boundaries between core brain domains, workflows, delivery surfaces, and support tooling.

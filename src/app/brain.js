@@ -451,6 +451,7 @@ async function lookupLocalEntityForRealNex({ entityId, name, email, phone, compa
 module.exports = {
   createAppError,
   toNumber,
+  getEntityDetail,
   ingestMessage,
   ingestAudio,
   searchBrain,

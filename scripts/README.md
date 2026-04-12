@@ -16,8 +16,13 @@ Notable import entry points:
 - `scripts/imports/import-foreclosure-csv.js`
 - `scripts/imports/import-from-realestatetool.js`
 - `scripts/imports/transcribe-folder.js`
-- `scripts/imports/auth-gmail-pkce.js`
 - `scripts/imports/sync-propertyradar-alerts.js`
+
+Notable admin/setup entry points:
+
+- `scripts/admin/migrate.js`
+- `scripts/admin/seed-test-data.js`
+- `scripts/admin/auth-gmail-pkce.js`
 
 Notable ops entry points:
 

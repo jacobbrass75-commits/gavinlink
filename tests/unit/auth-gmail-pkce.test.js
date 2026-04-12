@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { upsertEnvVar } = require('../../scripts/imports/auth-gmail-pkce');
+const { upsertEnvVar } = require('../../scripts/admin/auth-gmail-pkce');
 
 test('upsertEnvVar appends a missing env var', async () => {
   const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'gmail-auth-env-'));

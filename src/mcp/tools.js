@@ -1,10 +1,12 @@
 const brainApp = require('../app/brain');
+const runtimeApp = require('../app/runtime');
+const { createRealNexService } = require('../app/realnex');
 
 const TOOLS = [
   {
     name: 'brain_add',
     description:
-      "Add any information to the Second Brain. Just describe what you know in plain English — a buyer's criteria, a seller's situation, a relationship between people, a market observation, a deal update, or any context. The system automatically extracts entities, classifies the information, stores it, and runs matching if relevant.",
+      "Store new broker intelligence in the Second Brain. Use this only when the user is explicitly providing information to remember or save — buyer criteria, seller situation, relationship context, market insight, deal update, or other durable notes. Do not use this for questions, status checks, or casual chat.",
     inputSchema: {
       type: 'object',
       properties: {
@@ -16,7 +18,7 @@ const TOOLS = [
   {
     name: 'brain_search',
     description:
-      'Search everything in the Second Brain — call notes, buyer preferences, seller situations, property details, market insights. Uses semantic search.',
+      'Search the Second Brain when the user is asking a broad or fuzzy recall question across notes, buyer preferences, seller situations, property details, or market insights.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -29,7 +31,7 @@ const TOOLS = [
   {
     name: 'brain_lookup',
     description:
-      'Look up everything about a person, company, LLC, or property. Returns full profile, connected entities, properties, deals, and conversation history.',
+      'Look up a specific person, company, LLC, or property when the user names a concrete entity or address. Returns profile, connected entities, properties, deals, and knowledge history.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -40,7 +42,8 @@ const TOOLS = [
   },
   {
     name: 'brain_match',
-    description: 'Find matching buyers for a property or matching properties for a buyer.',
+    description:
+      'Find matching buyers for a property or matching properties for a buyer when the user asks about fit, likely counterparties, or who matches a given profile or asset.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -52,8 +55,33 @@ const TOOLS = [
   {
     name: 'brain_daily',
     description:
-      "Get today's prioritized action list: who to call, follow-ups, new matches, overdue items.",
+      "Get today's prioritized action list: who to call, follow-ups, new matches, and overdue items.",
     inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'brain_status',
+    description:
+      'Get live runtime status for Soleil, including database, ChromaDB, inference provider, and write-auth mode.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'brain_realnex_disambiguate',
+    description:
+      'Disambiguate a local person or company against RealNex CRM candidates. Use this when the user wants to connect a local entity to a likely RealNex contact or company record.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entityId: { type: 'string', description: 'Optional local Soleil entity UUID' },
+        name: { type: 'string', description: 'Person or company name' },
+        email: { type: 'string', description: 'Known email address' },
+        phone: { type: 'string', description: 'Known phone number' },
+        company: { type: 'string', description: 'Known company name' },
+        limit: { type: 'number', description: 'Max ranked matches to return', default: 5 },
+        pageSize: { type: 'number', description: 'RealNex page size, capped at 50', default: 25 },
+        contactLimit: { type: 'number', description: 'Max contact candidates to scan', default: 25 },
+        companyLimit: { type: 'number', description: 'Max company candidates to scan', default: 25 }
+      }
+    }
   }
 ];
 
@@ -68,9 +96,15 @@ function getApiBaseUrl() {
 }
 
 async function callApi(method, endpoint, body) {
+  const headers = body ? { 'content-type': 'application/json' } : {};
+
+  if (process.env.ADMIN_API_KEY) {
+    headers['x-api-key'] = process.env.ADMIN_API_KEY;
+  }
+
   const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     method,
-    headers: body ? { 'content-type': 'application/json' } : {},
+    headers,
     body: body ? JSON.stringify(body) : undefined
   });
 
@@ -121,6 +155,20 @@ async function callTool(name, args = {}) {
         return callApi('GET', `/api/match/${encodeURIComponent(args.identifier)}`);
       case 'brain_daily':
         return callApi('GET', '/api/daily');
+      case 'brain_status':
+        return callApi('GET', '/health');
+      case 'brain_realnex_disambiguate':
+        return callApi('POST', '/api/realnex/disambiguate', {
+          entityId: args.entityId,
+          name: args.name,
+          email: args.email,
+          phone: args.phone,
+          company: args.company,
+          limit: args.limit,
+          pageSize: args.pageSize,
+          contactLimit: args.contactLimit,
+          companyLimit: args.companyLimit
+        });
       default:
         throw new Error(`Unknown MCP tool: ${name}`);
     }
@@ -137,6 +185,30 @@ async function callTool(name, args = {}) {
       return callLocal(() => brainApp.matchIdentifier({ identifier: args.identifier }));
     case 'brain_daily':
       return callLocal(() => brainApp.getDailyBrief());
+    case 'brain_status':
+      return callLocal(() => runtimeApp.getRuntimeStatus());
+    case 'brain_realnex_disambiguate':
+      return callLocal(async () => {
+        const context = await brainApp.lookupLocalEntityForRealNex({
+          entityId: args.entityId,
+          name: args.name,
+          email: args.email,
+          phone: args.phone,
+          company: args.company
+        });
+        const service = createRealNexService();
+        const disambiguation = await service.disambiguate(context.disambiguation_input, {
+          limit: args.limit,
+          pageSize: args.pageSize,
+          contactLimit: args.contactLimit,
+          companyLimit: args.companyLimit
+        });
+
+        return {
+          entity: context.entity,
+          ...disambiguation
+        };
+      });
     default:
       throw new Error(`Unknown MCP tool: ${name}`);
   }

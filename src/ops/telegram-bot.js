@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const brainApp = require('../app/brain');
 const runtimeApp = require('../app/runtime');
+const inferenceProvider = require('../inference/provider');
 const {
   sendTelegramMessage,
   listTelegramUpdates,
@@ -89,7 +90,7 @@ function parseTelegramCommand(text) {
 
   if (!normalized.startsWith('/')) {
     return {
-      name: 'add',
+      name: 'plain',
       argument: normalized
     };
   }
@@ -101,6 +102,207 @@ function parseTelegramCommand(text) {
   return {
     name,
     argument
+  };
+}
+
+function stripTrailingPunctuation(text) {
+  return String(text || '').replace(/^[\s"'`]+|[\s"'`?!.,:;]+$/g, '').trim();
+}
+
+function classifyPlainTextHeuristically(text) {
+  const normalized = cleanText(text, '');
+  const lowered = normalized.toLowerCase();
+
+  if (!normalized) {
+    return {
+      name: 'help',
+      argument: ''
+    };
+  }
+
+  if (
+    /\b(don'?t save|do not save|dont save|never ?mind|nvm|cancel that|ignore that|stop)\b/i.test(
+      normalized
+    )
+  ) {
+    return {
+      name: 'cancel',
+      argument: ''
+    };
+  }
+
+  if (
+    /\b(help|what can you do|how do i use|commands)\b/i.test(normalized)
+  ) {
+    return {
+      name: 'help',
+      argument: ''
+    };
+  }
+
+  if (
+    /\b(are you working|you working|are you there|are you online|status|working\?)\b/i.test(
+      normalized
+    )
+  ) {
+    return {
+      name: 'status',
+      argument: ''
+    };
+  }
+
+  if (
+    /\b(what should i do today|what do i need to do today|today'?s priorities|daily brief|daily)\b/i.test(
+      normalized
+    )
+  ) {
+    return {
+      name: 'daily',
+      argument: ''
+    };
+  }
+
+  const lookupMatch =
+    normalized.match(/^(?:who is|who's|what do we know about|tell me about|lookup)\s+(.+)$/i) ||
+    normalized.match(/^(?:pull up|show me)\s+(.+)$/i);
+
+  if (lookupMatch) {
+    return {
+      name: 'lookup',
+      argument: stripTrailingPunctuation(lookupMatch[1])
+    };
+  }
+
+  const searchMatch =
+    normalized.match(/^(?:search|find|search for|find me)\s+(.+)$/i) ||
+    normalized.match(/^(?:what do we have on)\s+(.+)$/i);
+
+  if (searchMatch) {
+    return {
+      name: 'search',
+      argument: stripTrailingPunctuation(searchMatch[1])
+    };
+  }
+
+  const matchMatch =
+    normalized.match(/^(?:match|match for|find matches for|who matches)\s+(.+)$/i) ||
+    normalized.match(/^(?:buyers for|matches for)\s+(.+)$/i);
+
+  if (matchMatch) {
+    return {
+      name: 'match',
+      argument: stripTrailingPunctuation(matchMatch[1])
+    };
+  }
+
+  const explicitAddMatch =
+    normalized.match(/^(?:save|remember|note|add|log|record|capture)(?:\s+this)?\s*(?::|-)?\s+(.+)$/i) ||
+    normalized.match(/^(?:just talked to|talked to|met with|call with|call notes?:)\s+(.+)$/i);
+
+  if (explicitAddMatch) {
+    return {
+      name: 'add',
+      argument: stripTrailingPunctuation(explicitAddMatch[1] || normalized)
+    };
+  }
+
+  return {
+    name: 'unknown',
+    argument: normalized
+  };
+}
+
+function tryParseJsonObject(text) {
+  const normalized = cleanText(text, null);
+
+  if (!normalized) {
+    return null;
+  }
+
+  const firstBrace = normalized.indexOf('{');
+  const lastBrace = normalized.lastIndexOf('}');
+
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(normalized.slice(firstBrace, lastBrace + 1));
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function classifyPlainTextWithInference(text) {
+  const provider = String(process.env.INFERENCE_PROVIDER || '').trim().toLowerCase();
+  const hasAnthropicKey = cleanText(process.env.ANTHROPIC_API_KEY, null);
+  const hasOpenAiKey = cleanText(process.env.OPENAI_API_KEY, null);
+
+  if (!text || ((provider === 'claude' || !provider) && !hasAnthropicKey)) {
+    return null;
+  }
+
+  if (provider === 'openai' && !hasOpenAiKey) {
+    return null;
+  }
+
+  if (provider === 'ollama') {
+    return null;
+  }
+
+  const prompt = [
+    'You route Telegram messages for Soleil, a commercial real estate assistant.',
+    'Return minified JSON only with keys: intent, argument.',
+    'Allowed intents: help, status, daily, search, lookup, match, add, cancel, unknown.',
+    'Choose add only when the user is explicitly asking to save, remember, capture, or log a note, or the message is clearly broker intel meant for storage.',
+    'Casual chat, corrections, greetings, status checks, and "do not save" messages must not be add.',
+    'For lookup/search/match, extract the best argument string.',
+    'For status/help/daily/cancel/unknown, use an empty argument unless needed.',
+    `Message: ${JSON.stringify(text)}`
+  ].join('\n');
+
+  try {
+    const raw = await inferenceProvider.complete(prompt, {
+      maxTokens: 180
+    });
+    const parsed = tryParseJsonObject(raw);
+
+    if (!parsed || typeof parsed.intent !== 'string') {
+      return null;
+    }
+
+    const intent = parsed.intent.trim().toLowerCase();
+    const allowed = new Set(['help', 'status', 'daily', 'search', 'lookup', 'match', 'add', 'cancel', 'unknown']);
+
+    if (!allowed.has(intent)) {
+      return null;
+    }
+
+    return {
+      name: intent,
+      argument: cleanText(parsed.argument, '')
+    };
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function resolveTelegramIntent(text) {
+  const heuristic = classifyPlainTextHeuristically(text);
+
+  if (heuristic.name !== 'unknown') {
+    return heuristic;
+  }
+
+  const inferred = await classifyPlainTextWithInference(text);
+
+  if (inferred && inferred.name !== 'unknown') {
+    return inferred;
+  }
+
+  return {
+    name: 'unknown',
+    argument: cleanText(text, '')
   };
 }
 
@@ -250,7 +452,8 @@ function buildHelpText() {
       '/match <buyer or property>',
       '/add <note>',
       '',
-      'Any plain text message is treated as a brain note and ingested automatically.'
+      'Plain text is intent-routed first.',
+      'Use /add or say "save:" when you want something stored as a note.'
     ].join('\n')
   );
 }
@@ -292,6 +495,10 @@ async function handleCommand(command, argument) {
         source: 'telegram'
       });
       return 'Saved to Soleil.';
+    case 'cancel':
+      return 'Not saved.';
+    case 'unknown':
+      return 'I did not save that. Ask a question, use a command, or say "save:" when you want a note captured.';
     default:
       return buildHelpText();
   }
@@ -322,7 +529,9 @@ async function processUpdate(update) {
     };
   }
 
-  const { name, argument } = parseTelegramCommand(text);
+  const parsed = parseTelegramCommand(text);
+  const resolved = parsed.name === 'plain' ? await resolveTelegramIntent(text) : parsed;
+  const { name, argument } = resolved;
   const responseText = await handleCommand(name, argument);
 
   await sendTelegramMessage({
@@ -409,6 +618,8 @@ async function runTelegramBot(options = {}) {
 
 module.exports = {
   parseTelegramCommand,
+  classifyPlainTextHeuristically,
+  resolveTelegramIntent,
   formatDailyPayload,
   formatSearchPayload,
   formatLookupPayload,

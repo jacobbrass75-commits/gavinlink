@@ -11,10 +11,13 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'realnex-crm'))
 from realnex_client import RealNexClient
 
-TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0ZDlkNDllZC1lNWUzLTQ2MmItOGFjMS04NTE0Y2YwYzY2NjE6N2VjYTEwYTEtZjI3MC00NTI5LTlkNGEtOWU2YmE3OGU5OGYxIiwiYWNjb3VudF9rZXkiOiI0ZDlkNDllZC1lNWUzLTQ2MmItOGFjMS04NTE0Y2YwYzY2NjEiLCJ1c2VyX2tleSI6IjdlY2ExMGExLWYyNzAtNDUyOS05ZDRhLTllNmJhNzhlOThmMSIsIm5hbWUiOiJNYXR0aGV3IFN1bGxpdmFuIiwiZW1haWwiOiJtYXR0aGV3LnN1bGxpdmFuQGxlZS1hc3NvY2lhdGVzLmNvbSIsImlhdCI6MTc3NTg0MDExMCwiZXhwIjoyMTQ3NDcyMDAwfQ.NL9ECmJlohYd-eqWn2jUBEW4gn_MSt8iSasnS-ZfRJ0"
+TOKEN = os.environ.get("REALNEX_API_TOKEN", "").strip()
 
 PROGRESS_PATH = os.path.join(os.path.dirname(__file__), "llc_manager_progress.json")
 CRM_DUMP_PATH = os.path.join(os.path.dirname(__file__), "..", "realnex-crm", "realnex_all_contacts.json")
+
+if not TOKEN:
+    raise RuntimeError("REALNEX_API_TOKEN environment variable is required")
 
 
 def parse_name(full_name):

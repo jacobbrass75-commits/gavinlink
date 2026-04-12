@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Sullivan Link Brain is a local-first commercial real estate intelligence backend. Its job is to turn distressed-property signals and broker knowledge into a usable operating system for sourcing, qualification, and outreach.
+Sullivan Link Brain is a local-first commercial real estate intelligence backend. Its job is to turn distressed-property signals and broker knowledge into a usable operating system for sourcing, qualification, outreach, and assistant-driven execution.
 
-The repo contains one core backend application plus supporting narrative, operational, and verification layers. The main organization problem was not multiple disconnected apps. It was that the docs had drifted and the support tooling had flattened into one layer. This document reflects the repo as it exists now.
+The repo contains one core backend application plus assistant adapters, narrative layers, and standalone utility tooling. The main organization problem was not multiple disconnected apps. It was that the docs had drifted and the support tooling had flattened into one layer. This document reflects the repo as it exists now.
 
 ## Sources Of Truth
 
@@ -20,16 +20,17 @@ The repo contains one core backend application plus supporting narrative, operat
 ## Architecture In One View
 
 ```text
-                +-------------------+
-                |   API / CLI / MCP |
-                +---------+---------+
-                          |
-                 +--------v--------+
-                 | Application     |
-                 | Workflows       |
-                 | ingest/import/  |
-                 | documents/wiki  |
-                 +--------+--------+
+                +------------------------------+
+                | API / CLI / MCP / Telegram   |
+                | Hermes / Omi / Vermes ingress|
+                +--------------+---------------+
+                               |
+                 +---------v---------+
+                 | Application        |
+                 | Services /         |
+                 | Workflows          |
+                 | ingest/import/wiki |
+                 +---------+----------+
                           |
       +-------------------+-------------------+
       |                   |                   |
@@ -72,6 +73,7 @@ These directories are part of the write path into the brain:
 
 | Directory | Responsibility |
 | --- | --- |
+| `src/app` | Shared application-service layer used by API, CLI, MCP, Telegram, and channel adapters |
 | `src/ingestion` | Conversational classification and routing into structured records |
 | `src/import-export/foreclosure-import.js` | Business-specific foreclosure import workflow |
 | `src/knowledge/transcribe.js` | Audio-to-text ingestion entry point |
@@ -87,7 +89,8 @@ These directories enable the brain but are not themselves business domains:
 | `src/db` | Pooling, schema, migrations |
 | `src/inference` | LLM provider abstraction |
 | `src/import-export/gateway.js` | Generic CSV, XLSX, and JSON file parsing |
-| `src/integrations` | External service adapters |
+| `src/integrations` | External service adapters such as Telegram, Gmail, Obsidian, RealNex, Hermes, and Omi |
+| `src/ops` | Long-running workers and operational entry points over the shared app layer |
 | `src/utils` | Shared utility helpers |
 
 ### Delivery Surfaces
@@ -97,8 +100,10 @@ These are the user-facing or operator-facing entry points:
 | Surface | Files | Notes |
 | --- | --- | --- |
 | HTTP API | `src/api` | Primary runtime surface |
-| CLI | `src/cli/brain.js` | Thin operator and broker-facing adapter over the API plus wiki commands |
-| MCP | `src/mcp` | Five MCP tools that proxy to the API |
+| CLI | `src/cli/brain.js` | Operator and broker-facing adapter over shared app services plus wiki commands |
+| MCP | `src/mcp` | Five MCP tools for Claude/Codex-style assistants |
+| Telegram bot | `src/ops/telegram-bot.js` | Chat front door with command and plain-text intent routing |
+| Channel ingress | `src/api/routes/channels.js` | Hermes, Omi, and Vermes webhook-style ingress |
 | Ops scripts | `scripts/` | Support setup, import, maintenance, and QA |
 
 ## Runtime Surfaces
@@ -118,8 +123,10 @@ The Express server in `src/api/server.js` mounts route families for:
 - matching
 - daily
 - import/export
+- realnex
+- channels
 
-`/api/*` is the real working surface. Legacy `/brain/*` routes are stubs or compatibility placeholders and should not be treated as the product API.
+`/api/*` is the real working surface. `/brain/*` is a mixed compatibility layer: some routes still proxy real behavior and some remain placeholders. It should not be treated as the canonical product API.
 
 ### CLI
 
@@ -141,15 +148,28 @@ It also owns local narrative operations:
 
 ### MCP
 
-The MCP server exposes five tools:
+The MCP server currently exposes these operator tools:
 
 - `brain_add`
 - `brain_search`
 - `brain_lookup`
 - `brain_match`
 - `brain_daily`
+- `brain_status`
+- `brain_realnex_disambiguate`
 
-These proxy back to the HTTP API. MCP is an adapter, not a separate backend.
+These call shared app services by default and can fall back to HTTP when `BRAIN_TRANSPORT=http`. MCP is an adapter, not a separate backend.
+
+The operator contract for assistants lives in `CLAUDE_SKILL.md` and the assistant sections of `AGENTS.md` / `CLAUDE.md`. The short version is: use lookup/search/match/daily for questions, and reserve add for explicit memory writes.
+
+### Telegram
+
+Telegram is a broker-facing front door, not a separate brain:
+
+- slash commands map directly to shared app services
+- plain text is intent-routed first
+- explicit save requests still flow into note ingestion
+- the bot should not be treated as a generic open-ended chatbot unless the routing layer is upgraded further
 
 ## Operational Layout
 
@@ -157,18 +177,30 @@ These proxy back to the HTTP API. MCP is an adapter, not a separate backend.
 
 | Directory | Purpose | Current scripts |
 | --- | --- | --- |
-| `scripts/admin` | bootstrap and local environment setup | `migrate.js`, `seed-test-data.js` |
+| `scripts/admin` | bootstrap and local environment setup | `migrate.js`, `seed-test-data.js`, `dev-runtime.js`, `auth-gmail-pkce.js` |
 | `scripts/imports` | inbound data ingestion | `import-foreclosure-csv.js`, `import-from-realestatetool.js`, `transcribe-folder.js`, `sync-propertyradar-alerts.js` |
-| `scripts/ops` | recurring operational tasks | `run-matching.js`, `score-sellers.js`, `run-wiki-maintenance.js` |
+| `scripts/ops` | recurring operational tasks | `run-matching.js`, `score-sellers.js`, `run-wiki-maintenance.js`, `run-telegram-bot.js`, `run-propertyradar-feed.js`, `publish-obsidian-note.js`, `telegram-probe.js` |
 | `scripts/qa` | verification and sweep tools | `run-ioc-sweep.js` |
 
 `briefs/` is also grouped by intent:
 
 | Directory | Purpose |
 | --- | --- |
-| `briefs/modules` | implementation and module briefs |
+| `briefs/modules` | implementation briefs and historical module plans |
 | `briefs/reports` | generated or point-in-time reports |
 | `briefs/prompts` | operator and audit prompts |
+
+## Standalone Utility Tooling
+
+`tools/` is intentionally outside the live runtime. It contains investigative, one-off, or batch utilities that can graduate into `src/` later but are not booted by the API or PM2 stack today.
+
+| Directory | Purpose | Runtime status |
+| --- | --- | --- |
+| `tools/broker-email-lookup` | one-off broker email enrichment and export workflow | standalone utility |
+| `tools/llc-manager-finder` | LLC manager discovery, contact hunting, and optional CRM import | standalone utility |
+| `tools/realnex-crm` | Python RealNex client plus CRM dump for batch workflows | standalone utility |
+
+If a tool becomes part of the product, its adapter belongs under `src/integrations`, its orchestration under `src/app`, and its runtime entry points under `src/api`, `src/cli`, `src/mcp`, or `src/ops`.
 
 ## Major Data Flows
 
@@ -218,6 +250,7 @@ This connects evidence handling with the narrative layer without making the wiki
 .
 ├── src/
 │   ├── api/
+│   ├── app/
 │   ├── buyers/
 │   ├── cli/
 │   ├── db/
@@ -229,6 +262,7 @@ This connects evidence handling with the narrative layer without making the wiki
 │   ├── knowledge/
 │   ├── matching/
 │   ├── mcp/
+│   ├── ops/
 │   ├── properties/
 │   ├── sellers/
 │   ├── utils/
@@ -241,6 +275,7 @@ This connects evidence handling with the narrative layer without making the wiki
 ├── tests/
 │   ├── integration/
 │   └── unit/
+├── tools/
 ├── raw/
 ├── wiki/
 └── briefs/
@@ -257,8 +292,10 @@ The repo is better organized now, but some architectural blur remains:
 - `src/ingestion/router.js` coordinates too many cross-domain side effects.
 - `src/properties/documents.js` and `src/knowledge/transcribe.js` are cross-cutting modules that touch both core and narrative workflows.
 - Matching currently reaches into knowledge retrieval directly instead of depending on a narrower scoring input contract.
+- Telegram plain-text handling is now safer, but it is still an intent router over the brain, not a fully conversational agent shell.
+- `tools/` still contains bulky exports and utility code that should be treated as sensitive operational material even when they are not part of the live runtime.
 - The migration set in `src/db/migrations/` is the live schema contract; `src/db/schema.sql` is a base scaffold, not the full source of truth.
 
 ## Directional Cleanup
 
-If the team keeps expanding this repo, the next structural step should be an explicit application layer, for example `src/app/` or `src/services/`, so API, CLI, MCP, and scripts all depend on the same use-case boundary instead of partially re-implementing orchestration in multiple places.
+The application layer now exists in `src/app/`, but not every route family has been fully pulled through it yet. Buyers, sellers, properties, knowledge, and import/export are still partially hybrid.

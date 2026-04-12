@@ -25,7 +25,7 @@
     "wiki:maintain": "node scripts/ops/run-wiki-maintenance.js",
     "obsidian:publish": "node scripts/ops/publish-obsidian-note.js",
     "propertyradar:sync": "node scripts/imports/sync-propertyradar-alerts.js",
-    "gmail:auth": "node scripts/imports/auth-gmail-pkce.js"
+    "gmail:auth": "node scripts/admin/auth-gmail-pkce.js"
   },
   "engines": {
     "node": ">=20"

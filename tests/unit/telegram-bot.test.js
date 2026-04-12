@@ -3,13 +3,14 @@ const assert = require('node:assert/strict');
 
 const {
   parseTelegramCommand,
+  classifyPlainTextHeuristically,
   formatDailyPayload,
   formatSearchPayload
 } = require('../../src/ops/telegram-bot');
 
-test('parseTelegramCommand treats plain text as add', () => {
+test('parseTelegramCommand treats plain text as unresolved plain text', () => {
   assert.deepEqual(parseTelegramCommand('Mike Chen wants Carson industrial'), {
-    name: 'add',
+    name: 'plain',
     argument: 'Mike Chen wants Carson industrial'
   });
 });
@@ -19,6 +20,30 @@ test('parseTelegramCommand strips bot mentions from slash commands', () => {
     name: 'daily',
     argument: ''
   });
+});
+
+test('classifyPlainTextHeuristically routes casual status checks away from add', () => {
+  assert.deepEqual(classifyPlainTextHeuristically('yo you working bro'), {
+    name: 'status',
+    argument: ''
+  });
+});
+
+test('classifyPlainTextHeuristically cancels explicit do-not-save messages', () => {
+  assert.deepEqual(classifyPlainTextHeuristically("nah don't save"), {
+    name: 'cancel',
+    argument: ''
+  });
+});
+
+test('classifyPlainTextHeuristically still allows explicit note capture', () => {
+  assert.deepEqual(
+    classifyPlainTextHeuristically('save: Mike Chen wants Carson industrial'),
+    {
+      name: 'add',
+      argument: 'Mike Chen wants Carson industrial'
+    }
+  );
 });
 
 test('formatDailyPayload summarizes action items and distressed sellers', () => {

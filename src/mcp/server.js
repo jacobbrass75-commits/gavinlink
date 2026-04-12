@@ -96,6 +96,46 @@ async function createMCPServer() {
     }
   );
 
+  server.registerTool(
+    'brain_status',
+    {
+      description: TOOLS.find((tool) => tool.name === 'brain_status').description,
+      inputSchema: {}
+    },
+    async () => {
+      const result = await callTool('brain_status', {});
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
+        structuredContent: result.payload
+      };
+    }
+  );
+
+  server.registerTool(
+    'brain_realnex_disambiguate',
+    {
+      description: TOOLS.find((tool) => tool.name === 'brain_realnex_disambiguate').description,
+      inputSchema: {
+        entityId: z.string().optional(),
+        name: z.string().optional(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        company: z.string().optional(),
+        limit: z.number().optional(),
+        pageSize: z.number().optional(),
+        contactLimit: z.number().optional(),
+        companyLimit: z.number().optional()
+      }
+    },
+    async (args) => {
+      const result = await callTool('brain_realnex_disambiguate', args);
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result.payload, null, 2) }],
+        structuredContent: result.payload
+      };
+    }
+  );
+
   return {
     server,
     transport: new StdioServerTransport()

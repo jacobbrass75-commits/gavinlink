@@ -2,6 +2,8 @@
 
 Date: 2026-04-10
 
+> Historical report. Some adapter gaps listed below are now partially built or promoted into the live runtime, including Telegram, Obsidian publishing, RealNex runtime routes, and Hermes/Omi/Vermes channel ingress. Use `README.md` and `ARCHITECTURE.md` for the current repo boundary map.
+
 ## Executive Summary
 
 The repo is materially further along than the older "Module 1 complete, Module 2 next" plan suggests.

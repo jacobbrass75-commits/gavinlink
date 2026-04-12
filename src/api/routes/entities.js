@@ -1,6 +1,6 @@
 const express = require('express');
 const { query } = require('../../db/connection');
-const { lookupBrain } = require('../../app/brain');
+const { lookupBrain, getEntityDetail } = require('../../app/brain');
 const { getPortfolio, detectPortfolioDistress } = require('../../entities/cluster');
 const { normalizeName } = require('../../entities/extract');
 const { buildContainsPattern } = require('../../utils/sql');
