@@ -3,9 +3,9 @@ const {
   runFullMatching,
   runMatchingForBuyer,
   runMatchingForProperty,
-  getMatchDistribution,
-  lookupIdentifier
+  getMatchDistribution
 } = require('../../matching/runner');
+const { matchIdentifier, toNumber } = require('../../app/brain');
 const { createRateLimiter, requireAdminApiKey } = require('../guardrails');
 const { validateBody, z } = require('../validation');
 
@@ -110,53 +110,34 @@ router.get('/api/match/distribution', async (_req, res, next) => {
 
 router.get('/api/match/:identifier', matchingLimiter, async (req, res, next) => {
   try {
-    const identifier = String(req.params.identifier || '').trim();
-
-    if (!identifier) {
-      return res.status(400).json({ error: 'identifier is required' });
-    }
-
-    const target = await lookupIdentifier(identifier);
-
-    if (!target) {
-      return res.status(404).json({
-        identifier,
-        matches: [],
-        total: 0,
-        message: 'No buyer or property matched that identifier.'
-      });
-    }
-
-    const matches =
-      target.kind === 'buyer'
-        ? await runMatchingForBuyer(target.entity_id, {
-            minScore: req.query.minScore,
-            dryRun: parseBoolean(req.query.dryRun, false),
-            generateNarratives: parseBoolean(req.query.generateNarratives, false)
-          })
-        : await runMatchingForProperty(target.property_id, {
-            minScore: req.query.minScore,
-            dryRun: parseBoolean(req.query.dryRun, false),
-            generateNarratives: parseBoolean(req.query.generateNarratives, false)
-          });
-
-    return res.json({
-      identifier,
-      kind: target.kind,
-      matches: matches.slice(0, parseLimit(req.query.limit, 10)),
-      total: matches.length
-    });
+    return res.json(
+      await matchIdentifier({
+        identifier: req.params.identifier,
+        limit: parseLimit(req.query.limit, 10),
+        minScore: toNumber(req.query.minScore),
+        dryRun: parseBoolean(req.query.dryRun, false),
+        generateNarratives: parseBoolean(req.query.generateNarratives, false)
+      })
+    );
   } catch (error) {
     return next(error);
   }
 });
 
-router.get('/brain/match/:identifier', (_req, res) => {
-  res.status(501).json({
-    status: 'not_implemented',
-    module: 'Module 2',
-    message: 'This endpoint will be implemented in Module 2: Entity Extraction'
-  });
+router.get('/brain/match/:identifier', matchingLimiter, async (req, res, next) => {
+  try {
+    return res.json(
+      await matchIdentifier({
+        identifier: req.params.identifier,
+        limit: parseLimit(req.query.limit, 10),
+        minScore: toNumber(req.query.minScore),
+        dryRun: parseBoolean(req.query.dryRun, false),
+        generateNarratives: parseBoolean(req.query.generateNarratives, false)
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
 });
 
 module.exports = router;

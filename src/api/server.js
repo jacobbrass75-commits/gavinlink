@@ -13,12 +13,15 @@ const matchRouter = require('./routes/match');
 const matchesRouter = require('./routes/matches');
 const dailyRouter = require('./routes/daily');
 const importExportRouter = require('./routes/import-export');
+const realNexRouter = require('./routes/realnex');
+const channelRouter = require('./routes/channels');
+const answerRouter = require('./routes/answer');
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 function createApp() {
   const app = express();
-  app.use(express.json({ limit: '100kb' }));
+  app.use(express.json({ limit: process.env.API_JSON_LIMIT || '2mb' }));
   app.use(healthRouter);
   app.use(ingestRouter);
   app.use(searchRouter);
@@ -31,6 +34,9 @@ function createApp() {
   app.use(matchesRouter);
   app.use(dailyRouter);
   app.use(importExportRouter);
+  app.use(realNexRouter);
+  app.use(channelRouter);
+  app.use(answerRouter);
   app.use((error, _req, res, _next) => {
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
     const message = statusCode >= 500 ? 'Internal server error' : error.message;

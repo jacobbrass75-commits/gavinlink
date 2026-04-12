@@ -3,9 +3,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const multer = require('multer');
-const { classifyMessage } = require('../../ingestion/classifier');
-const { routeClassifiedMessage } = require('../../ingestion/router');
-const { processAudioFile } = require('../../knowledge/transcribe');
+const { ingestMessage, ingestAudio } = require('../../app/brain');
+const { requireAdminApiKey } = require('../guardrails');
 const { validateBody, z } = require('../validation');
 
 const router = express.Router();
@@ -20,14 +19,10 @@ const ingestSchema = z.object({
   source: z.string().trim().min(1).optional()
 });
 
-router.post('/api/ingest', validateBody(ingestSchema), async (req, res, next) => {
+router.post('/api/ingest', requireAdminApiKey, validateBody(ingestSchema), async (req, res, next) => {
   try {
     const { message, source } = req.validatedBody;
-
-    const classified = await classifyMessage(message);
-    const result = await routeClassifiedMessage(classified, message, {
-      source: source || 'api'
-    });
+    const result = await ingestMessage({ message, source: source || 'api' });
 
     return res.json({
       ok: true,
@@ -38,7 +33,7 @@ router.post('/api/ingest', validateBody(ingestSchema), async (req, res, next) =>
   }
 });
 
-router.post('/api/ingest/audio', upload.single('audio'), async (req, res, next) => {
+router.post('/api/ingest/audio', requireAdminApiKey, upload.single('audio'), async (req, res, next) => {
   const cleanupTargets = [req.file?.path].filter(Boolean);
 
   try {
@@ -48,7 +43,8 @@ router.post('/api/ingest/audio', upload.single('audio'), async (req, res, next) 
       return res.status(400).json({ error: 'audio file upload is required' });
     }
 
-    const result = await processAudioFile(filePath, {
+    const result = await ingestAudio({
+      filePath,
       source: typeof req.body?.source === 'string' ? req.body.source : 'voice_memo'
     });
 
@@ -71,12 +67,16 @@ router.post('/api/ingest/audio', upload.single('audio'), async (req, res, next) 
   }
 });
 
-router.post('/brain/ingest', (_req, res) => {
-  res.status(501).json({
-    status: 'not_implemented',
-    module: 'Module 2',
-    message: 'This endpoint will be implemented in Module 2: Entity Extraction'
-  });
+router.post('/brain/ingest', requireAdminApiKey, validateBody(ingestSchema), async (req, res, next) => {
+  try {
+    const result = await ingestMessage({
+      message: req.validatedBody.message,
+      source: req.validatedBody.source || 'brain_api'
+    });
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 module.exports = router;

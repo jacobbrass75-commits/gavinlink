@@ -231,12 +231,59 @@ function extractCapitalizedNames(message) {
 }
 
 function extractCompanyNames(message) {
-  const matches =
+  const suffixMatches =
     message.match(
       /\b[A-Z][A-Za-z&.\s]+(?:LLC|L\.L\.C\.|INC|INCORPORATED|CORP|CORPORATION|GROUP|PARTNERS|PARTNERSHIP|HOLDINGS|CAPITAL|PROPERTIES|COMPANY)\b/g
     ) || [];
 
-  return [...new Set(matches.map((value) => value.trim()))];
+  const contextualMatches = Array.from(
+    message.matchAll(
+      /\b(?:at|with|from|of)\s+([A-Z][A-Za-z&.\-']*(?:\s+[A-Z][A-Za-z&.\-']*){1,4})(?=[,.;]|(?:\s+(?:wants?|looking|seeking|needs?|budget|close|prefers?|runs?|is|was|and)\b)|$)/g
+    )
+  )
+    .map((match) => cleanText(match[1], null))
+    .filter(Boolean)
+    .filter((value) => classifyEntityType(value, 'owner_name') !== 'person');
+
+  return [...new Set([...suffixMatches, ...contextualMatches].map((value) => value.trim()))];
+}
+
+function extractContextualCompanyRelationships(message, personNames = [], companyNames = []) {
+  const relationships = [];
+
+  for (const personName of personNames) {
+    const escapedPersonName = personName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = message.match(
+      new RegExp(
+        `\\b${escapedPersonName}\\b\\s+(?:at|with|from|of)\\s+([A-Z][A-Za-z&.\\-']*(?:\\s+[A-Z][A-Za-z&.\\-']*){1,4})(?=[,.;]|(?:\\s+(?:wants?|looking|seeking|needs?|budget|close|prefers?|runs?|is|was|and)\\b)|$)`,
+        'i'
+      )
+    );
+
+    if (!match) {
+      continue;
+    }
+
+    const companyName = cleanText(match[1], null);
+
+    if (!companyName) {
+      continue;
+    }
+
+    const verifiedType = classifyEntityType(companyName, 'owner_name');
+
+    if (verifiedType === 'person' && !companyNames.includes(companyName)) {
+      continue;
+    }
+
+    relationships.push({
+      entity_a: personName,
+      entity_b: companyName,
+      relationship: 'principal_of'
+    });
+  }
+
+  return relationships;
 }
 
 function extractCities(message) {
@@ -309,7 +356,16 @@ function fallbackClassify(message) {
     classifications.add(propertyRef ? 'property_note' : 'seller_intel');
   }
 
-  if (/\b(controls|principal of|member of|partner with|manages)\b/i.test(text)) {
+  const contextualRelationships = extractContextualCompanyRelationships(
+    text,
+    personNames,
+    companyNames
+  );
+
+  if (
+    /\b(controls|principal of|member of|partner with|manages)\b/i.test(text) ||
+    contextualRelationships.length > 0
+  ) {
     classifications.add('relationship');
   }
 
@@ -344,6 +400,10 @@ function fallbackClassify(message) {
   }
 
   if (classifications.has('relationship')) {
+    for (const relationship of contextualRelationships) {
+      relationships.push(relationship);
+    }
+
     if (/\bcontrols\b/i.test(text) && personNames.length >= 1 && companyNames.length >= 1) {
       for (const companyName of companyNames) {
         relationships.push({

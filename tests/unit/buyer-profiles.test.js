@@ -44,7 +44,7 @@ async function resetTables() {
 }
 
 test.before(async () => {
-  const migrationRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+  const migrationRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
   assert.equal(migrationRun.status, 0, migrationRun.stderr || migrationRun.stdout);
 });
 

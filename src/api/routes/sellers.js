@@ -203,7 +203,7 @@ router.get('/api/sellers', async (req, res, next) => {
   }
 });
 
-router.put('/api/sellers/:id', validateBody(sellerUpdateSchema), async (req, res, next) => {
+router.put('/api/sellers/:id', requireAdminApiKey, validateBody(sellerUpdateSchema), async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });

@@ -1,141 +1,290 @@
-# ISG Second Brain
+# Sullivan Link Brain
 
-ISG Second Brain is a local-first commercial real estate intelligence backend. It now includes:
+Sullivan Link Brain is the backend and broker memory system behind Sullivan Link. It ingests distressed commercial real estate signals, turns them into structured intelligence, and exposes that brain through an API, a CLI, an MCP server, Telegram, webhook-style channels, and recurring workers.
 
-- PostgreSQL + ChromaDB infrastructure
-- entity, buyer, seller, knowledge, and matching workflows
-- foreclosure CSV import with dry-run preview and parcel grouping
-- property document attachment support
-- a narrative `raw/` + `wiki/` layer governed by `CLAUDE.md`
+Historical internal names such as `isg-second-brain` still appear in package metadata, container names, and some prompts. The product-level intent in this repo is Sullivan Link Brain.
 
-## Prerequisites
+## Goal
 
-- Node.js 20+
-- npm
-- Docker Desktop or a compatible Docker runtime
+The software is built to help a brokerage team move from raw market signals to actionable outreach:
 
-## Setup
+- import foreclosure and property data
+- ingest call notes, voice memos, and documents
+- maintain canonical entity, property, buyer, seller, and knowledge records in PostgreSQL
+- maintain semantic recall in ChromaDB
+- score seller distress and buyer-property fit
+- generate a curated narrative layer in `wiki/` without replacing database truth
 
-1. Copy `.env.example` to `.env` and adjust values if needed. By default, PostgreSQL is mapped to `5433` to avoid colliding with a locally installed Postgres on macOS.
-2. Start the local services:
+## Main Surfaces
 
-```powershell
+- API: Express server in `src/api/`, started with `npm start`
+- CLI: `brain`, implemented in `src/cli/brain.js`
+- MCP server: started with `brain serve`, implemented in `src/mcp/`
+- Telegram bot: worker in `src/ops/telegram-bot.js`
+- Channel ingress: `/api/channels/{omi,hermes,vermes}`
+- Assistant answer surface: `/api/answer`, `brain answer ...`, and MCP `brain_answer`
+- Recurring workers: PM2-managed jobs such as the PropertyRadar feed under `src/ops/`
+- Ops scripts: grouped under `scripts/admin`, `scripts/imports`, `scripts/ops`, and `scripts/qa`
+
+API, CLI, MCP, Telegram, and the recurring workers all sit on top of the same `src/` codebase and shared `src/app/` orchestration layer. The scripts are support tools for setup, imports, maintenance, and verification.
+
+## Runtime Vs Standalone Tools
+
+The live product runtime is:
+
+- `src/`
+- `scripts/` entry points
+- `ecosystem.config.cjs`
+- PostgreSQL + ChromaDB
+
+The `tools/` directory is different. It contains standalone utilities, bulk exports, and investigative workflows that are useful, but not part of the default PM2/API runtime.
+
+- `tools/broker-email-lookup`: one-off outreach enrichment tooling
+- `tools/llc-manager-finder`: standalone LLC manager and contact discovery pipeline
+- `tools/realnex-crm`: Python RealNex client and local CRM export workflows
+
+If something in `tools/` becomes product-critical, move the adapter into `src/integrations`, the orchestration into `src/app`, and the entry point into the API/CLI/MCP/ops surfaces.
+
+## Claude / Assistant Use
+
+Soleil is designed to be used by assistants through the MCP surface, not just by humans reading docs.
+
+- Use `brain_answer` as the default conversational front door.
+- Use `brain_lookup` for specific entity or property questions.
+- Use `brain_search` for fuzzy recall and broad memory questions.
+- Use `brain_match` for buyer-property fit and counterpart discovery.
+- Use `brain_daily` for priorities and next actions.
+- Use `brain_add` only when the user is explicitly providing information to store.
+
+Do not treat casual chat, corrections, or "don't save that" messages as ingestion. The assistant-facing operating rules live in [CLAUDE_SKILL.md](/Users/yakub/Desktop/sullilink/CLAUDE_SKILL.md), [AGENTS.md](/Users/yakub/Desktop/sullilink/AGENTS.md), and [CLAUDE.md](/Users/yakub/Desktop/sullilink/CLAUDE.md).
+
+## Repo Map
+
+```text
+src/
+  api/            HTTP routes and request validation
+  app/            shared application services and orchestration
+  buyers/         Buyer profiles, activity, lender analytics
+  cli/            brain CLI entry point
+  db/             PostgreSQL connection, schema, migrations
+  entities/       Entity extraction, clustering, LLC resolution
+  import-export/  File parsing and foreclosure import workflow
+  inference/      LLM provider abstraction
+  ingestion/      Conversational write path into the brain
+  integrations/   External data adapters
+  knowledge/      Knowledge entries, embeddings, search, transcription
+  matching/       Buyer-seller-property scoring and narratives
+  mcp/            MCP tool adapter over Soleil services
+  ops/            long-running workers and chat/webhook front doors
+  properties/     Property documents and grouping
+  sellers/        Seller profiles, distress, motivation, portfolio patterns
+  wiki/           Wiki promotion, queueing, linting
+
+scripts/
+  admin/          bootstrap and seed scripts
+  imports/        foreclosure, external import, transcription entry points
+  ops/            matching, seller scoring, wiki maintenance
+  qa/             end-to-end sweep and operational verification
+
+tests/
+  unit/
+  integration/
+
+raw/              immutable source material for the narrative layer
+wiki/             curated narrative pages backed by citations
+briefs/           module notes, reports, and prompt artifacts
+```
+
+## Quick Start
+
+1. Copy `.env.example` to `.env`.
+2. Start infrastructure:
+
+```bash
 docker-compose up -d
 ```
 
 3. Install dependencies:
 
-```powershell
+```bash
 npm install
 ```
 
-4. Run database migrations:
+4. Apply migrations:
 
-```powershell
-node scripts/migrate.js
+```bash
+npm run migrate
 ```
 
-5. Seed the 10 provided test properties:
+5. Seed sample data:
 
-```powershell
-node scripts/seed-test-data.js
+```bash
+npm run seed
 ```
 
-6. Start the API server:
+6. Start the API:
 
-```powershell
+```bash
 npm start
 ```
 
-7. Run the test suite:
+7. Run tests:
 
-```powershell
+```bash
 npm test
 ```
 
-## Endpoints
-
-- `GET /health`
-- `POST /api/import/foreclosure/preview`
-- `POST /api/import/foreclosure`
-- `GET /api/properties/:id`
-- `GET /api/properties/:id/group`
-- `POST /api/properties/:id/documents`
-- `POST /brain/ingest`
-- `GET /brain/search`
-- `GET /brain/entity/:id`
-- `GET /brain/match/:identifier`
-- `GET /brain/daily`
-- `POST /brain/import`
-- `GET /brain/export`
-
-## Health Response
-
-When all dependencies are reachable, `GET /health` returns:
-
-```json
-{
-  "status": "ok",
-  "database": "connected",
-  "tables": 8,
-  "tables_total": 15,
-  "core_tables_expected": 8,
-  "chromadb": "connected",
-  "inference_provider": "claude",
-  "version": "0.1.0"
-}
-```
-
-If PostgreSQL or ChromaDB is unavailable, the route responds with HTTP 503 and the same JSON shape with the failing dependency marked `disconnected`.
-
-## Foreclosure Import
-
-Preview a real foreclosure CSV without writing data:
+Local-first runtime shortcuts:
 
 ```bash
-node scripts/import-foreclosure-csv.js /path/to/foreclosures.csv --dry-run
+npm run local:up:seed
+npm run local:check
+npm run local:up:pm2
 ```
 
-Run the live import:
+`local:up:seed` brings up Docker services, runs migrations, seeds sample data, and prints a readiness summary. Add `npm run local:up:pm2` if you want it to start the API, Telegram worker, and PropertyRadar feed under PM2 in one step.
+
+## Transport Model
+
+- The app itself serves `/health` and `/api/*`.
+- Public deployments may reverse-proxy that app under a prefix such as `/api/brain/*`.
+- CLI, MCP, and Telegram default to local shared app calls.
+- Set `BRAIN_TRANSPORT=http` only when you explicitly want those surfaces to target a remote HTTP API.
+- `/brain/*` is a mixed compatibility layer, not the canonical product API.
+
+## Common Workflows
+
+Run the core runtime surfaces:
 
 ```bash
-node scripts/import-foreclosure-csv.js /path/to/foreclosures.csv
+npm start
+brain search "industrial Carson"
+brain answer "who is Mike Chen"
+brain match "Mike Chen"
+brain serve
 ```
 
-The importer is UTF-16 aware, deduplicates by `(apn, region)`, records every raw row in `property_import_records`, and groups likely multi-row parcels in `property_groups`.
+For local development, the CLI, MCP server, and Telegram worker now call the shared app layer directly by default instead of bouncing through HTTP. Set `BRAIN_TRANSPORT=http` only when you explicitly want those surfaces to target a remote API.
 
-## Narrative Wiki
-
-The repo includes a Karpathy-inspired narrative layer:
-
-- `raw/` for immutable source material
-- `wiki/` for curated markdown pages
-- `CLAUDE.md` for citation and maintenance rules
-
-Promote a knowledge entry into the wiki:
+Import or enrich data:
 
 ```bash
-brain promote <knowledge_entry_id>
+node scripts/imports/import-foreclosure-csv.js /path/to/foreclosures.csv --dry-run
+node scripts/imports/import-from-realestatetool.js --region la_county --limit 100
+node scripts/imports/transcribe-folder.js /path/to/voice-memos --once
+node scripts/imports/sync-propertyradar-alerts.js --dry-run --max-results 10
 ```
 
-Promote a property PDF or notice into the property wiki page:
+Run operational maintenance:
 
 ```bash
-brain promote-document <property_id> /path/to/notice.pdf --document-type notice_of_sale
-```
-
-Queue high-signal knowledge entries for promotion:
-
-```bash
-brain autopromote --dry-run
-brain autopromote --limit 25
-```
-
-Lint the wiki for missing citations and stale references:
-
-```bash
-brain lint
+npm run match
+node scripts/ops/score-sellers.js --report
 npm run wiki:maintain
+npm run obsidian:publish -- briefs/reports/2026-04-10-soleil-current-state.md sullilink-soleil-current-state-2026-04-10.md
+node scripts/qa/run-ioc-sweep.js
 ```
 
-`npm run wiki:maintain` processes the auto-promote queue, writes JSON maintenance reports into `wiki/reports/`, and then lints the wiki for missing citations, missing raw sources, orphan pages, and stale references.
+Gmail / PropertyRadar setup:
+
+```bash
+npm run gmail:auth
+npm run propertyradar:sync -- --dry-run --max-results 10
+npm run propertyradar:feed -- --telegram-summary
+npm run propertyradar:feed -- --loop --interval-ms 300000 --telegram-summary
+```
+
+Obsidian note publishing:
+
+```bash
+npm run obsidian:publish -- ./briefs/reports/2026-04-10-soleil-current-state.md status/soleil-current-state.md
+```
+
+Required env vars:
+
+- `OBSIDIAN_API_URL`
+- `OBSIDIAN_API_KEY`
+- `OBSIDIAN_ALLOW_INSECURE_TLS=true` for the common local self-signed setup
+
+Telegram bootstrap:
+
+```bash
+npm run telegram:probe -- --updates
+npm run telegram:probe -- --chat-id <chat-id> --message "Soleil is online."
+npm run telegram:bot -- --once
+npm run telegram:bot
+```
+
+Telegram behavior:
+
+- slash commands are supported
+- plain text is routed through the shared assistant service first
+- use `/add ...` or `save: ...` when you explicitly want note capture
+- casual text should not be treated as automatic memory writes anymore
+
+Required env vars:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_DEFAULT_CHAT_ID` for a default destination
+- `TELEGRAM_ALLOWED_CHAT_IDS` to restrict who can use the bot
+- `TELEGRAM_BOT_OFFSET_FILE` to persist `update_id` state between runs
+- `BRAIN_TRANSPORT=http` and `BRAIN_API_URL` only if the bot should talk to a non-local brain API
+
+PropertyRadar feed worker env:
+
+- `PROPERTYRADAR_FEED_INTERVAL_MS=300000`
+- `PROPERTYRADAR_FEED_ITERATIONS=` for limited loops during testing
+
+PM2 runtime:
+
+```bash
+NODE_ENV=development pm2 start ecosystem.config.cjs
+pm2 status
+pm2 logs sullilink-api
+pm2 logs sullilink-telegram-bot
+pm2 logs sullilink-propertyradar-feed
+```
+
+Use an internal API base for workers when possible:
+
+- `BRAIN_API_URL=http://127.0.0.1:3100`
+- do not point the Telegram bot or feed worker at a public reverse-proxy path unless `/health` and `/api/*` resolve there exactly as they do in the app
+
+Auth defaults:
+
+- Production write routes fail closed if `ADMIN_API_KEY` is not configured.
+- Local non-production stays open by default for iteration speed.
+- `ALLOW_UNAUTHENTICATED_WRITE=true` is there as an explicit marker for dev environments and custom launch scripts.
+- If you want to mirror production locally, set `ADMIN_API_KEY` and send `x-api-key` on write requests.
+
+Runtime adapters:
+
+- RealNex API routes: `/api/realnex/contacts`, `/api/realnex/contacts/:key`, `/api/realnex/companies/:key`, `/api/realnex/properties/:key`, `/api/realnex/disambiguate`
+- Channel ingest routes: `/api/channels/omi`, `/api/channels/hermes`, `/api/channels/vermes`
+- Telegram bot is a runtime worker, not just a probe script
+
+Additional env vars:
+
+- `REALNEX_API_TOKEN`, `REALNEX_BASE_URL`, `REALNEX_PAGE_SIZE`, `REALNEX_TIMEOUT_MS`
+- `OMI_WEBHOOK_SECRET`, `OMI_DEFAULT_SOURCE`
+- `HERMES_WEBHOOK_SECRET`, `HERMES_DEFAULT_SOURCE`
+- `VERMES_WEBHOOK_SECRET`, `VERMES_DEFAULT_SOURCE`
+
+## Narrative Layer
+
+`raw/` and `wiki/` are part of the product, but they are not the source of truth for structured state.
+
+- PostgreSQL is authoritative for structured records.
+- ChromaDB is authoritative for embedding-backed recall.
+- `raw/` stores immutable evidence.
+- `wiki/` stores curated narrative pages with citations.
+
+Follow the narrative rules in `AGENTS.md`. `CLAUDE.md` is kept as a compatibility mirror for tools that still expect that filename.
+
+## Contributor Notes
+
+- `src/` is the core runtime. Prefer adding product logic there, not into one-off scripts.
+- `scripts/` is for operational entry points, not for hiding product features.
+- `tools/` is for standalone utilities and historical workflows. Treat it as adjacent to the product, not as the main app.
+- `briefs/` is design/history context, not executable truth.
+- `ARCHITECTURE.md` explains the current boundaries between core brain domains, workflows, delivery surfaces, and support tooling.

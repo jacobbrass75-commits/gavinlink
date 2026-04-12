@@ -61,7 +61,7 @@ test('Module 2 import pipeline works end to end with fixture data', async (t) =>
     await close();
   });
 
-  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
   assert.equal(migrateRun.status, 0, migrateRun.stderr || migrateRun.stdout);
 
   await resetTables();
@@ -72,7 +72,7 @@ test('Module 2 import pipeline works end to end with fixture data', async (t) =>
     '--limit',
     '10'
   ];
-  const firstImport = runNodeScript(path.join(ROOT, 'scripts', 'import-from-realestatetool.js'), importArgs);
+  const firstImport = runNodeScript(path.join(ROOT, 'scripts', 'imports', 'import-from-realestatetool.js'), importArgs);
   assert.equal(firstImport.status, 0, firstImport.stderr || firstImport.stdout);
 
   const propertyCountResult = await query('SELECT COUNT(*)::int AS count FROM properties');
@@ -95,7 +95,7 @@ test('Module 2 import pipeline works end to end with fixture data', async (t) =>
     properties: propertyCountResult.rows[0].count,
     entities: entityCountResult.rows[0].count
   };
-  const secondImport = runNodeScript(path.join(ROOT, 'scripts', 'import-from-realestatetool.js'), importArgs);
+  const secondImport = runNodeScript(path.join(ROOT, 'scripts', 'imports', 'import-from-realestatetool.js'), importArgs);
   assert.equal(secondImport.status, 0, secondImport.stderr || secondImport.stdout);
 
   const propertyCountAfterSecondImport = await query('SELECT COUNT(*)::int AS count FROM properties');

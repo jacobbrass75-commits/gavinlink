@@ -1,4 +1,4 @@
-# ISG Second Brain Wiki
+# Sullivan Link Brain Wiki
 
 ## Pages
 

@@ -141,6 +141,37 @@ test('classifyMessage falls back to general_note on garbage input when provider 
   assert.deepEqual(result.classifications, ['general_note']);
 });
 
+test('classifyMessage fallback verifies company-like entities from context cheaply', async (t) => {
+  const originalComplete = provider.complete;
+
+  t.after(() => {
+    provider.complete = originalComplete;
+  });
+
+  provider.complete = async () => {
+    throw new Error('provider unavailable');
+  };
+
+  const result = await classifyMessage(
+    'Mike Chen at Pacific Industrial wants industrial in Carson, budget 4M, SBA.'
+  );
+
+  assert.ok(result.classifications.includes('buyer_intel'));
+  assert.ok(result.classifications.includes('relationship'));
+  assert.ok(result.entities.some((entity) => entity.name === 'Mike Chen' && entity.type === 'person'));
+  assert.ok(
+    result.entities.some((entity) => entity.name === 'Pacific Industrial' && entity.type === 'unknown')
+  );
+  assert.ok(
+    result.relationships.some(
+      (relationship) =>
+        relationship.entity_a === 'Mike Chen' &&
+        relationship.entity_b === 'Pacific Industrial' &&
+        relationship.relationship === 'principal_of'
+    )
+  );
+});
+
 test('validateClassification throws on malformed JSON', () => {
   assert.throws(
     () => validateClassification('{bad json'),

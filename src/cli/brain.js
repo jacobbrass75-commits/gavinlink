@@ -2,6 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 const { startMCPServer } = require('../mcp/server');
+const brainApp = require('../app/brain');
+const assistantApp = require('../app/assistant');
 const { promoteKnowledgeEntry } = require('../wiki/promote');
 const { lintWiki } = require('../wiki/lint');
 const { processAutoPromoteQueue } = require('../wiki/queue');
@@ -12,6 +14,12 @@ function getApiBaseUrl() {
 
 function printResult(value) {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+}
+
+function useHttpTransport() {
+  return String(process.env.BRAIN_TRANSPORT || '')
+    .trim()
+    .toLowerCase() === 'http';
 }
 
 async function apiRequest(method, endpoint, body) {
@@ -36,6 +44,13 @@ async function apiRequest(method, endpoint, body) {
 }
 
 async function postAudio(filePath) {
+  if (!useHttpTransport()) {
+    return brainApp.ingestAudio({
+      filePath,
+      source: 'cli'
+    });
+  }
+
   const absolutePath = path.resolve(filePath);
   const fileBuffer = await fs.promises.readFile(absolutePath);
   const file = new File([fileBuffer], path.basename(absolutePath));
@@ -232,10 +247,15 @@ async function main() {
       }
 
       return printResult(
-        await apiRequest('POST', '/api/ingest', {
-          message,
-          source: 'cli'
-        })
+        useHttpTransport()
+          ? await apiRequest('POST', '/api/ingest', {
+              message,
+              source: 'cli'
+            })
+          : await brainApp.ingestMessage({
+              message,
+              source: 'cli'
+            })
       );
     }
     case 'search': {
@@ -245,7 +265,32 @@ async function main() {
         throw new Error('query is required');
       }
 
-      return printResult(await apiRequest('POST', '/api/search', { query }));
+      return printResult(
+        useHttpTransport()
+          ? await apiRequest('POST', '/api/search', { query })
+          : await brainApp.searchBrain({ query })
+      );
+    }
+    case 'answer': {
+      const message = args.join(' ').trim();
+
+      if (!message) {
+        throw new Error('message is required');
+      }
+
+      return printResult(
+        useHttpTransport()
+          ? await apiRequest('POST', '/api/answer', {
+              message,
+              source: 'cli',
+              surface: 'assistant'
+            })
+          : await assistantApp.answerMessage({
+              message,
+              source: 'cli',
+              surface: 'assistant'
+            })
+      );
     }
     case 'lookup': {
       const name = args.join(' ').trim();
@@ -255,7 +300,9 @@ async function main() {
       }
 
       return printResult(
-        await apiRequest('GET', `/api/entities/lookup?name=${encodeURIComponent(name)}`)
+        useHttpTransport()
+          ? await apiRequest('GET', `/api/entities/lookup?name=${encodeURIComponent(name)}`)
+          : await brainApp.lookupBrain({ name })
       );
     }
     case 'match': {
@@ -266,11 +313,15 @@ async function main() {
       }
 
       return printResult(
-        await apiRequest('GET', `/api/match/${encodeURIComponent(identifier)}`)
+        useHttpTransport()
+          ? await apiRequest('GET', `/api/match/${encodeURIComponent(identifier)}`)
+          : await brainApp.matchIdentifier({ identifier })
       );
     }
     case 'daily':
-      return printResult(await apiRequest('GET', '/api/daily'));
+      return printResult(
+        useHttpTransport() ? await apiRequest('GET', '/api/daily') : await brainApp.getDailyBrief()
+      );
     case 'promote':
       return promoteCommand(args);
     case 'promote-document':
@@ -284,7 +335,7 @@ async function main() {
       return undefined;
     default:
       throw new Error(
-        'Usage: brain add <message> | brain add --audio <file> | brain search <query> | brain lookup <name> | brain match <identifier> | brain daily | brain promote <knowledge-entry-id> [--page wiki/...md] [--title "..."] | brain promote-document <property-id> <file> [--document-type type] [--notes text] [--queue-only] | brain autopromote [--limit N] [--dry-run] | brain lint [--offline] | brain serve'
+        'Usage: brain add <message> | brain add --audio <file> | brain answer <message> | brain search <query> | brain lookup <name> | brain match <identifier> | brain daily | brain promote <knowledge-entry-id> [--page wiki/...md] [--title "..."] | brain promote-document <property-id> <file> [--document-type type] [--notes text] [--queue-only] | brain autopromote [--limit N] [--dry-run] | brain lint [--offline] | brain serve'
       );
   }
 }

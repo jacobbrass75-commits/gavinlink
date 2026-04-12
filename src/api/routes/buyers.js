@@ -17,6 +17,7 @@ const {
   getLenderDetail,
   getLenderOwnerOverlaps
 } = require('../../buyers/lender-report');
+const { requireAdminApiKey } = require('../guardrails');
 const { validateBody, z } = require('../validation');
 
 const router = express.Router();
@@ -79,7 +80,7 @@ router.get('/api/buyers/search', async (req, res, next) => {
   }
 });
 
-router.post('/api/buyers/:id/purchases', async (req, res, next) => {
+router.post('/api/buyers/:id/purchases', requireAdminApiKey, async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });
@@ -139,7 +140,7 @@ router.get('/api/buyers/:id', async (req, res, next) => {
   }
 });
 
-router.post('/api/buyers', validateBody(buyerCreateSchema), async (req, res, next) => {
+router.post('/api/buyers', requireAdminApiKey, validateBody(buyerCreateSchema), async (req, res, next) => {
   try {
     const profile = await createBuyerProfile(req.validatedBody || {});
     return res.status(201).json(profile);
@@ -169,7 +170,7 @@ router.get('/api/buyers', async (req, res, next) => {
   }
 });
 
-router.put('/api/buyers/:id', validateBody(buyerUpdateSchema), async (req, res, next) => {
+router.put('/api/buyers/:id', requireAdminApiKey, validateBody(buyerUpdateSchema), async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });
@@ -182,7 +183,7 @@ router.put('/api/buyers/:id', validateBody(buyerUpdateSchema), async (req, res, 
   }
 });
 
-router.delete('/api/buyers/:id', async (req, res, next) => {
+router.delete('/api/buyers/:id', requireAdminApiKey, async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });

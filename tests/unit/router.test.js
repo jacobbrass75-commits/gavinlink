@@ -47,7 +47,7 @@ async function resetTables() {
 }
 
 test('routeClassifiedMessage creates new buyer entities, profile, and knowledge entry', async () => {
-  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'migrate.js'));
+  const migrateRun = runNodeScript(path.join(ROOT, 'scripts', 'admin', 'migrate.js'));
   assert.equal(migrateRun.status, 0, migrateRun.stderr || migrateRun.stdout);
 
   await resetTables();
@@ -142,7 +142,7 @@ test('routeClassifiedMessage merges repeated buyer mentions', async () => {
 
 test('routeClassifiedMessage creates seller profile for known property', async () => {
   await resetTables();
-  const importRun = runNodeScript(path.join(ROOT, 'scripts', 'import-from-realestatetool.js'), [
+  const importRun = runNodeScript(path.join(ROOT, 'scripts', 'imports', 'import-from-realestatetool.js'), [
     '--csv',
     path.join(ROOT, 'tests', 'fixtures', 'sample-properties.json'),
     '--limit',
