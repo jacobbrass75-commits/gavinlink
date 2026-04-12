@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const brainApp = require('../app/brain');
+const runtimeApp = require('../app/runtime');
 const {
   sendTelegramMessage,
   listTelegramUpdates,
@@ -21,59 +23,8 @@ function cleanLines(values = []) {
     .filter(Boolean);
 }
 
-function getApiBaseUrl() {
-  return String(process.env.BRAIN_API_URL || `http://localhost:${process.env.API_PORT || 3100}`).replace(
-    /\/$/,
-    ''
-  );
-}
-
-function getAdminHeaders(headers = {}) {
-  if (!process.env.ADMIN_API_KEY) {
-    return headers;
-  }
-
-  return {
-    ...headers,
-    'x-api-key': process.env.ADMIN_API_KEY
-  };
-}
-
-async function callBrainApi(method, endpoint, body) {
-  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
-    method,
-    headers: getAdminHeaders(body ? { 'content-type': 'application/json' } : {}),
-    body: body ? JSON.stringify(body) : undefined
-  });
-
-  const payload = await response.json();
-
-  if (!response.ok) {
-    throw new Error(payload?.error || `Brain API request failed with status ${response.status}`);
-  }
-
-  return payload;
-}
-
 async function getBrainHealthPayload() {
-  const response = await fetch(`${getApiBaseUrl()}/health`, {
-    headers: getAdminHeaders()
-  });
-  const payload = await response.json().catch(() => ({}));
-
-  if (
-    payload &&
-    typeof payload === 'object' &&
-    ('status' in payload || 'database' in payload || 'chromadb' in payload)
-  ) {
-    return payload;
-  }
-
-  if (!response.ok) {
-    throw new Error(`Brain API request failed with status ${response.status}`);
-  }
-
-  return payload;
+  return runtimeApp.getRuntimeStatus();
 }
 
 function getOffsetFilePath() {
@@ -312,35 +263,31 @@ async function handleCommand(command, argument) {
     case 'status':
       return formatStatusPayload(await getBrainHealthPayload());
     case 'daily':
-      return formatDailyPayload(await callBrainApi('GET', '/api/daily'));
+      return formatDailyPayload(await brainApp.getDailyBrief());
     case 'search':
       if (!argument) {
         return 'Usage: /search <query>';
       }
 
-      return formatSearchPayload(await callBrainApi('POST', '/api/search', { query: argument, limit: 5 }));
+      return formatSearchPayload(await brainApp.searchBrain({ query: argument, limit: 5 }));
     case 'lookup':
       if (!argument) {
         return 'Usage: /lookup <name or address>';
       }
 
-      return formatLookupPayload(
-        await callBrainApi('GET', `/api/entities/lookup?name=${encodeURIComponent(argument)}`)
-      );
+      return formatLookupPayload(await brainApp.lookupBrain({ name: argument }));
     case 'match':
       if (!argument) {
         return 'Usage: /match <buyer or property>';
       }
 
-      return formatMatchPayload(
-        await callBrainApi('GET', `/api/match/${encodeURIComponent(argument)}?limit=5`)
-      );
+      return formatMatchPayload(await brainApp.matchIdentifier({ identifier: argument, limit: 5 }));
     case 'add':
       if (!argument) {
         return 'Usage: /add <note>';
       }
 
-      await callBrainApi('POST', '/api/ingest', {
+      await brainApp.ingestMessage({
         message: argument,
         source: 'telegram'
       });

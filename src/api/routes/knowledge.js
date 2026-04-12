@@ -4,6 +4,7 @@ const {
   getKnowledgeEntry,
   deleteKnowledgeEntry
 } = require('../../knowledge/extract');
+const { requireAdminApiKey } = require('../guardrails');
 
 const router = express.Router();
 
@@ -61,7 +62,7 @@ router.get('/api/knowledge', async (req, res, next) => {
   }
 });
 
-router.delete('/api/knowledge/:id', async (req, res, next) => {
+router.delete('/api/knowledge/:id', requireAdminApiKey, async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });

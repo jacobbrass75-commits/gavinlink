@@ -1,3 +1,5 @@
+const brainApp = require('../app/brain');
+
 const TOOLS = [
   {
     name: 'brain_add',
@@ -55,6 +57,12 @@ const TOOLS = [
   }
 ];
 
+function useHttpTransport() {
+  return String(process.env.BRAIN_TRANSPORT || '')
+    .trim()
+    .toLowerCase() === 'http';
+}
+
 function getApiBaseUrl() {
   return process.env.BRAIN_API_URL || `http://localhost:${process.env.API_PORT || 3100}`;
 }
@@ -68,39 +76,67 @@ async function callApi(method, endpoint, body) {
 
   const payload = await response.json();
 
-  if (!response.ok) {
-    return {
-      ok: false,
-      status: response.status,
-      payload
-    };
-  }
-
   return {
-    ok: true,
+    ok: response.ok,
     status: response.status,
     payload
   };
 }
 
+async function callLocal(handler) {
+  try {
+    const payload = await handler();
+    return {
+      ok: true,
+      status: 200,
+      payload
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: error?.statusCode || 500,
+      payload: {
+        error: error.message
+      }
+    };
+  }
+}
+
 async function callTool(name, args = {}) {
+  if (useHttpTransport()) {
+    switch (name) {
+      case 'brain_add':
+        return callApi('POST', '/api/ingest', {
+          message: args.message,
+          source: 'mcp'
+        });
+      case 'brain_search':
+        return callApi('POST', '/api/search', {
+          query: args.query,
+          limit: args.limit
+        });
+      case 'brain_lookup':
+        return callApi('GET', `/api/entities/lookup?name=${encodeURIComponent(args.name)}`);
+      case 'brain_match':
+        return callApi('GET', `/api/match/${encodeURIComponent(args.identifier)}`);
+      case 'brain_daily':
+        return callApi('GET', '/api/daily');
+      default:
+        throw new Error(`Unknown MCP tool: ${name}`);
+    }
+  }
+
   switch (name) {
     case 'brain_add':
-      return callApi('POST', '/api/ingest', {
-        message: args.message,
-        source: 'mcp'
-      });
+      return callLocal(() => brainApp.ingestMessage({ message: args.message, source: 'mcp' }));
     case 'brain_search':
-      return callApi('POST', '/api/search', {
-        query: args.query,
-        limit: args.limit
-      });
+      return callLocal(() => brainApp.searchBrain({ query: args.query, limit: args.limit }));
     case 'brain_lookup':
-      return callApi('GET', `/api/entities/lookup?name=${encodeURIComponent(args.name)}`);
+      return callLocal(() => brainApp.lookupBrain({ name: args.name }));
     case 'brain_match':
-      return callApi('GET', `/api/match/${encodeURIComponent(args.identifier)}`);
+      return callLocal(() => brainApp.matchIdentifier({ identifier: args.identifier }));
     case 'brain_daily':
-      return callApi('GET', '/api/daily');
+      return callLocal(() => brainApp.getDailyBrief());
     default:
       throw new Error(`Unknown MCP tool: ${name}`);
   }

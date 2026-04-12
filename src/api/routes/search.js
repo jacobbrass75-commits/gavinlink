@@ -1,5 +1,5 @@
 const express = require('express');
-const { hybridSearch } = require('../../knowledge/search');
+const { searchBrain } = require('../../app/brain');
 const { createRateLimiter } = require('../guardrails');
 const { validateBody, z } = require('../validation');
 
@@ -19,28 +19,30 @@ const searchSchema = z.object({
 router.post('/api/search', searchLimiter, validateBody(searchSchema), async (req, res, next) => {
   try {
     const body = req.validatedBody;
-
-    const results = await hybridSearch(body.query, {
-      limit: body.limit,
-      entity_ids: body.entity_ids || [],
-      entry_types: body.entry_types || []
-    });
-
-    return res.json({
-      results,
-      total: results.length
-    });
+    return res.json(
+      await searchBrain({
+        query: body.query,
+        limit: body.limit,
+        entityIds: body.entity_ids || [],
+        entryTypes: body.entry_types || []
+      })
+    );
   } catch (error) {
     return next(error);
   }
 });
 
-router.get('/brain/search', (_req, res) => {
-  res.status(501).json({
-    status: 'not_implemented',
-    module: 'Module 2',
-    message: 'This endpoint will be implemented in Module 2: Entity Extraction'
-  });
+router.get('/brain/search', searchLimiter, async (req, res, next) => {
+  try {
+    return res.json(
+      await searchBrain({
+        query: req.query.q || req.query.query,
+        limit: req.query.limit
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
 });
 
 module.exports = router;

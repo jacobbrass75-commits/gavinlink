@@ -98,6 +98,16 @@ npm start
 npm test
 ```
 
+Local-first runtime shortcuts:
+
+```bash
+npm run local:up:seed
+npm run local:check
+npm run local:up:pm2
+```
+
+`local:up:seed` brings up Docker services, runs migrations, seeds sample data, and prints a readiness summary. Add `npm run local:up:pm2` if you want it to start the API, Telegram worker, and PropertyRadar feed under PM2 in one step.
+
 ## Common Workflows
 
 Run the core runtime surfaces:
@@ -108,6 +118,8 @@ brain search "industrial Carson"
 brain match "Mike Chen"
 brain serve
 ```
+
+For local development, the CLI, MCP server, and Telegram worker now call the shared app layer directly by default instead of bouncing through HTTP. Set `BRAIN_TRANSPORT=http` only when you explicitly want those surfaces to target a remote API.
 
 Import or enrich data:
 
@@ -164,7 +176,7 @@ Required env vars:
 - `TELEGRAM_DEFAULT_CHAT_ID` for a default destination
 - `TELEGRAM_ALLOWED_CHAT_IDS` to restrict who can use the bot
 - `TELEGRAM_BOT_OFFSET_FILE` to persist `update_id` state between runs
-- `BRAIN_API_URL` if the bot should talk to a non-local brain API
+- `BRAIN_TRANSPORT=http` and `BRAIN_API_URL` only if the bot should talk to a non-local brain API
 
 PropertyRadar feed worker env:
 
@@ -174,7 +186,7 @@ PropertyRadar feed worker env:
 PM2 runtime:
 
 ```bash
-pm2 start ecosystem.config.cjs
+NODE_ENV=development pm2 start ecosystem.config.cjs
 pm2 status
 pm2 logs sullilink-api
 pm2 logs sullilink-telegram-bot
@@ -185,6 +197,25 @@ Use an internal API base for workers when possible:
 
 - `BRAIN_API_URL=http://127.0.0.1:3100`
 - do not point the Telegram bot or feed worker at a public reverse-proxy path unless `/health` and `/api/*` resolve there exactly as they do in the app
+
+Auth defaults:
+
+- Production write routes fail closed if `ADMIN_API_KEY` is not configured.
+- Local non-production stays open by default for iteration speed.
+- `ALLOW_UNAUTHENTICATED_WRITE=true` is there as an explicit marker for dev environments and custom launch scripts.
+- If you want to mirror production locally, set `ADMIN_API_KEY` and send `x-api-key` on write requests.
+
+Runtime adapters:
+
+- RealNex API routes: `/api/realnex/contacts`, `/api/realnex/contacts/:key`, `/api/realnex/companies/:key`, `/api/realnex/properties/:key`, `/api/realnex/disambiguate`
+- Channel ingest routes: `/api/channels/omi`, `/api/channels/hermes`, `/api/channels/vermes`
+
+Additional env vars:
+
+- `REALNEX_API_TOKEN`, `REALNEX_BASE_URL`, `REALNEX_PAGE_SIZE`, `REALNEX_TIMEOUT_MS`
+- `OMI_WEBHOOK_SECRET`, `OMI_DEFAULT_SOURCE`
+- `HERMES_WEBHOOK_SECRET`, `HERMES_DEFAULT_SOURCE`
+- `VERMES_WEBHOOK_SECRET`, `VERMES_DEFAULT_SOURCE`
 
 ## Narrative Layer
 

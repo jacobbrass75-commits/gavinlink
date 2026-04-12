@@ -13,6 +13,8 @@ const matchRouter = require('./routes/match');
 const matchesRouter = require('./routes/matches');
 const dailyRouter = require('./routes/daily');
 const importExportRouter = require('./routes/import-export');
+const realNexRouter = require('./routes/realnex');
+const channelRouter = require('./routes/channels');
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
@@ -31,6 +33,8 @@ function createApp() {
   app.use(matchesRouter);
   app.use(dailyRouter);
   app.use(importExportRouter);
+  app.use(realNexRouter);
+  app.use(channelRouter);
   app.use((error, _req, res, _next) => {
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
     const message = statusCode >= 500 ? 'Internal server error' : error.message;

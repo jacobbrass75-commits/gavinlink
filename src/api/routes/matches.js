@@ -104,7 +104,7 @@ router.get('/api/matches/:id', async (req, res, next) => {
   }
 });
 
-router.put('/api/matches/:id/status', async (req, res, next) => {
+router.put('/api/matches/:id/status', requireAdminApiKey, async (req, res, next) => {
   try {
     if (!isUuid(req.params.id)) {
       return res.status(400).json({ error: 'id must be a valid UUID' });
