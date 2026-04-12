@@ -98,11 +98,11 @@ test('answerMessage routes lookup questions into lookupBrain', async (t) => {
 
 test('answerMessage falls back to RealNex import on local lookup miss', async (t) => {
   const originalLookupBrain = brainApp.lookupBrain;
-  const originalImportRealNexMatchToBrain = realNexApp.importRealNexMatchToBrain;
+  const originalSyncRealNexMatch = realNexApp.syncRealNexMatch;
 
   t.after(() => {
     brainApp.lookupBrain = originalLookupBrain;
-    realNexApp.importRealNexMatchToBrain = originalImportRealNexMatchToBrain;
+    realNexApp.syncRealNexMatch = originalSyncRealNexMatch;
   });
 
   brainApp.lookupBrain = async () => {
@@ -110,7 +110,7 @@ test('answerMessage falls back to RealNex import on local lookup miss', async (t
     error.statusCode = 404;
     throw error;
   };
-  realNexApp.importRealNexMatchToBrain = async (payload) => ({
+  realNexApp.syncRealNexMatch = async (payload) => ({
     status: 'imported',
     knowledge_entry_id: 'ke-realnex-1',
     entity: {

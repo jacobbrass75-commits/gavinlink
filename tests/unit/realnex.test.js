@@ -225,3 +225,151 @@ test('disambiguateLocalEntityAgainstRealNex composes local lookup with shared se
   assert.equal(result.best_match.id, 'contact-1');
   assert.equal(result.input.email, 'sgarcia@lee-re.com');
 });
+
+test('syncRealNexMatch syncs an explicit contact key and fetches the linked company by companyKey', async (t) => {
+  const dbModule = require('../../src/db/connection');
+  const mergeModule = require('../../src/ingestion/merge');
+  const knowledgeModule = require('../../src/knowledge/extract');
+  const brainModule = require('../../src/app/brain');
+  const realNexModulePath = require.resolve('../../src/app/realnex');
+  const originalQuery = dbModule.query;
+  const originalFindOrCreateEntity = mergeModule.findOrCreateEntity;
+  const originalCreateKnowledgeEntry = knowledgeModule.createKnowledgeEntry;
+  const originalBuildEntityLookupPayload = brainModule.buildEntityLookupPayload;
+
+  t.after(() => {
+    dbModule.query = originalQuery;
+    mergeModule.findOrCreateEntity = originalFindOrCreateEntity;
+    knowledgeModule.createKnowledgeEntry = originalCreateKnowledgeEntry;
+    brainModule.buildEntityLookupPayload = originalBuildEntityLookupPayload;
+    delete require.cache[realNexModulePath];
+  });
+
+  const entitySeeds = [];
+  const relationshipCalls = [];
+
+  dbModule.query = async (text, params = []) => {
+    if (text.includes('FROM entities') && text.includes("external_refs")) {
+      return { rows: [] };
+    }
+
+    if (text.includes('FROM entities') && text.includes('WHERE id = $1')) {
+      return {
+        rows: [
+          {
+            id: params[0],
+            name: params[0] === 'entity-contact' ? 'Shelly Garcia' : 'Lee Associates',
+            normalized_name: params[0] === 'entity-contact' ? 'SHELLY GARCIA' : 'LEE ASSOCIATES',
+            entity_type: params[0] === 'entity-contact' ? 'person' : 'unknown',
+            phone: null,
+            email: null,
+            metadata: {}
+          }
+        ]
+      };
+    }
+
+    if (text.includes('UPDATE entities')) {
+      return {
+        rows: [
+          {
+            id: params[0],
+            name: params[0] === 'entity-contact' ? 'Shelly Garcia' : 'Lee Associates',
+            normalized_name: params[0] === 'entity-contact' ? 'SHELLY GARCIA' : 'LEE ASSOCIATES',
+            entity_type: params[0] === 'entity-contact' ? 'person' : 'unknown',
+            phone: params[1],
+            email: params[2],
+            metadata: JSON.parse(params[3])
+          }
+        ]
+      };
+    }
+
+    if (text.includes('INSERT INTO entity_relationships')) {
+      relationshipCalls.push(params.slice(1, 4));
+      return {
+        rows: [{ id: 'rel-1' }]
+      };
+    }
+
+    throw new Error(`Unexpected query in syncRealNexMatch test: ${text}`);
+  };
+
+  mergeModule.findOrCreateEntity = async (seed) => {
+    entitySeeds.push(seed);
+
+    if (seed.name === 'Shelly Garcia') {
+      return {
+        entity: {
+          id: 'entity-contact',
+          name: 'Shelly Garcia',
+          entity_type: 'person',
+          metadata: {}
+        }
+      };
+    }
+
+    return {
+      entity: {
+        id: 'entity-company',
+        name: 'Lee Associates',
+        entity_type: 'unknown',
+        metadata: {}
+      }
+    };
+  };
+
+  knowledgeModule.createKnowledgeEntry = async () => ({
+    id: 'ke-realnex-1'
+  });
+  brainModule.buildEntityLookupPayload = async (entityId) => ({
+    kind: 'entity',
+    entity: {
+      id: entityId,
+      name: entityId === 'entity-contact' ? 'Shelly Garcia' : 'Lee Associates',
+      type: entityId === 'entity-contact' ? 'person' : 'unknown'
+    },
+    relationships: [],
+    properties: []
+  });
+
+  delete require.cache[realNexModulePath];
+  const { syncRealNexMatch } = require('../../src/app/realnex');
+  const result = await syncRealNexMatch(
+    {
+      kind: 'contact',
+      key: 'contact-1',
+      companyKey: 'company-1'
+    },
+    {
+      service: {
+        getContact: async () => ({
+          Key: 'contact-1',
+          FullName: 'Shelly Garcia',
+          Email: 'sgarcia@lee-re.com',
+          CompanyName: 'Lee Associates',
+          CompanyKey: 'company-1'
+        }),
+        getCompany: async () => ({
+          Key: 'company-1',
+          Name: 'Lee Associates',
+          WebSite: 'https://www.lee-associates.com'
+        })
+      }
+    }
+  );
+
+  assert.equal(result.disambiguation, null);
+  assert.equal(result.entity.name, 'Shelly Garcia');
+  assert.equal(result.company_entity.name, 'Lee Associates');
+  assert.equal(result.knowledge_entry_id, 'ke-realnex-1');
+  assert.deepEqual(
+    entitySeeds.map((seed) => seed.name),
+    ['Shelly Garcia', 'Lee Associates']
+  );
+  assert.deepEqual(relationshipCalls[0], [
+    'entity-contact',
+    'entity-company',
+    'affiliated_with'
+  ]);
+});

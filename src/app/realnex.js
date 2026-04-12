@@ -119,7 +119,13 @@ function extractCandidateCompanyKey(candidate = {}) {
   return pickFirstString([
     candidate.CompanyKey,
     candidate.companyKey,
-    candidate.company_key
+    candidate.company_key,
+    candidate.AccountKey,
+    candidate.accountKey,
+    candidate.account_key,
+    candidate.OrganizationKey,
+    candidate.organizationKey,
+    candidate.organization_key
   ]);
 }
 
@@ -571,8 +577,14 @@ async function findEntityByRealNexRef(kind, key) {
     `
       SELECT id, name, normalized_name, entity_type, phone, email, metadata
       FROM entities
-      WHERE metadata -> 'external_refs' -> 'realnex' ->> 'kind' = $1
-        AND metadata -> 'external_refs' -> 'realnex' ->> 'key' = $2
+      WHERE (
+          metadata -> 'external_refs' -> 'realnex' ->> 'kind' = $1
+          AND metadata -> 'external_refs' -> 'realnex' ->> 'key' = $2
+        )
+         OR (
+          metadata -> 'realnex' ->> 'kind' = $1
+          AND metadata -> 'realnex' ->> 'key' = $2
+        )
       ORDER BY updated_at DESC
       LIMIT 1
     `,
@@ -926,7 +938,7 @@ async function disambiguateLocalEntityAgainstRealNex(input = {}, options = {}) {
   };
 }
 
-async function importRealNexMatchToBrain(input = {}, options = {}) {
+async function syncRealNexMatch(input = {}, options = {}) {
   const service = options.service || createRealNexService(options.serviceOptions || {});
   const minScore = Math.max(1, Math.min(100, Number(options.minScore ?? input.minScore ?? 70) || 70));
   const kind = cleanText(input.kind, null)?.toLowerCase() || null;
@@ -938,14 +950,33 @@ async function importRealNexMatchToBrain(input = {}, options = {}) {
       normalizeKind(kind) === 'company'
         ? await service.getCompany(key)
         : await service.getContact(key);
+    let explicitCompanyCandidate = null;
+    const explicitCompanyKey =
+      normalizeKind(kind) === 'contact'
+        ? cleanText(input.companyKey, null) || extractCandidateCompanyKey(candidate)
+        : null;
+
+    if (explicitCompanyKey) {
+      try {
+        explicitCompanyCandidate = await service.getCompany(explicitCompanyKey);
+      } catch (_error) {
+        explicitCompanyCandidate = null;
+      }
+    }
+
     return {
       disambiguation: null,
       ...(await syncCandidateToBrain(candidate, kind, {
         entityId: input.entityId,
-        company: input.company,
+        company:
+          input.company ||
+          extractCandidateName(explicitCompanyCandidate) ||
+          extractCandidateCompany(explicitCompanyCandidate) ||
+          null,
         email: input.email,
         phone: input.phone,
-        createKnowledge: options.createKnowledge !== false
+        createKnowledge: options.createKnowledge !== false,
+        companyCandidate: explicitCompanyCandidate
       }))
     };
   }
@@ -990,10 +1021,10 @@ async function importRealNexMatchToBrain(input = {}, options = {}) {
   if (
     bestMatch.kind === 'contact' &&
     !topCompanyCandidate &&
-    cleanText(candidate?.companyKey, null)
+    extractCandidateCompanyKey(candidate)
   ) {
     try {
-      companyCandidateFromKey = await service.getCompany(candidate.companyKey);
+      companyCandidateFromKey = await service.getCompany(extractCandidateCompanyKey(candidate));
     } catch (_error) {
       companyCandidateFromKey = null;
     }
@@ -1016,9 +1047,14 @@ async function importRealNexMatchToBrain(input = {}, options = {}) {
   };
 }
 
+async function importRealNexMatchToBrain(input = {}, options = {}) {
+  return syncRealNexMatch(input, options);
+}
+
 module.exports = {
   createRealNexService,
   disambiguateLocalEntityAgainstRealNex,
+  syncRealNexMatch,
   importRealNexMatchToBrain,
   scoreCandidate,
   rankCandidates,

@@ -608,7 +608,7 @@ async function answerMessage(options = {}) {
       } catch (error) {
         if (error?.statusCode === 404) {
           try {
-            const imported = await realNexApp.importRealNexMatchToBrain(
+            const imported = await realNexApp.syncRealNexMatch(
               {
                 name: lookupIdentity.name,
                 company: lookupIdentity.company

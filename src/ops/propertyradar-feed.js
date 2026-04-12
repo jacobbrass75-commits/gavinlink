@@ -135,27 +135,113 @@ function getUrgencyRank(changeType) {
   }
 }
 
+function humanizeToken(value, fallback = null) {
+  const text = cleanText(value, null);
+
+  if (!text) {
+    return fallback;
+  }
+
+  return text
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
+function formatTimeline(value) {
+  const text = cleanText(value, null);
+
+  if (!text) {
+    return null;
+  }
+
+  if (text === '30_days') {
+    return '30-day';
+  }
+
+  if (text === '60_days') {
+    return '60-day';
+  }
+
+  if (text === '90_days') {
+    return '90-day';
+  }
+
+  return text === 'urgent' ? 'urgent' : humanizeToken(text, text);
+}
+
+function sortAlertsByPriority(left, right) {
+  const leftMatched = Boolean(left?.matched_property_id || left?.matched_property_address || left?.property_apn);
+  const rightMatched = Boolean(right?.matched_property_id || right?.matched_property_address || right?.property_apn);
+  const rankDelta = getUrgencyRank(right?.normalized_change_type) - getUrgencyRank(left?.normalized_change_type);
+
+  if (rankDelta !== 0) {
+    return rankDelta;
+  }
+
+  const distressDelta = (Number(right?.distress_level) || 0) - (Number(left?.distress_level) || 0);
+
+  if (distressDelta !== 0) {
+    return distressDelta;
+  }
+
+  if (rightMatched !== leftMatched) {
+    return Number(rightMatched) - Number(leftMatched);
+  }
+
+  return String(left?.matched_property_address || left?.street || '')
+    .localeCompare(String(right?.matched_property_address || right?.street || ''));
+}
+
+function summarizeAlertMix(alerts = []) {
+  const counts = new Map();
+
+  for (const alert of alerts) {
+    const label = humanizeToken(alert?.normalized_change_type, cleanText(alert?.what_changed, 'Other'));
+    counts.set(label, (counts.get(label) || 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 4)
+    .map(([label, count]) => `${label} ${count}`)
+    .join(' | ');
+}
+
 function formatActionableAlert(alert) {
+  const prefix = alert.status === 'preview' ? '[preview] ' : '';
+
+  if (cleanText(alert?.broker_summary, null)) {
+    return `- ${prefix}${alert.broker_summary}`;
+  }
+
   const parts = [
     `${alert.what_changed || alert.normalized_change_type || 'Alert'}: ${alert.matched_property_address || alert.street || alert.radar_id || 'unknown property'}`,
     alert.city ? `${alert.city}${alert.state ? `, ${alert.state}` : ''}` : alert.state || null,
-    alert.timeline ? `${alert.timeline} timeline` : null,
+    formatTimeline(alert.timeline) ? `${formatTimeline(alert.timeline)} timeline` : null,
     alert.distress_level != null ? `distress ${alert.distress_level}` : null,
     alert.property_apn ? `APN ${alert.property_apn}` : null,
     alert.owner_name ? `owner ${alert.owner_name}` : null
   ].filter(Boolean);
 
-  return `- ${parts.join(' | ')}`;
+  return `- ${prefix}${parts.join(' | ')}`;
 }
 
 function formatUnmatchedAlert(alert) {
+  const prefix = alert.status === 'preview' ? '[preview] ' : '';
+
+  if (cleanText(alert?.broker_summary, null)) {
+    return `- ${prefix}${alert.broker_summary}`;
+  }
+
   const parts = [
     `${alert.what_changed || alert.normalized_change_type || 'Alert'}: ${alert.street || alert.radar_id || 'unknown property'}`,
     alert.city ? `${alert.city}${alert.state ? `, ${alert.state}` : ''}` : alert.state || null,
     alert.zip ? `ZIP ${alert.zip}` : null
   ].filter(Boolean);
 
-  return `- ${parts.join(' | ')}`;
+  return `- ${prefix}${parts.join(' | ')}`;
 }
 
 function buildPropertyRadarFeedSummary({
@@ -174,13 +260,16 @@ function buildPropertyRadarFeedSummary({
     `Matched properties: ${Number(result?.matched_properties) || 0} | Refreshed: ${Number(result?.refreshed_with_realestatetool) || 0}`
   ];
   const outcomes = Array.isArray(result?.results) ? result.results : [];
-  const actionable = outcomes
-    .filter((item) => item?.status === 'recorded')
-    .sort((left, right) => getUrgencyRank(right.normalized_change_type) - getUrgencyRank(left.normalized_change_type))
+  const brokerVisible = outcomes.filter((item) => item?.status === 'recorded' || item?.status === 'preview');
+  const actionable = brokerVisible
+    .filter((item) => item?.matched_property_id || item?.matched_property_address || item?.property_apn)
+    .sort(sortAlertsByPriority)
     .slice(0, 5);
-  const unmatched = outcomes
-    .filter((item) => item?.status === 'recorded' && !item?.matched_property_id)
+  const unmatched = brokerVisible
+    .filter((item) => !item?.matched_property_id && !item?.matched_property_address && !item?.property_apn)
+    .sort(sortAlertsByPriority)
     .slice(0, 3);
+  const alertMix = summarizeAlertMix(brokerVisible);
 
   if (Number(result?.recorded) === 0 && Number(result?.duplicates) > 0) {
     lines.push('Status: no new alerts recorded; all parsed alerts were already in the brain.');
@@ -204,18 +293,26 @@ function buildPropertyRadarFeedSummary({
 
   lines.push(`Errors: ${Array.isArray(result?.errors) ? result.errors.length : 0}`);
 
+  if (alertMix) {
+    lines.push(`Alert mix: ${alertMix}`);
+  }
+
   if (actionable.length > 0) {
-    lines.push('', 'Top actionable alerts:');
+    lines.push('', 'Broker priorities:');
     for (const alert of actionable) {
       lines.push(formatActionableAlert(alert));
     }
   }
 
   if (unmatched.length > 0) {
-    lines.push('', 'Unmatched alerts:');
+    lines.push('', 'Needs matching:');
     for (const alert of unmatched) {
       lines.push(formatUnmatchedAlert(alert));
     }
+  }
+
+  if (actionable.length === 0 && unmatched.length === 0 && brokerVisible.length === 0) {
+    lines.push('Broker priorities: none from this run.');
   }
 
   if (errors.length > 0) {

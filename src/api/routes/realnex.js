@@ -2,6 +2,7 @@ const express = require('express');
 const {
   createRealNexService,
   disambiguateLocalEntityAgainstRealNex,
+  syncRealNexMatch,
   importRealNexMatchToBrain
 } = require('../../app/realnex');
 const { requireAdminApiKey } = require('../guardrails');
@@ -38,10 +39,12 @@ const importSchema = z
     entityId: z.string().trim().optional(),
     key: z.string().trim().optional(),
     kind: z.enum(['contact', 'company']).optional(),
+    companyKey: z.string().trim().optional(),
     name: z.string().trim().optional(),
     email: z.string().trim().optional(),
     phone: z.string().trim().optional(),
     company: z.string().trim().optional(),
+    createKnowledge: z.boolean().optional(),
     minScore: z.coerce.number().int().min(1).max(100).optional(),
     limit: z.coerce.number().int().min(1).max(25).optional(),
     pageSize: z.coerce.number().int().min(1).max(50).optional(),
@@ -134,7 +137,26 @@ async function importHandler(req, res, next) {
         pageSize: body.pageSize,
         contactLimit: body.contactLimit,
         companyLimit: body.companyLimit,
-        createKnowledge: true
+        createKnowledge: body.createKnowledge !== false
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function syncHandler(req, res, next) {
+  try {
+    const body = req.validatedBody || {};
+    return res.json(
+      await syncRealNexMatch(body, {
+        service: getRealNexService(),
+        minScore: body.minScore,
+        limit: body.limit,
+        pageSize: body.pageSize,
+        contactLimit: body.contactLimit,
+        companyLimit: body.companyLimit,
+        createKnowledge: body.createKnowledge !== false
       })
     );
   } catch (error) {
@@ -153,7 +175,7 @@ router.post(
   '/api/realnex/sync',
   requireAdminApiKey,
   validateBody(importSchema),
-  importHandler
+  syncHandler
 );
 
 module.exports = router;

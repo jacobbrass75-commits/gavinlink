@@ -290,14 +290,14 @@ test('POST /api/realnex/import uses the shared RealNex import service', async (t
   assert.equal(payload.company_entity.name, 'Lee Associates');
 });
 
-test('POST /api/realnex/sync reuses the shared RealNex import service', async (t) => {
-  const originalImport = realNexApp.importRealNexMatchToBrain;
+test('POST /api/realnex/sync uses the shared RealNex sync service', async (t) => {
+  const originalSync = realNexApp.syncRealNexMatch;
 
   t.after(() => {
-    realNexApp.importRealNexMatchToBrain = originalImport;
+    realNexApp.syncRealNexMatch = originalSync;
   });
 
-  realNexApp.importRealNexMatchToBrain = async (input) => ({
+  realNexApp.syncRealNexMatch = async (input) => ({
     status: 'imported',
     entity: {
       id: 'entity-1',

@@ -438,6 +438,132 @@ function normalizeRealEstateToolType(value) {
   return text.toLowerCase();
 }
 
+function pickFirstText(...values) {
+  for (const value of values) {
+    const cleaned = cleanText(value, null);
+    if (cleaned) {
+      return cleaned;
+    }
+  }
+
+  return null;
+}
+
+function formatNumber(value) {
+  const numeric = toNullableNumber(value, null);
+
+  if (numeric == null) {
+    return null;
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: numeric % 1 === 0 ? 0 : 2
+  }).format(numeric);
+}
+
+function formatCurrency(value) {
+  const numeric = toNullableNumber(value, null);
+
+  if (numeric == null) {
+    return null;
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0
+  }).format(numeric);
+}
+
+function humanizeToken(value, fallback = null) {
+  const text = cleanText(value, null);
+
+  if (!text) {
+    return fallback;
+  }
+
+  return text
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
+function humanizeTimeline(value) {
+  const text = cleanText(value, null);
+
+  if (!text) {
+    return null;
+  }
+
+  if (text === '30_days') {
+    return '30-day';
+  }
+
+  if (text === '60_days') {
+    return '60-day';
+  }
+
+  if (text === '90_days') {
+    return '90-day';
+  }
+
+  return text === 'urgent' ? 'urgent' : humanizeToken(text, text);
+}
+
+function buildAlertLocation(alert, property = null) {
+  const address = pickFirstText(property?.address, alert?.street);
+  const city = pickFirstText(property?.city, alert?.city);
+  const state = pickFirstText(property?.state, alert?.state);
+  const locality = [city, state].filter(Boolean).join(', ');
+
+  return [address, locality].filter(Boolean).join(', ') || null;
+}
+
+function getOwnerName(property, realEstateToolSnapshot = null) {
+  return pickFirstText(
+    property?.owner_name,
+    realEstateToolSnapshot?.owner_name,
+    [
+      cleanText(realEstateToolSnapshot?.owner_first_name, null),
+      cleanText(realEstateToolSnapshot?.owner_last_name, null)
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+}
+
+function getTrusteeName(property, realEstateToolSnapshot = null) {
+  return pickFirstText(property?.trustee_name, realEstateToolSnapshot?.trustee_name);
+}
+
+function buildBrokerAlertSummary(alert, property, sellerProfile, realEstateToolSnapshot) {
+  const summary = cleanText(
+    alert?.what_changed,
+    humanizeToken(alert?.normalized_change_type, 'PropertyRadar alert')
+  );
+  const location = buildAlertLocation(alert, property);
+  const ownerName = getOwnerName(property, realEstateToolSnapshot);
+  const trusteeName = getTrusteeName(property, realEstateToolSnapshot);
+  const distressLevel = toNullableNumber(sellerProfile?.distress_level, null);
+  const timeline = humanizeTimeline(sellerProfile?.timeline);
+  const assessedValue = formatCurrency(property?.assessed_value);
+
+  return [
+    summary,
+    location ? `at ${location}` : null,
+    property?.apn ? `APN ${property.apn}` : null,
+    ownerName ? `owner ${ownerName}` : null,
+    trusteeName ? `trustee ${trusteeName}` : null,
+    distressLevel != null ? `distress ${distressLevel}/5` : null,
+    timeline ? `${timeline} timeline` : null,
+    assessedValue ? `assessed ${assessedValue}` : null,
+    property?.id ? 'matched in Soleil' : 'unmatched in Soleil'
+  ]
+    .filter(Boolean)
+    .join('; ');
+}
+
 function buildPropertyRadarMetadata(property, alert, messageMeta, realEstateToolSnapshot) {
   const existing = property?.metadata && typeof property.metadata === 'object' && !Array.isArray(property.metadata)
     ? property.metadata
@@ -570,19 +696,37 @@ async function syncSellerProfileFromAlert(property, alert, messageMeta) {
   });
 }
 
-function buildKnowledgeContent(alert, messageMeta, property, realEstateToolSnapshot) {
+function buildKnowledgeContent(alert, messageMeta, property, sellerProfile, realEstateToolSnapshot) {
+  const brokerSummary = buildBrokerAlertSummary(
+    alert,
+    property,
+    sellerProfile || {},
+    realEstateToolSnapshot
+  );
   const lines = [
     `PropertyRadar alert "${alert.alert_name || 'Daily Digest Alert'}" reported ${alert.what_changed}.`,
+    brokerSummary ? `Broker summary: ${brokerSummary}` : null,
     cleanText(alert.street, null) ? `Street: ${alert.street}` : null,
     cleanText(alert.city, null) ? `City: ${alert.city}` : null,
     cleanText(alert.state, null) ? `State: ${alert.state}` : null,
     cleanText(alert.zip, null) ? `ZIP: ${alert.zip}` : null,
     cleanText(alert.radar_id, null) ? `Radar ID: ${alert.radar_id}` : null,
     cleanText(alert.property_type, null) ? `Property type: ${alert.property_type}` : null,
-    alert.sq_feet != null ? `Sq Ft: ${alert.sq_feet}` : null,
-    alert.est_value != null ? `Estimated value: ${alert.est_value}` : null,
+    alert.sq_feet != null ? `Sq Ft: ${formatNumber(alert.sq_feet)}` : null,
+    alert.est_value != null ? `Estimated value: ${formatCurrency(alert.est_value)}` : null,
     property?.apn ? `Matched APN: ${property.apn}` : null,
     property?.address ? `Matched property: ${property.address}` : null,
+    getOwnerName(property, realEstateToolSnapshot)
+      ? `Owner: ${getOwnerName(property, realEstateToolSnapshot)}`
+      : null,
+    getTrusteeName(property, realEstateToolSnapshot)
+      ? `Trustee: ${getTrusteeName(property, realEstateToolSnapshot)}`
+      : null,
+    property?.assessed_value != null ? `Assessed value: ${formatCurrency(property.assessed_value)}` : null,
+    sellerProfile?.distress_level != null ? `Distress level: ${sellerProfile.distress_level}/5` : null,
+    cleanText(sellerProfile?.timeline, null)
+      ? `Timeline: ${humanizeTimeline(sellerProfile.timeline)}`
+      : null,
     realEstateToolSnapshot ? 'RealEstateTool refresh: snapshot captured' : 'RealEstateTool refresh: unavailable',
     messageMeta.subject ? `Email subject: ${messageMeta.subject}` : null,
     messageMeta.from ? `Email from: ${messageMeta.from}` : null
@@ -591,14 +735,25 @@ function buildKnowledgeContent(alert, messageMeta, property, realEstateToolSnaps
   return lines.join('\n');
 }
 
-function buildAlertOutcomeSnapshot({ alert, property = null, sellerProfile = null, refreshed = false }) {
+function buildAlertOutcomeSnapshot({
+  alert,
+  property = null,
+  sellerProfile = null,
+  refreshed = false,
+  realEstateToolSnapshot = null
+}) {
   const assessedValue = toNullableNumber(property?.assessed_value ?? alert?.est_value);
   const distressLevel =
     sellerProfile?.distress_level ??
-    (property ? getDistressAssessment(property, {}).score : null);
+    (property && alert?.foreclosure_related ? getDistressAssessment(property, {}).score : null);
+  const effectiveTimeline = cleanText(
+    sellerProfile?.timeline,
+    alert?.foreclosure_related ? deriveTimeline(alert.normalized_change_type) : null
+  );
 
   return {
     radar_id: alert.radar_id || null,
+    alert_name: alert.alert_name || null,
     street: alert.street || null,
     city: alert.city || null,
     state: alert.state || null,
@@ -609,12 +764,21 @@ function buildAlertOutcomeSnapshot({ alert, property = null, sellerProfile = nul
     matched_property_id: property?.id || null,
     matched_property_address: property?.address || null,
     property_apn: property?.apn || null,
-    owner_name: property?.owner_name || null,
-    trustee_name: property?.trustee_name || null,
+    owner_name: getOwnerName(property, realEstateToolSnapshot),
+    trustee_name: getTrusteeName(property, realEstateToolSnapshot),
     assessed_value: assessedValue,
     distress_level: distressLevel,
-    timeline: deriveTimeline(alert.normalized_change_type),
-    refreshed_with_realestatetool: Boolean(refreshed)
+    timeline: effectiveTimeline,
+    refreshed_with_realestatetool: Boolean(refreshed),
+    broker_summary: buildBrokerAlertSummary(
+      alert,
+      property,
+      {
+        distress_level: distressLevel,
+        timeline: effectiveTimeline
+      },
+      realEstateToolSnapshot
+    )
   };
 }
 
@@ -709,7 +873,8 @@ async function recordPropertyRadarAlert({ alert, messageMeta, dryRun = false, re
     alert,
     property,
     sellerProfile: currentSellerProfile,
-    refreshed: Boolean(realEstateToolSnapshot)
+    refreshed: Boolean(realEstateToolSnapshot),
+    realEstateToolSnapshot
   });
 
   if (dryRun) {
@@ -734,7 +899,28 @@ async function recordPropertyRadarAlert({ alert, messageMeta, dryRun = false, re
   const sellerProfile = nextProperty
     ? await syncSellerProfileFromAlert(nextProperty, alert, messageMeta)
     : null;
-  const content = buildKnowledgeContent(alert, messageMeta, nextProperty, realEstateToolSnapshot);
+  const effectiveSellerProfile = sellerProfile || {
+    distress_level:
+      currentSellerProfile?.distress_level ??
+      (nextProperty && alert.foreclosure_related ? getDistressAssessment(nextProperty, {}).score : null),
+    timeline: cleanText(
+      currentSellerProfile?.timeline,
+      alert.foreclosure_related ? deriveTimeline(alert.normalized_change_type) : null
+    )
+  };
+  const brokerSummary = buildBrokerAlertSummary(
+    alert,
+    nextProperty,
+    effectiveSellerProfile,
+    realEstateToolSnapshot
+  );
+  const content = buildKnowledgeContent(
+    alert,
+    messageMeta,
+    nextProperty,
+    effectiveSellerProfile,
+    realEstateToolSnapshot
+  );
   const entityIds = [
     nextProperty?.owner_entity_id,
     nextProperty?.trustee_entity_id,
@@ -745,7 +931,7 @@ async function recordPropertyRadarAlert({ alert, messageMeta, dryRun = false, re
     entry_type: 'email',
     title: `PropertyRadar alert: ${alert.what_changed}${nextProperty?.address ? ` - ${nextProperty.address}` : ''}`,
     content,
-    summary: `${alert.what_changed} for ${alert.street || nextProperty?.address || alert.radar_id || 'property alert'}`,
+    summary: brokerSummary,
     source: 'email',
     property_id: nextProperty?.id || null,
     entity_id: nextProperty?.owner_entity_id || nextProperty?.trustee_entity_id || nextProperty?.lender_entity_id || null,
@@ -764,7 +950,7 @@ async function recordPropertyRadarAlert({ alert, messageMeta, dryRun = false, re
       normalized_change_type: alert.normalized_change_type,
       realestatetool_snapshot: realEstateToolSnapshot || null
     },
-    ai_summary: `${alert.what_changed} recorded from PropertyRadar for ${alert.street || nextProperty?.address || 'matched property'}`,
+    ai_summary: brokerSummary,
     ai_tags: ['propertyradar', 'email', 'alert', alert.normalized_change_type, alert.city].filter(Boolean),
     ai_classifications: ['property_note', 'deal_update'],
     entity_ids: entityIds,
@@ -806,7 +992,8 @@ async function recordPropertyRadarAlert({ alert, messageMeta, dryRun = false, re
       alert,
       property: nextProperty,
       sellerProfile,
-      refreshed: Boolean(realEstateToolSnapshot)
+      refreshed: Boolean(realEstateToolSnapshot),
+      realEstateToolSnapshot
     })
   };
 }

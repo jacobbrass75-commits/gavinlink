@@ -260,7 +260,7 @@ Auth defaults:
 
 Runtime adapters:
 
-- RealNex API routes: `/api/realnex/contacts`, `/api/realnex/contacts/:key`, `/api/realnex/companies/:key`, `/api/realnex/properties/:key`, `/api/realnex/disambiguate`
+- RealNex API routes: `/api/realnex/contacts`, `/api/realnex/contacts/:key`, `/api/realnex/companies/:key`, `/api/realnex/properties/:key`, `/api/realnex/disambiguate`, `/api/realnex/sync`
 - Channel ingest routes: `/api/channels/omi`, `/api/channels/hermes`, `/api/channels/vermes`
 - Telegram bot is a runtime worker, not just a probe script
 
