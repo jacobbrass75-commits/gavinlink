@@ -1,4 +1,5 @@
 const brainApp = require('./brain');
+const realNexApp = require('./realnex');
 const runtimeApp = require('./runtime');
 const inferenceProvider = require('../inference/provider');
 
@@ -49,6 +50,31 @@ function parseAssistantCommand(text) {
 
 function stripTrailingPunctuation(text) {
   return String(text || '').replace(/^[\s"'`]+|[\s"'`?!.,:;]+$/g, '').trim();
+}
+
+function splitLookupIdentity(argument) {
+  const normalized = cleanText(argument, '');
+
+  if (!normalized) {
+    return {
+      name: '',
+      company: null
+    };
+  }
+
+  const match = normalized.match(/^(.+?)\s+(?:at|from)\s+(.+)$/i);
+
+  if (!match) {
+    return {
+      name: normalized,
+      company: null
+    };
+  }
+
+  return {
+    name: stripTrailingPunctuation(match[1]),
+    company: stripTrailingPunctuation(match[2])
+  };
 }
 
 function looksLikeQuestion(text) {
@@ -396,6 +422,22 @@ function formatLookupPayload(payload) {
   return 'Lookup returned no usable result.';
 }
 
+function formatRealNexLookupResult(result) {
+  const lines = [formatLookupPayload(result?.lookup_payload)];
+
+  if (result?.status === 'imported') {
+    lines.push('', 'Synced from RealNex.');
+  } else if (result?.status === 'already_linked') {
+    lines.push('', 'Matched against an existing RealNex-linked entity.');
+  }
+
+  if (result?.company_entity?.name) {
+    lines.push(`Linked company: ${result.company_entity.name}`);
+  }
+
+  return truncateMessage(lines.filter(Boolean).join('\n'));
+}
+
 function formatMatchPayload(payload) {
   const matches = Array.isArray(payload?.matches) ? payload.matches.slice(0, 5) : [];
 
@@ -549,9 +591,11 @@ async function answerMessage(options = {}) {
         };
       }
 
+      const lookupIdentity = splitLookupIdentity(resolved.argument);
+
       try {
         const payload = await brainApp.lookupBrain({
-          name: resolved.argument
+          name: lookupIdentity.name
         });
         return {
           intent: 'lookup',
@@ -563,6 +607,30 @@ async function answerMessage(options = {}) {
         };
       } catch (error) {
         if (error?.statusCode === 404) {
+          try {
+            const imported = await realNexApp.importRealNexMatchToBrain(
+              {
+                name: lookupIdentity.name,
+                company: lookupIdentity.company
+              },
+              {
+                minScore: 72,
+                createKnowledge: true
+              }
+            );
+
+            return {
+              intent: 'lookup',
+              argument: resolved.argument,
+              route: `${resolved.route}:realnex_import`,
+              saved: Boolean(imported.knowledge_entry_id),
+              reply: formatRealNexLookupResult(imported),
+              payload: imported.lookup_payload
+            };
+          } catch (_realNexError) {
+            // Fall back to the normal not-found reply when no confident RealNex match exists.
+          }
+
           return {
             intent: 'lookup',
             argument: resolved.argument,

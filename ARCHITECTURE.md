@@ -129,6 +129,8 @@ The Express server in `src/api/server.js` mounts route families for:
 
 `/api/*` is the real working surface. `/brain/*` is a mixed compatibility layer: some routes still proxy real behavior and some remain placeholders. It should not be treated as the canonical product API.
 
+Protected write surfaces fail closed unless explicit secrets are configured. Administrative routes use `ADMIN_API_KEY`. Channel ingress uses route-specific shared secrets instead of a global admin fallback.
+
 ### CLI
 
 `brain` is a thin adapter over the API for the core actions:

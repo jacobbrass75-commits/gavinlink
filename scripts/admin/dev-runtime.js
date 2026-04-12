@@ -111,9 +111,7 @@ async function getLocalStatus() {
     api,
     auth: {
       mode: runtimeApp.getWriteAuthMode(),
-      admin_api_key_configured: Boolean(cleanText(process.env.ADMIN_API_KEY, null)),
-      allow_unauthenticated_write:
-        String(process.env.ALLOW_UNAUTHENTICATED_WRITE || '').trim().toLowerCase() === 'true'
+      admin_api_key_configured: Boolean(cleanText(process.env.ADMIN_API_KEY, null))
     }
   };
 }

@@ -182,6 +182,46 @@ async function getKnowledgeForProperty(propertyId) {
   }));
 }
 
+async function buildEntityLookupPayload(entityId, { matchType = 'exact' } = {}) {
+  const entityDetail = await getEntityDetail(entityId);
+
+  if (!entityDetail) {
+    throw createAppError(404, 'Entity not found');
+  }
+
+  const portfolio = await entityCluster.getPortfolio(entityId);
+  const buyerProfileResult = await db.query(
+    `
+      SELECT id
+      FROM buyer_profiles
+      WHERE entity_id = $1
+      LIMIT 1
+    `,
+    [entityId]
+  );
+  const sellerProfilesResult = await db.query(
+    `
+      SELECT id, property_id, distress_level, motivation
+      FROM seller_profiles
+      WHERE entity_id = $1
+      ORDER BY distress_level DESC NULLS LAST, created_at DESC
+    `,
+    [entityId]
+  );
+
+  return {
+    kind: 'entity',
+    match_type: matchType,
+    entity: entityDetail.entity,
+    relationships: entityDetail.relationships,
+    properties: entityDetail.properties,
+    portfolio,
+    buyer_profile_id: buyerProfileResult.rows[0]?.id || null,
+    seller_profiles: sellerProfilesResult.rows,
+    knowledge_entries: await getKnowledgeForEntity(entityId)
+  };
+}
+
 async function ingestMessage({
   message,
   source = 'app',
@@ -257,38 +297,9 @@ async function lookupBrain({ name }) {
   const matchedEntity = exact || fuzzy[0] || null;
 
   if (matchedEntity) {
-    const entityDetail = await getEntityDetail(matchedEntity.id);
-    const portfolio = await entityCluster.getPortfolio(matchedEntity.id);
-    const buyerProfileResult = await db.query(
-      `
-        SELECT id
-        FROM buyer_profiles
-        WHERE entity_id = $1
-        LIMIT 1
-      `,
-      [matchedEntity.id]
-    );
-    const sellerProfilesResult = await db.query(
-      `
-        SELECT id, property_id, distress_level, motivation
-        FROM seller_profiles
-        WHERE entity_id = $1
-        ORDER BY distress_level DESC NULLS LAST, created_at DESC
-      `,
-      [matchedEntity.id]
-    );
-
-    return {
-      kind: 'entity',
-      match_type: exact ? 'exact' : 'fuzzy',
-      entity: entityDetail.entity,
-      relationships: entityDetail.relationships,
-      properties: entityDetail.properties,
-      portfolio,
-      buyer_profile_id: buyerProfileResult.rows[0]?.id || null,
-      seller_profiles: sellerProfilesResult.rows,
-      knowledge_entries: await getKnowledgeForEntity(matchedEntity.id)
-    };
+    return buildEntityLookupPayload(matchedEntity.id, {
+      matchType: exact ? 'exact' : 'fuzzy'
+    });
   }
 
   const propertyResult = await db.query(
@@ -477,6 +488,7 @@ module.exports = {
   createAppError,
   toNumber,
   getEntityDetail,
+  buildEntityLookupPayload,
   ingestMessage,
   ingestChannelEvent,
   ingestAudio,

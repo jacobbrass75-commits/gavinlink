@@ -6,7 +6,7 @@ const {
 } = require('../../app/channels');
 const assistantApp = require('../../app/assistant');
 const brainApp = require('../../app/brain');
-const { requireAdminApiKey } = require('../guardrails');
+const { safeEqual } = require('../guardrails');
 
 const router = express.Router();
 
@@ -19,37 +19,32 @@ function cleanText(value, fallback = null) {
   return trimmed === '' ? fallback : trimmed;
 }
 
-function matchesSecret(req, candidates = []) {
-  const provided = cleanText(
-    req.get('x-webhook-secret') ||
-      req.get('x-omi-secret') ||
-      req.get('x-hermes-secret') ||
-      req.get('x-vermes-secret'),
-    null
-  );
+function matchesSecret(provided, expected) {
+  const normalizedProvided = cleanText(provided, null);
+  const normalizedExpected = cleanText(expected, null);
 
-  if (!provided) {
+  if (!normalizedProvided || !normalizedExpected) {
     return false;
   }
 
-  return candidates.some((candidate) => cleanText(candidate, null) === provided);
+  return safeEqual(normalizedProvided, normalizedExpected);
 }
 
-function requireChannelAccess(secretEnvNames = []) {
+function requireChannelAccess({ secretEnvName, headerName }) {
   return (req, res, next) => {
-    const configuredSecrets = secretEnvNames
-      .map((name) => cleanText(process.env[name], null))
-      .filter(Boolean);
+    const configuredSecret = cleanText(process.env[secretEnvName], null);
 
-    if (configuredSecrets.length > 0) {
-      if (matchesSecret(req, configuredSecrets)) {
+    if (configuredSecret) {
+      if (matchesSecret(req.get(headerName), configuredSecret)) {
         return next();
       }
 
       return res.status(401).json({ error: 'Valid webhook secret is required' });
     }
 
-    return requireAdminApiKey(req, res, next);
+    return res.status(503).json({
+      error: `${secretEnvName} must be configured for this channel route`
+    });
   };
 }
 
@@ -114,7 +109,13 @@ function buildChannelResponse(result) {
   };
 }
 
-router.post('/api/channels/omi', requireChannelAccess(['OMI_WEBHOOK_SECRET']), async (req, res, next) => {
+router.post(
+  '/api/channels/omi',
+  requireChannelAccess({
+    secretEnvName: 'OMI_WEBHOOK_SECRET',
+    headerName: 'x-omi-secret'
+  }),
+  async (req, res, next) => {
   try {
     const result = await getChannelService(process.env.OMI_DEFAULT_SOURCE || 'omi').ingestOmiPayload(
       req.body,
@@ -126,11 +127,15 @@ router.post('/api/channels/omi', requireChannelAccess(['OMI_WEBHOOK_SECRET']), a
   } catch (error) {
     return next(error);
   }
-});
+  }
+);
 
 router.post(
   '/api/channels/hermes',
-  requireChannelAccess(['HERMES_WEBHOOK_SECRET']),
+  requireChannelAccess({
+    secretEnvName: 'HERMES_WEBHOOK_SECRET',
+    headerName: 'x-hermes-secret'
+  }),
   async (req, res, next) => {
     try {
       const result = await getChannelService(process.env.HERMES_DEFAULT_SOURCE || 'hermes').ingestHermesPayload(
@@ -148,7 +153,10 @@ router.post(
 
 router.post(
   '/api/channels/vermes',
-  requireChannelAccess(['VERMES_WEBHOOK_SECRET', 'HERMES_WEBHOOK_SECRET']),
+  requireChannelAccess({
+    secretEnvName: 'VERMES_WEBHOOK_SECRET',
+    headerName: 'x-vermes-secret'
+  }),
   async (req, res, next) => {
     try {
       const result = await getChannelService(process.env.VERMES_DEFAULT_SOURCE || 'vermes').ingestVermesPayload(

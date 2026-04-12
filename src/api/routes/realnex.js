@@ -1,7 +1,8 @@
 const express = require('express');
 const {
   createRealNexService,
-  disambiguateLocalEntityAgainstRealNex
+  disambiguateLocalEntityAgainstRealNex,
+  importRealNexMatchToBrain
 } = require('../../app/realnex');
 const { requireAdminApiKey } = require('../guardrails');
 const { validateBody, z } = require('../validation');
@@ -29,6 +30,36 @@ const disambiguateSchema = z
       Boolean(value.entityId || value.name || value.email || value.phone || value.company),
     {
       message: 'entityId, name, email, phone, or company is required'
+    }
+  );
+
+const importSchema = z
+  .object({
+    entityId: z.string().trim().optional(),
+    key: z.string().trim().optional(),
+    kind: z.enum(['contact', 'company']).optional(),
+    name: z.string().trim().optional(),
+    email: z.string().trim().optional(),
+    phone: z.string().trim().optional(),
+    company: z.string().trim().optional(),
+    minScore: z.coerce.number().int().min(1).max(100).optional(),
+    limit: z.coerce.number().int().min(1).max(25).optional(),
+    pageSize: z.coerce.number().int().min(1).max(50).optional(),
+    contactLimit: z.coerce.number().int().min(1).max(500).optional(),
+    companyLimit: z.coerce.number().int().min(1).max(500).optional()
+  })
+  .refine(
+    (value) =>
+      Boolean(
+        (value.key && value.kind) ||
+          value.entityId ||
+          value.name ||
+          value.email ||
+          value.phone ||
+          value.company
+      ),
+    {
+      message: 'Either key+kind or entityId, name, email, phone, or company is required'
     }
   );
 
@@ -90,6 +121,39 @@ router.post(
       return next(error);
     }
   }
+);
+
+async function importHandler(req, res, next) {
+  try {
+    const body = req.validatedBody || {};
+    return res.json(
+      await importRealNexMatchToBrain(body, {
+        service: getRealNexService(),
+        minScore: body.minScore,
+        limit: body.limit,
+        pageSize: body.pageSize,
+        contactLimit: body.contactLimit,
+        companyLimit: body.companyLimit,
+        createKnowledge: true
+      })
+    );
+  } catch (error) {
+    return next(error);
+  }
+}
+
+router.post(
+  '/api/realnex/import',
+  requireAdminApiKey,
+  validateBody(importSchema),
+  importHandler
+);
+
+router.post(
+  '/api/realnex/sync',
+  requireAdminApiKey,
+  validateBody(importSchema),
+  importHandler
 );
 
 module.exports = router;

@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { importPropertyRadarAlerts } = require('../import-export/propertyradar-alerts');
 const { sendTelegramMessage } = require('../integrations/telegram');
 
@@ -53,6 +55,44 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getFeedStateFilePath() {
+  return path.resolve(
+    process.cwd(),
+    process.env.PROPERTYRADAR_FEED_STATE_FILE || 'data/propertyradar-feed-state.json'
+  );
+}
+
+async function loadFeedState() {
+  const filePath = getFeedStateFilePath();
+
+  try {
+    const raw = await fs.promises.readFile(filePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return {
+      seen_message_ids: Array.isArray(parsed?.seen_message_ids)
+        ? parsed.seen_message_ids.map((value) => cleanText(value, null)).filter(Boolean)
+        : []
+    };
+  } catch (_error) {
+    return {
+      seen_message_ids: []
+    };
+  }
+}
+
+async function saveFeedState(state) {
+  const filePath = getFeedStateFilePath();
+  const normalized = {
+    seen_message_ids: Array.isArray(state?.seen_message_ids)
+      ? [...new Set(state.seen_message_ids.map((value) => cleanText(value, null)).filter(Boolean))].slice(-1000)
+      : []
+  };
+
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.promises.writeFile(`${filePath}.tmp`, `${JSON.stringify(normalized, null, 2)}\n`, 'utf8');
+  await fs.promises.rename(`${filePath}.tmp`, filePath);
+}
+
 function formatErrorList(errors = [], limit = 2) {
   const preview = Array.isArray(errors) ? errors.slice(0, limit) : [];
   return preview
@@ -78,6 +118,46 @@ function formatErrorList(errors = [], limit = 2) {
     .filter(Boolean);
 }
 
+function getUrgencyRank(changeType) {
+  switch (String(changeType || '').trim().toLowerCase()) {
+    case 'reo':
+      return 5;
+    case 'auction_pending':
+      return 4;
+    case 'notice_of_sale':
+      return 3;
+    case 'notice_of_default':
+      return 2;
+    case 'pre_foreclosure':
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+function formatActionableAlert(alert) {
+  const parts = [
+    `${alert.what_changed || alert.normalized_change_type || 'Alert'}: ${alert.matched_property_address || alert.street || alert.radar_id || 'unknown property'}`,
+    alert.city ? `${alert.city}${alert.state ? `, ${alert.state}` : ''}` : alert.state || null,
+    alert.timeline ? `${alert.timeline} timeline` : null,
+    alert.distress_level != null ? `distress ${alert.distress_level}` : null,
+    alert.property_apn ? `APN ${alert.property_apn}` : null,
+    alert.owner_name ? `owner ${alert.owner_name}` : null
+  ].filter(Boolean);
+
+  return `- ${parts.join(' | ')}`;
+}
+
+function formatUnmatchedAlert(alert) {
+  const parts = [
+    `${alert.what_changed || alert.normalized_change_type || 'Alert'}: ${alert.street || alert.radar_id || 'unknown property'}`,
+    alert.city ? `${alert.city}${alert.state ? `, ${alert.state}` : ''}` : alert.state || null,
+    alert.zip ? `ZIP ${alert.zip}` : null
+  ].filter(Boolean);
+
+  return `- ${parts.join(' | ')}`;
+}
+
 function buildPropertyRadarFeedSummary({
   result,
   runNumber = 1,
@@ -89,10 +169,24 @@ function buildPropertyRadarFeedSummary({
 }) {
   const lines = [
     `PropertyRadar feed run #${runNumber} ${dryRun ? '(dry run)' : 'complete'}`,
-    `Messages: ${Number(result?.messages_processed) || 0} | Alerts: ${Number(result?.alerts_parsed) || 0}`,
+    `Messages: ${Number(result?.messages_processed) || 0} processed | ${Number(result?.messages_skipped) || 0} skipped | Alerts: ${Number(result?.alerts_parsed) || 0}`,
     `Recorded: ${Number(result?.recorded) || 0} | Duplicates: ${Number(result?.duplicates) || 0} | Previews: ${Number(result?.previews) || 0}`,
     `Matched properties: ${Number(result?.matched_properties) || 0} | Refreshed: ${Number(result?.refreshed_with_realestatetool) || 0}`
   ];
+  const outcomes = Array.isArray(result?.results) ? result.results : [];
+  const actionable = outcomes
+    .filter((item) => item?.status === 'recorded')
+    .sort((left, right) => getUrgencyRank(right.normalized_change_type) - getUrgencyRank(left.normalized_change_type))
+    .slice(0, 5);
+  const unmatched = outcomes
+    .filter((item) => item?.status === 'recorded' && !item?.matched_property_id)
+    .slice(0, 3);
+
+  if (Number(result?.recorded) === 0 && Number(result?.duplicates) > 0) {
+    lines.push('Status: no new alerts recorded; all parsed alerts were already in the brain.');
+  } else if (Number(result?.messages_processed) === 0 && Number(result?.messages_skipped) > 0) {
+    lines.push('Status: no new Gmail messages since the last successful feed checkpoint.');
+  }
 
   if (query) {
     lines.push(`Query: ${query}`);
@@ -109,6 +203,20 @@ function buildPropertyRadarFeedSummary({
   const errors = formatErrorList(result?.errors || [], 2);
 
   lines.push(`Errors: ${Array.isArray(result?.errors) ? result.errors.length : 0}`);
+
+  if (actionable.length > 0) {
+    lines.push('', 'Top actionable alerts:');
+    for (const alert of actionable) {
+      lines.push(formatActionableAlert(alert));
+    }
+  }
+
+  if (unmatched.length > 0) {
+    lines.push('', 'Unmatched alerts:');
+    for (const alert of unmatched) {
+      lines.push(formatUnmatchedAlert(alert));
+    }
+  }
 
   if (errors.length > 0) {
     lines.push(`Error preview: ${errors.join(' | ')}`);
@@ -164,6 +272,7 @@ async function runPropertyRadarFeed({
   const resolvedIterations = toNumber(iterations, null);
   const shouldLoop = toBoolean(loop, false);
   const shouldSendTelegramSummary = toBoolean(sendTelegramSummary, false);
+  const feedState = messageId ? { seen_message_ids: [] } : await loadFeedState();
   const runs = [];
   const errors = [];
   let runNumber = 0;
@@ -182,7 +291,8 @@ async function runPropertyRadarFeed({
         maxResults: resolvedMaxResults,
         dryRun,
         refreshWithRealEstateTool,
-        messageId
+        messageId,
+        skipMessageIds: messageId ? [] : feedState.seen_message_ids
       });
     } catch (error) {
       result = {
@@ -190,6 +300,8 @@ async function runPropertyRadarFeed({
         query: resolvedQuery,
         dry_run: dryRun,
         messages_processed: 0,
+        messages_skipped: 0,
+        processed_message_ids: [],
         alerts_parsed: 0,
         recorded: 0,
         duplicates: 0,
@@ -199,6 +311,11 @@ async function runPropertyRadarFeed({
         errors: [{ message: error.message }],
         results: []
       };
+    }
+
+    if (!messageId && Array.isArray(result?.processed_message_ids) && result.processed_message_ids.length > 0) {
+      feedState.seen_message_ids = [...feedState.seen_message_ids, ...result.processed_message_ids];
+      await saveFeedState(feedState);
     }
 
     if (shouldSendTelegramSummary) {

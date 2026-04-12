@@ -73,20 +73,12 @@ async function getDatabaseStatus() {
 
 function getWriteAuthMode() {
   const keyConfigured = typeof process.env.ADMIN_API_KEY === 'string' && process.env.ADMIN_API_KEY.trim() !== '';
-  const allowUnauthenticated =
-    String(process.env.ALLOW_UNAUTHENTICATED_WRITE || '')
-      .trim()
-      .toLowerCase() === 'true';
 
   if (keyConfigured) {
     return 'api_key';
   }
 
-  if (allowUnauthenticated) {
-    return 'dev_bypass';
-  }
-
-  return process.env.NODE_ENV === 'production' ? 'misconfigured' : 'open_dev';
+  return 'misconfigured';
 }
 
 async function getRuntimeStatus() {

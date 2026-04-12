@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 
 const assistantApp = require('../../src/app/assistant');
 const brainApp = require('../../src/app/brain');
+const realNexApp = require('../../src/app/realnex');
 const runtimeApp = require('../../src/app/runtime');
 
 test('answerMessage routes status-style plain text to runtime status', async (t) => {
@@ -93,4 +94,54 @@ test('answerMessage routes lookup questions into lookupBrain', async (t) => {
   assert.equal(result.intent, 'lookup');
   assert.equal(result.argument, 'Mike Chen');
   assert.match(result.reply, /Entity: Mike Chen/);
+});
+
+test('answerMessage falls back to RealNex import on local lookup miss', async (t) => {
+  const originalLookupBrain = brainApp.lookupBrain;
+  const originalImportRealNexMatchToBrain = realNexApp.importRealNexMatchToBrain;
+
+  t.after(() => {
+    brainApp.lookupBrain = originalLookupBrain;
+    realNexApp.importRealNexMatchToBrain = originalImportRealNexMatchToBrain;
+  });
+
+  brainApp.lookupBrain = async () => {
+    const error = new Error('not found');
+    error.statusCode = 404;
+    throw error;
+  };
+  realNexApp.importRealNexMatchToBrain = async (payload) => ({
+    status: 'imported',
+    knowledge_entry_id: 'ke-realnex-1',
+    entity: {
+      id: 'entity-1',
+      name: 'Shelly Garcia'
+    },
+    company_entity: {
+      id: 'entity-2',
+      name: 'Lee Associates'
+    },
+    lookup_payload: {
+      kind: 'entity',
+      entity: {
+        name: 'Shelly Garcia',
+        type: 'person'
+      },
+      properties: [],
+      relationships: []
+    },
+    echo: payload
+  });
+
+  const result = await assistantApp.answerMessage({
+    message: 'who is Shelly Garcia from Lee Associates',
+    source: 'unit_test'
+  });
+
+  assert.equal(result.intent, 'lookup');
+  assert.equal(result.saved, true);
+  assert.equal(result.route, 'heuristic:realnex_import');
+  assert.match(result.reply, /Entity: Shelly Garcia/);
+  assert.match(result.reply, /Synced from RealNex/);
+  assert.match(result.reply, /Linked company: Lee Associates/);
 });

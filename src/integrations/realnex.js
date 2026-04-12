@@ -190,7 +190,17 @@ function createRealNexClient(overrides = {}) {
         throw new Error('contact key is required');
       }
 
-      return requestJson(config, 'GET', `/api/v1/Crm/contact/${encodeURIComponent(contactKey)}`);
+      const payload = await requestJson(
+        config,
+        'GET',
+        `/api/v1/Crm/contact/${encodeURIComponent(contactKey)}`
+      );
+      return {
+        ...payload,
+        Key: payload?.Key ?? contactKey,
+        key: payload?.key ?? contactKey,
+        kind: payload?.kind ?? 'contact'
+      };
     },
     async getProperty(key) {
       const propertyKey = cleanText(key, null);
@@ -199,7 +209,17 @@ function createRealNexClient(overrides = {}) {
         throw new Error('property key is required');
       }
 
-      return requestJson(config, 'GET', `/api/v1/Crm/property/${encodeURIComponent(propertyKey)}`);
+      const payload = await requestJson(
+        config,
+        'GET',
+        `/api/v1/Crm/property/${encodeURIComponent(propertyKey)}`
+      );
+      return {
+        ...payload,
+        Key: payload?.Key ?? propertyKey,
+        key: payload?.key ?? propertyKey,
+        kind: payload?.kind ?? 'property'
+      };
     },
     async getCompany(key) {
       const companyKey = cleanText(key, null);
@@ -208,7 +228,17 @@ function createRealNexClient(overrides = {}) {
         throw new Error('company key is required');
       }
 
-      return requestJson(config, 'GET', `/api/v1/Crm/company/${encodeURIComponent(companyKey)}`);
+      const payload = await requestJson(
+        config,
+        'GET',
+        `/api/v1/Crm/company/${encodeURIComponent(companyKey)}`
+      );
+      return {
+        ...payload,
+        Key: payload?.Key ?? companyKey,
+        key: payload?.key ?? companyKey,
+        kind: payload?.kind ?? 'company'
+      };
     }
   };
 }

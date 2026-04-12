@@ -1,5 +1,13 @@
+const { v4: uuidv4 } = require('uuid');
+const { query } = require('../db/connection');
 const { createRealNexClient } = require('../integrations/realnex');
-const { lookupLocalEntityForRealNex } = require('./brain');
+const { createKnowledgeEntry } = require('../knowledge/extract');
+const { findOrCreateEntity, normalizeEntityType } = require('../ingestion/merge');
+const {
+  createAppError,
+  buildEntityLookupPayload,
+  lookupLocalEntityForRealNex
+} = require('./brain');
 
 function cleanText(value, fallback = null) {
   if (typeof value !== 'string') {
@@ -67,12 +75,21 @@ function extractCandidateType(candidate = {}) {
 function extractCandidateName(candidate = {}) {
   return pickFirstString([
     candidate.FullName,
+    candidate.fullName,
     candidate.Name,
+    candidate.name,
     candidate.CompanyName,
+    candidate.companyName,
     candidate.BusinessName,
+    candidate.businessName,
     candidate.DisplayName,
+    candidate.displayName,
     candidate.ContactName,
+    candidate.contactName,
     candidate.Organization,
+    candidate.organization,
+    candidate.OrganizationId,
+    candidate.organizationId,
     candidate.Full_Name
   ]);
 }
@@ -80,37 +97,113 @@ function extractCandidateName(candidate = {}) {
 function extractCandidateCompany(candidate = {}) {
   return pickFirstString([
     candidate.CompanyName,
+    candidate.companyName,
     candidate.Company,
+    candidate.company,
     candidate.Organization,
+    candidate.organization,
     candidate.Employer,
+    candidate.employer,
     candidate.BusinessName,
+    candidate.businessName,
     candidate.Workplace,
-    candidate.AccountName
+    candidate.workplace,
+    candidate.AccountName,
+    candidate.accountName,
+    candidate.OrganizationId,
+    candidate.organizationId
   ]);
 }
 
 function extractCandidateEmail(candidate = {}) {
   return pickFirstString([
     candidate.Email,
+    candidate.email,
     candidate.EmailAddress,
+    candidate.emailAddress,
     candidate.WorkEmail,
+    candidate.workEmail,
     candidate.PrimaryEmail,
-    candidate.BusinessEmail
+    candidate.primaryEmail,
+    candidate.BusinessEmail,
+    candidate.businessEmail
   ]);
 }
 
 function extractCandidatePhone(candidate = {}) {
   return pickFirstString([
     candidate.Work,
+    candidate.work,
     candidate.Mobile,
+    candidate.mobile,
     candidate.Home,
+    candidate.home,
     candidate.Phone,
+    candidate.phone,
     candidate.Telephone,
+    candidate.telephone,
     candidate.MainPhone,
+    candidate.mainPhone,
     candidate.BusinessPhone,
+    candidate.businessPhone,
     candidate.CellPhone,
-    candidate.Fax
+    candidate.cellPhone,
+    candidate.Fax,
+    candidate.fax
   ]);
+}
+
+function extractCandidateWebsite(candidate = {}) {
+  return pickFirstString([
+    candidate.WebSite,
+    candidate.Website,
+    candidate.webSite,
+    candidate.website,
+    candidate.website,
+    candidate.url
+  ]);
+}
+
+function extractCandidateAddress(candidate = {}) {
+  const address = candidate.Address && typeof candidate.Address === 'object'
+    ? candidate.Address
+    : candidate.address && typeof candidate.address === 'object'
+      ? candidate.address
+      : null;
+  const mailingAddress =
+    candidate.MailingAddress && typeof candidate.MailingAddress === 'object'
+      ? candidate.MailingAddress
+      : candidate.mailingAddress && typeof candidate.mailingAddress === 'object'
+        ? candidate.mailingAddress
+      : null;
+  const selected = address || mailingAddress;
+
+  if (!selected) {
+    return null;
+  }
+
+  return {
+    address1: pickFirstString([selected.Address1, selected.address1, selected.company]),
+    address2: pickFirstString([selected.Address2, selected.address2]),
+    city: pickFirstString([selected.City, selected.city]),
+    state: pickFirstString([selected.State, selected.state]),
+    zip: pickFirstString([selected.ZipCode, selected.zip, selected.zipCode]),
+    country: pickFirstString([selected.Country, selected.country])
+  };
+}
+
+function extractCandidateObjectGroups(candidate = {}) {
+  const groups = Array.isArray(candidate.ObjectGroups)
+    ? candidate.ObjectGroups
+    : Array.isArray(candidate.objectGroups)
+      ? candidate.objectGroups
+      : null;
+
+  if (!groups) {
+    return [];
+  }
+
+  return groups.map((group) => pickFirstString([group?.Name, group?.name])).filter(Boolean);
 }
 
 function normalizeCandidate(candidate = {}, type = null) {
@@ -123,6 +216,19 @@ function normalizeCandidate(candidate = {}, type = null) {
     phone: extractCandidatePhone(candidate),
     raw: candidate
   };
+}
+
+function normalizeKind(kind, fallback = 'contact') {
+  const normalized = cleanText(kind, fallback)?.toLowerCase();
+  return normalized === 'company' ? 'company' : 'contact';
+}
+
+function inferEntityTypeFromCandidate(candidate = {}, kind = 'contact') {
+  if (normalizeKind(kind) === 'contact') {
+    return 'person';
+  }
+
+  return normalizeEntityType('company', extractCandidateName(candidate) || extractCandidateCompany(candidate) || '');
 }
 
 function normalizeInput(input = {}) {
@@ -353,6 +459,275 @@ function disambiguateRealNexRecords(input = {}, { contacts = [], companies = [],
   };
 }
 
+async function findEntityById(entityId) {
+  if (!cleanText(entityId, null)) {
+    return null;
+  }
+
+  const result = await query(
+    `
+      SELECT id, name, normalized_name, entity_type, phone, email, metadata
+      FROM entities
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [entityId]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function findEntityByRealNexRef(kind, key) {
+  const normalizedKind = normalizeKind(kind, null);
+  const normalizedKey = cleanText(key, null);
+
+  if (!normalizedKind || !normalizedKey) {
+    return null;
+  }
+
+  const result = await query(
+    `
+      SELECT id, name, normalized_name, entity_type, phone, email, metadata
+      FROM entities
+      WHERE metadata -> 'external_refs' -> 'realnex' ->> 'kind' = $1
+        AND metadata -> 'external_refs' -> 'realnex' ->> 'key' = $2
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `,
+    [normalizedKind, normalizedKey]
+  );
+
+  return result.rows[0] || null;
+}
+
+function mergeEntityMetadata(existingMetadata = {}, nextMetadata = {}) {
+  return {
+    ...existingMetadata,
+    ...nextMetadata,
+    external_refs: {
+      ...(existingMetadata.external_refs || {}),
+      ...(nextMetadata.external_refs || {})
+    },
+    realnex: {
+      ...(existingMetadata.realnex || {}),
+      ...(nextMetadata.realnex || {})
+    }
+  };
+}
+
+async function updateEntityFromRealNex(entityId, candidate = {}, kind, context = {}) {
+  const existing = await findEntityById(entityId);
+
+  if (!existing) {
+    throw createAppError(404, 'Entity not found');
+  }
+
+  const normalizedKind = normalizeKind(kind);
+  const candidateName = extractCandidateName(candidate) || extractCandidateCompany(candidate) || existing.name;
+  const candidateCompany = extractCandidateCompany(candidate) || context.company || existing.metadata?.company || null;
+  const candidateEmail = extractCandidateEmail(candidate) || context.email || existing.email || null;
+  const candidatePhone = extractCandidatePhone(candidate) || context.phone || existing.phone || null;
+  const candidateWebsite = extractCandidateWebsite(candidate);
+  const candidateKey = cleanText(candidate.Key ?? candidate.key ?? candidate.Id ?? candidate.id, null);
+  const nextMetadata = mergeEntityMetadata(existing.metadata || {}, {
+    ...(candidateCompany ? { company: candidateCompany } : {}),
+    ...(candidateKey
+      ? {
+          external_refs: {
+            realnex: {
+              kind: normalizedKind,
+              key: candidateKey,
+              synced_at: new Date().toISOString()
+            }
+          }
+        }
+      : {}),
+    realnex: {
+      kind: normalizedKind,
+      key: candidateKey,
+      name: candidateName,
+      company: candidateCompany,
+      email: candidateEmail,
+      phone: candidatePhone,
+      website: candidateWebsite,
+      object_groups: extractCandidateObjectGroups(candidate),
+      address: extractCandidateAddress(candidate)
+    }
+  });
+
+  const result = await query(
+    `
+      UPDATE entities
+      SET
+        phone = COALESCE(entities.phone, $2),
+        email = COALESCE(entities.email, $3),
+        metadata = $4::jsonb,
+        updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, name, normalized_name, entity_type, phone, email, metadata
+    `,
+    [entityId, candidatePhone, candidateEmail, JSON.stringify(nextMetadata)]
+  );
+
+  return result.rows[0] || existing;
+}
+
+async function ensureRelationship(parentEntityId, childEntityId, relationshipType, metadata = {}) {
+  if (!parentEntityId || !childEntityId || parentEntityId === childEntityId) {
+    return false;
+  }
+
+  const result = await query(
+    `
+      INSERT INTO entity_relationships (
+        id,
+        parent_entity_id,
+        child_entity_id,
+        relationship_type,
+        source,
+        confidence,
+        metadata
+      )
+      VALUES ($1, $2, $3, $4, 'realnex_sync', 0.85, $5::jsonb)
+      ON CONFLICT (parent_entity_id, child_entity_id, relationship_type)
+      DO NOTHING
+      RETURNING id
+    `,
+    [uuidv4(), parentEntityId, childEntityId, relationshipType, JSON.stringify(metadata)]
+  );
+
+  return Boolean(result.rows[0]);
+}
+
+function buildKnowledgeLines(entity, kind, candidate, companyEntity = null) {
+  const lines = [
+    `RealNex ${kind} sync completed for ${entity.name}.`,
+    cleanText(extractCandidateEmail(candidate), null)
+      ? `Email: ${extractCandidateEmail(candidate)}`
+      : null,
+    cleanText(extractCandidatePhone(candidate), null)
+      ? `Phone: ${extractCandidatePhone(candidate)}`
+      : null,
+    cleanText(extractCandidateCompany(candidate), null)
+      ? `Company: ${extractCandidateCompany(candidate)}`
+      : null,
+    cleanText(extractCandidateWebsite(candidate), null)
+      ? `Website: ${extractCandidateWebsite(candidate)}`
+      : null,
+    companyEntity?.name ? `Linked company entity: ${companyEntity.name}` : null,
+    cleanText(candidate?.Key ?? candidate?.key ?? candidate?.Id ?? candidate?.id, null)
+      ? `RealNex key: ${cleanText(candidate.Key ?? candidate.key ?? candidate.Id ?? candidate.id, null)}`
+      : null
+  ].filter(Boolean);
+
+  return lines.join('\n');
+}
+
+async function maybeCreateRealNexKnowledgeEntry({
+  entity,
+  candidate,
+  kind,
+  companyEntity = null,
+  createKnowledge = true,
+  alreadyLinked = false
+}) {
+  if (!createKnowledge || alreadyLinked || !entity?.id) {
+    return null;
+  }
+
+  const content = buildKnowledgeLines(entity, kind, candidate, companyEntity);
+  return createKnowledgeEntry({
+    entry_type: 'other',
+    title: `RealNex sync: ${entity.name}`,
+    content,
+    summary: `Imported ${normalizeKind(kind)} from RealNex for ${entity.name}`,
+    source: 'realnex',
+    entity_id: entity.id,
+    metadata: {
+      provider: 'realnex',
+      external_source: 'realnex',
+      kind: normalizeKind(kind),
+      key: cleanText(candidate?.Key ?? candidate?.key ?? candidate?.Id ?? candidate?.id, null),
+      company_entity_id: companyEntity?.id || null
+    },
+    ai_summary: `RealNex import completed for ${entity.name}`,
+    ai_tags: ['realnex', normalizeKind(kind)],
+    ai_classifications: ['relationship', 'general_note'],
+    entity_ids: [entity.id, companyEntity?.id].filter(Boolean)
+  });
+}
+
+async function syncCandidateToBrain(candidate = {}, kind, options = {}) {
+  const normalizedKind = normalizeKind(kind);
+  const existingByRef = await findEntityByRealNexRef(
+    normalizedKind,
+    candidate.Key ?? candidate.key ?? candidate.Id ?? candidate.id
+  );
+  let baseEntity = options.entityId ? await findEntityById(options.entityId) : existingByRef;
+
+  if (!baseEntity) {
+    const entitySeed = {
+      name: extractCandidateName(candidate) || extractCandidateCompany(candidate),
+      type: inferEntityTypeFromCandidate(candidate, normalizedKind),
+      email: extractCandidateEmail(candidate),
+      phone: extractCandidatePhone(candidate)
+    };
+    const created = await findOrCreateEntity(entitySeed);
+    baseEntity = created.entity;
+  }
+
+  const updatedEntity = await updateEntityFromRealNex(baseEntity.id, candidate, normalizedKind, {
+    company: options.company,
+    email: options.email,
+    phone: options.phone
+  });
+  const companyName =
+    extractCandidateCompany(candidate) || cleanText(options.company, null) || null;
+  let companyEntity = null;
+  let relationshipCreated = false;
+
+  if (normalizedKind === 'contact' && companyName) {
+    if (options.companyCandidate) {
+      companyEntity = await syncCandidateToBrain(options.companyCandidate, 'company', {
+        createKnowledge: false,
+        company: companyName
+      });
+      companyEntity = companyEntity.entity;
+    } else {
+      const companyResult = await findOrCreateEntity({
+        name: companyName,
+        type: 'company'
+      });
+      companyEntity = companyResult.entity;
+    }
+
+    relationshipCreated = await ensureRelationship(updatedEntity.id, companyEntity.id, 'affiliated_with', {
+      provider: 'realnex'
+    });
+  }
+
+  const knowledgeEntry = await maybeCreateRealNexKnowledgeEntry({
+    entity: updatedEntity,
+    candidate,
+    kind: normalizedKind,
+    companyEntity,
+    createKnowledge: options.createKnowledge !== false,
+    alreadyLinked: Boolean(existingByRef)
+  });
+  const lookupPayload = await buildEntityLookupPayload(updatedEntity.id, {
+    matchType: existingByRef ? 'realnex_existing' : 'realnex_import'
+  });
+
+  return {
+    status: existingByRef ? 'already_linked' : 'imported',
+    entity: updatedEntity,
+    company_entity: companyEntity,
+    relationship_created: relationshipCreated,
+    knowledge_entry_id: knowledgeEntry?.id || null,
+    lookup_payload: lookupPayload
+  };
+}
+
 async function collectRecords(listFn, { limit = 50, pageSize = 50 } = {}) {
   const maxRecords = Math.max(0, Number(limit) || 0);
   const resolvedPageSize = Math.max(1, Math.min(50, Number(pageSize) || 50));
@@ -469,9 +844,79 @@ async function disambiguateLocalEntityAgainstRealNex(input = {}, options = {}) {
   };
 }
 
+async function importRealNexMatchToBrain(input = {}, options = {}) {
+  const service = options.service || createRealNexService(options.serviceOptions || {});
+  const minScore = Math.max(1, Math.min(100, Number(options.minScore ?? input.minScore ?? 70) || 70));
+  const kind = cleanText(input.kind, null)?.toLowerCase() || null;
+  const key = cleanText(input.key, null);
+
+  if (key && kind) {
+    const candidate =
+      normalizeKind(kind) === 'company'
+        ? await service.getCompany(key)
+        : await service.getContact(key);
+    return {
+      disambiguation: null,
+      ...(await syncCandidateToBrain(candidate, kind, {
+        entityId: input.entityId,
+        company: input.company,
+        email: input.email,
+        phone: input.phone,
+        createKnowledge: options.createKnowledge !== false
+      }))
+    };
+  }
+
+  const disambiguation = await disambiguateLocalEntityAgainstRealNex(input, options);
+  const bestMatch = disambiguation.best_match;
+
+  if (!bestMatch || Number(bestMatch.score || 0) < minScore) {
+    throw createAppError(404, 'No confident RealNex match found');
+  }
+
+  const candidate =
+    bestMatch.kind === 'company'
+      ? await service.getCompany(bestMatch.id)
+      : await service.getContact(bestMatch.id);
+  const topCompanyCandidate =
+    bestMatch.kind === 'contact'
+      ? (disambiguation.companies || []).find((company) => Number(company.score || 0) >= minScore)
+      : null;
+  let companyCandidateFromKey = null;
+
+  if (
+    bestMatch.kind === 'contact' &&
+    !topCompanyCandidate &&
+    cleanText(candidate?.companyKey, null)
+  ) {
+    try {
+      companyCandidateFromKey = await service.getCompany(candidate.companyKey);
+    } catch (_error) {
+      companyCandidateFromKey = null;
+    }
+  }
+
+  return {
+    disambiguation,
+    ...(await syncCandidateToBrain(candidate, bestMatch.kind, {
+      entityId: input.entityId || disambiguation.entity?.id || null,
+      company:
+        input.company ||
+        extractCandidateName(companyCandidateFromKey) ||
+        extractCandidateCompany(companyCandidateFromKey) ||
+        null,
+      email: input.email || null,
+      phone: input.phone || null,
+      createKnowledge: options.createKnowledge !== false,
+      companyCandidate: topCompanyCandidate?.raw || companyCandidateFromKey || null
+    }))
+  };
+}
+
 module.exports = {
   createRealNexService,
   disambiguateLocalEntityAgainstRealNex,
+  importRealNexMatchToBrain,
   scoreCandidate,
   rankCandidates,
   disambiguateRealNexRecords,

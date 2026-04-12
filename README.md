@@ -252,10 +252,11 @@ Use an internal API base for workers when possible:
 
 Auth defaults:
 
-- Production write routes fail closed if `ADMIN_API_KEY` is not configured.
-- Local non-production stays open by default for iteration speed.
-- `ALLOW_UNAUTHENTICATED_WRITE=true` is there as an explicit marker for dev environments and custom launch scripts.
-- If you want to mirror production locally, set `ADMIN_API_KEY` and send `x-api-key` on write requests.
+- Protected write routes fail closed if `ADMIN_API_KEY` is not configured.
+- Local development should still set `ADMIN_API_KEY` if you want to exercise the real protected surfaces.
+- Channel ingress routes do not use `x-api-key`; they require route-specific secrets:
+  `x-omi-secret`, `x-hermes-secret`, and `x-vermes-secret`.
+- If you want to mirror production locally, set `ADMIN_API_KEY` and the channel webhook secrets in `.env`.
 
 Runtime adapters:
 

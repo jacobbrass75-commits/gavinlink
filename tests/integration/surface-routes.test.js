@@ -16,7 +16,24 @@ function clearApiCache() {
   }
 }
 
-async function withServer(t) {
+async function withServer(t, { env = {} } = {}) {
+  const previousEnv = {};
+
+  for (const [key, value] of Object.entries(env)) {
+    previousEnv[key] = process.env[key];
+    process.env[key] = value;
+  }
+
+  t.after(() => {
+    for (const [key, value] of Object.entries(previousEnv)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  });
+
   clearApiCache();
   const { createApp } = require('../../src/api/server');
   const app = createApp();
@@ -53,11 +70,16 @@ test('POST /api/answer uses the shared assistant service', async (t) => {
     }
   });
 
-  const { baseUrl } = await withServer(t);
+  const { baseUrl } = await withServer(t, {
+    env: {
+      ADMIN_API_KEY: 'test-admin-key'
+    }
+  });
   const response = await fetch(`${baseUrl}/api/answer`, {
     method: 'POST',
     headers: {
-      'content-type': 'application/json'
+      'content-type': 'application/json',
+      'x-api-key': 'test-admin-key'
     },
     body: JSON.stringify({
       message: 'yo you working bro'
@@ -83,11 +105,16 @@ test('POST /api/channels/omi normalizes and ingests through the shared brain lay
     echoed: payload
   });
 
-  const { baseUrl } = await withServer(t);
+  const { baseUrl } = await withServer(t, {
+    env: {
+      OMI_WEBHOOK_SECRET: 'omi-secret'
+    }
+  });
   const response = await fetch(`${baseUrl}/api/channels/omi`, {
     method: 'POST',
     headers: {
-      'content-type': 'application/json'
+      'content-type': 'application/json',
+      'x-omi-secret': 'omi-secret'
     },
     body: JSON.stringify({
       source: 'omi-recorder',
@@ -130,11 +157,16 @@ test('POST /api/channels/vermes uses the Vermes adapter path', async (t) => {
     }
   });
 
-  const { baseUrl } = await withServer(t);
+  const { baseUrl } = await withServer(t, {
+    env: {
+      VERMES_WEBHOOK_SECRET: 'vermes-secret'
+    }
+  });
   const response = await fetch(`${baseUrl}/api/channels/vermes`, {
     method: 'POST',
     headers: {
-      'content-type': 'application/json'
+      'content-type': 'application/json',
+      'x-vermes-secret': 'vermes-secret'
     },
     body: JSON.stringify({
       event_type: 'conversation.created',
@@ -181,11 +213,16 @@ test('POST /api/realnex/disambiguate uses the shared RealNex app service', async
     }
   });
 
-  const { baseUrl } = await withServer(t);
+  const { baseUrl } = await withServer(t, {
+    env: {
+      ADMIN_API_KEY: 'test-admin-key'
+    }
+  });
   const response = await fetch(`${baseUrl}/api/realnex/disambiguate`, {
     method: 'POST',
     headers: {
-      'content-type': 'application/json'
+      'content-type': 'application/json',
+      'x-api-key': 'test-admin-key'
     },
     body: JSON.stringify({
       name: 'Shelly Garcia',
@@ -198,4 +235,105 @@ test('POST /api/realnex/disambiguate uses the shared RealNex app service', async
   assert.equal(response.status, 200);
   assert.equal(payload.best_match.id, 'contact-1');
   assert.equal(payload.input.email, 'sgarcia@lee-re.com');
+});
+
+test('POST /api/realnex/import uses the shared RealNex import service', async (t) => {
+  const originalImport = realNexApp.importRealNexMatchToBrain;
+
+  t.after(() => {
+    realNexApp.importRealNexMatchToBrain = originalImport;
+  });
+
+  realNexApp.importRealNexMatchToBrain = async (input) => ({
+    status: 'imported',
+    entity: {
+      id: 'entity-1',
+      name: input.name
+    },
+    company_entity: {
+      id: 'entity-2',
+      name: input.company
+    },
+    knowledge_entry_id: 'ke-1',
+    lookup_payload: {
+      kind: 'entity',
+      entity: {
+        name: input.name,
+        type: 'person'
+      },
+      relationships: [],
+      properties: []
+    }
+  });
+
+  const { baseUrl } = await withServer(t, {
+    env: {
+      ADMIN_API_KEY: 'test-admin-key'
+    }
+  });
+  const response = await fetch(`${baseUrl}/api/realnex/import`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': 'test-admin-key'
+    },
+    body: JSON.stringify({
+      name: 'Shelly Garcia',
+      company: 'Lee Associates'
+    })
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.status, 'imported');
+  assert.equal(payload.entity.name, 'Shelly Garcia');
+  assert.equal(payload.company_entity.name, 'Lee Associates');
+});
+
+test('POST /api/realnex/sync reuses the shared RealNex import service', async (t) => {
+  const originalImport = realNexApp.importRealNexMatchToBrain;
+
+  t.after(() => {
+    realNexApp.importRealNexMatchToBrain = originalImport;
+  });
+
+  realNexApp.importRealNexMatchToBrain = async (input) => ({
+    status: 'imported',
+    entity: {
+      id: 'entity-1',
+      name: input.name
+    },
+    company_entity: null,
+    knowledge_entry_id: 'ke-1',
+    lookup_payload: {
+      kind: 'entity',
+      entity: {
+        name: input.name,
+        type: 'person'
+      },
+      relationships: [],
+      properties: []
+    }
+  });
+
+  const { baseUrl } = await withServer(t, {
+    env: {
+      ADMIN_API_KEY: 'test-admin-key'
+    }
+  });
+  const response = await fetch(`${baseUrl}/api/realnex/sync`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': 'test-admin-key'
+    },
+    body: JSON.stringify({
+      name: 'Shelly Garcia'
+    })
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.status, 'imported');
+  assert.equal(payload.entity.name, 'Shelly Garcia');
 });

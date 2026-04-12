@@ -591,6 +591,33 @@ function buildKnowledgeContent(alert, messageMeta, property, realEstateToolSnaps
   return lines.join('\n');
 }
 
+function buildAlertOutcomeSnapshot({ alert, property = null, sellerProfile = null, refreshed = false }) {
+  const assessedValue = toNullableNumber(property?.assessed_value ?? alert?.est_value);
+  const distressLevel =
+    sellerProfile?.distress_level ??
+    (property ? getDistressAssessment(property, {}).score : null);
+
+  return {
+    radar_id: alert.radar_id || null,
+    street: alert.street || null,
+    city: alert.city || null,
+    state: alert.state || null,
+    zip: alert.zip || null,
+    what_changed: alert.what_changed,
+    normalized_change_type: alert.normalized_change_type,
+    foreclosure_related: Boolean(alert.foreclosure_related),
+    matched_property_id: property?.id || null,
+    matched_property_address: property?.address || null,
+    property_apn: property?.apn || null,
+    owner_name: property?.owner_name || null,
+    trustee_name: property?.trustee_name || null,
+    assessed_value: assessedValue,
+    distress_level: distressLevel,
+    timeline: deriveTimeline(alert.normalized_change_type),
+    refreshed_with_realestatetool: Boolean(refreshed)
+  };
+}
+
 async function maybeStoreKnowledgeEmbedding(knowledgeEntryId, content, metadata) {
   try {
     const chroma = await storeEmbedding(knowledgeEntryId, content, metadata);
@@ -674,17 +701,21 @@ async function reserveAlertEvent({ alert, messageMeta, property }) {
 
 async function recordPropertyRadarAlert({ alert, messageMeta, dryRun = false, refreshWithRealEstateTool = true }) {
   const property = await findMatchingPropertyForAlert(alert);
+  const currentSellerProfile = property?.id ? await getSellerProfileByProperty(property.id) : null;
   const realEstateToolSnapshot = property && refreshWithRealEstateTool
     ? await maybeRefreshRealEstateToolSnapshot(property)
     : null;
+  const initialSnapshot = buildAlertOutcomeSnapshot({
+    alert,
+    property,
+    sellerProfile: currentSellerProfile,
+    refreshed: Boolean(realEstateToolSnapshot)
+  });
 
   if (dryRun) {
     return {
       status: 'preview',
-      matched_property_id: property?.id || null,
-      matched_property_address: property?.address || null,
-      normalized_change_type: alert.normalized_change_type,
-      refreshed_with_realestatetool: Boolean(realEstateToolSnapshot)
+      ...initialSnapshot
     };
   }
 
@@ -693,9 +724,7 @@ async function recordPropertyRadarAlert({ alert, messageMeta, dryRun = false, re
   if (!reserved) {
     return {
       status: 'duplicate',
-      matched_property_id: property?.id || null,
-      normalized_change_type: alert.normalized_change_type,
-      refreshed_with_realestatetool: Boolean(realEstateToolSnapshot)
+      ...initialSnapshot
     };
   }
 
@@ -772,11 +801,13 @@ async function recordPropertyRadarAlert({ alert, messageMeta, dryRun = false, re
     status: 'recorded',
     event_id: reserved.id,
     knowledge_entry_id: knowledgeEntry.id,
-    matched_property_id: nextProperty?.id || null,
-    matched_property_address: nextProperty?.address || null,
     seller_profile_id: sellerProfile?.id || null,
-    normalized_change_type: alert.normalized_change_type,
-    refreshed_with_realestatetool: Boolean(realEstateToolSnapshot)
+    ...buildAlertOutcomeSnapshot({
+      alert,
+      property: nextProperty,
+      sellerProfile,
+      refreshed: Boolean(realEstateToolSnapshot)
+    })
   };
 }
 
@@ -810,18 +841,27 @@ async function importPropertyRadarAlerts({
   maxResults = Number(process.env.GMAIL_PROPERTYRADAR_MAX_RESULTS || 25),
   dryRun = false,
   refreshWithRealEstateTool = true,
-  messageId = null
+  messageId = null,
+  skipMessageIds = []
 } = {}) {
   const resolvedQuery = cleanText(queryText, process.env.GMAIL_PROPERTYRADAR_QUERY || '"Daily Digest Alert:"');
   const resolvedMaxResults = Math.max(1, Number(maxResults) || Number(process.env.GMAIL_PROPERTYRADAR_MAX_RESULTS || 25) || 25);
-  const summaries = messageId
+  const rawSummaries = messageId
     ? [{ id: messageId }]
     : await getMessageList({
         queryText: resolvedQuery,
         maxResults: resolvedMaxResults
       });
+  const skipMessageIdSet = new Set(
+    Array.isArray(skipMessageIds)
+      ? skipMessageIds.map((value) => cleanText(value, null)).filter(Boolean)
+      : []
+  );
+  const summaries = rawSummaries.filter((summary) => !skipMessageIdSet.has(cleanText(summary?.id, null)));
   const results = [];
+  const processedMessageIds = [];
   let messagesProcessed = 0;
+  let messagesSkipped = rawSummaries.length - summaries.length;
   let alertsParsed = 0;
   let recorded = 0;
   let duplicates = 0;
@@ -842,6 +882,7 @@ async function importPropertyRadarAlerts({
       });
 
       messagesProcessed += 1;
+      processedMessageIds.push(messageMeta.id || summary.id);
 
       if (parsed.rows.length === 0) {
         results.push({
@@ -899,6 +940,8 @@ async function importPropertyRadarAlerts({
     query: resolvedQuery,
     dry_run: dryRun,
     messages_processed: messagesProcessed,
+    messages_skipped: messagesSkipped,
+    processed_message_ids: processedMessageIds,
     alerts_parsed: alertsParsed,
     recorded,
     duplicates,

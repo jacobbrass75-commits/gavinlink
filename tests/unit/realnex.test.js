@@ -71,6 +71,21 @@ test('createRealNexClient encodes keys for get methods', async () => {
   ]);
 });
 
+test('createRealNexClient preserves requested keys on sparse get payloads', async () => {
+  const client = createRealNexClient({
+    token: 'test-token',
+    baseUrl: 'https://sync.realnex.com',
+    fetchImpl: async () => jsonResponse({ fullName: 'Shelly Garcia' })
+  });
+
+  const contact = await client.getContact('contact-123');
+
+  assert.equal(contact.fullName, 'Shelly Garcia');
+  assert.equal(contact.Key, 'contact-123');
+  assert.equal(contact.key, 'contact-123');
+  assert.equal(contact.kind, 'contact');
+});
+
 test('scoreCandidate prefers exact contact matches over fuzzy company matches', () => {
   const exactContact = scoreCandidate(
     {

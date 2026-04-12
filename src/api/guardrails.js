@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 const buckets = new Map();
 
 function cleanText(value) {
@@ -8,16 +10,15 @@ function cleanText(value) {
   return value.trim();
 }
 
-function isTruthyEnv(value) {
-  return ['1', 'true', 'yes', 'on'].includes(String(value || '').trim().toLowerCase());
-}
+function safeEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left || ''));
+  const rightBuffer = Buffer.from(String(right || ''));
 
-function isProduction() {
-  return cleanText(process.env.NODE_ENV).toLowerCase() === 'production';
-}
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
 
-function allowsUnauthenticatedWrite() {
-  return isTruthyEnv(process.env.ALLOW_UNAUTHENTICATED_WRITE);
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 function createRateLimiter({ windowMs, max, message }) {
@@ -46,28 +47,23 @@ function createRateLimiter({ windowMs, max, message }) {
 function requireAdminApiKey(req, res, next) {
   const configuredKey = cleanText(process.env.ADMIN_API_KEY);
 
-  if (configuredKey) {
-    const providedKey = req.get('x-api-key');
+  if (!configuredKey) {
+    return res.status(503).json({
+      error: 'ADMIN_API_KEY must be configured for protected routes'
+    });
+  }
 
-    if (providedKey !== configuredKey) {
-      return res.status(401).json({ error: 'Valid x-api-key is required' });
-    }
+  const providedKey = req.get('x-api-key');
 
+  if (safeEqual(providedKey, configuredKey)) {
     return next();
   }
 
-  if (!isProduction() || allowsUnauthenticatedWrite()) {
-    return next();
-  }
-
-  return res.status(503).json({
-    error: 'ADMIN_API_KEY must be configured for write routes in production'
-  });
+  return res.status(401).json({ error: 'Valid x-api-key is required' });
 }
 
 module.exports = {
   createRateLimiter,
   requireAdminApiKey,
-  allowsUnauthenticatedWrite,
-  isProduction
+  safeEqual
 };

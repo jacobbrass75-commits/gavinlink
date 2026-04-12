@@ -15,12 +15,27 @@ test('buildPropertyRadarFeedSummary includes run counts and error preview', () =
     loop: true,
     result: {
       messages_processed: 4,
+      messages_skipped: 3,
       alerts_parsed: 6,
       recorded: 3,
       duplicates: 2,
       previews: 1,
       matched_properties: 2,
       refreshed_with_realestatetool: 1,
+      results: [
+        {
+          status: 'recorded',
+          what_changed: 'New Notice of Default',
+          normalized_change_type: 'notice_of_default',
+          matched_property_address: '5414 E Floral Ave',
+          city: 'SELMA',
+          state: 'CA',
+          timeline: '60_days',
+          distress_level: 4,
+          property_apn: '123-456-789',
+          owner_name: 'Ken Kahan'
+        }
+      ],
       errors: [
         { message: 'first failure' },
         { message: 'second failure' }
@@ -29,12 +44,14 @@ test('buildPropertyRadarFeedSummary includes run counts and error preview', () =
   });
 
   assert.match(summary, /PropertyRadar feed run #2 \(dry run\)/);
-  assert.match(summary, /Messages: 4 \| Alerts: 6/);
+  assert.match(summary, /Messages: 4 processed \| 3 skipped \| Alerts: 6/);
   assert.match(summary, /Recorded: 3 \| Duplicates: 2 \| Previews: 1/);
   assert.match(summary, /Matched properties: 2 \| Refreshed: 1/);
   assert.match(summary, /Query: from:no-reply@propertyradar.info subject:"Daily Digest Alert:"/);
   assert.match(summary, /Max results: 10/);
   assert.match(summary, /Loop interval: 300000ms/);
   assert.match(summary, /Errors: 2/);
+  assert.match(summary, /Top actionable alerts:/);
+  assert.match(summary, /New Notice of Default: 5414 E Floral Ave/);
   assert.match(summary, /Error preview: first failure \| second failure/);
 });
