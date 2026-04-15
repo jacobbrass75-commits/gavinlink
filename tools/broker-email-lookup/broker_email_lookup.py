@@ -7,11 +7,9 @@ import json, re, time, sys, csv, os
 import requests, urllib.parse
 from bs4 import BeautifulSoup
 import threading
+from paths import INPUT_CSV, OUTPUT_CSV, PROGRESS_PATH
 
 RR_KEY = os.environ["ROCKETREACH_API_KEY"]
-INPUT_CSV = os.environ.get("INPUT_CSV", "/Users/josephsullivan/Downloads/CostarExport_MF Sales_2024-Present.xlsx - Export041026.csv")
-OUTPUT_CSV = os.environ.get("OUTPUT_CSV", "/Users/josephsullivan/Downloads/CoStar_Brokers_With_Emails.csv")
-PROGRESS_PATH = os.environ.get("PROGRESS_PATH", "/Users/josephsullivan/Downloads/broker_lookup_progress.json")
 UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15'
 
 

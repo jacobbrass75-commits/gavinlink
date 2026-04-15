@@ -33,7 +33,7 @@ Remaining 204 are mostly solo agents at small shops with no meaningful public fo
 
 ## Scripts (execution order)
 
-All scripts read/write state to `broker_lookup_progress.json` (colocated). They're idempotent — skip brokers that already have an email.
+All scripts read/write state under `tools/broker-email-lookup/artifacts/` by default. They are idempotent and skip brokers that already have an email. Override paths with env vars like `PROGRESS_PATH`, `INPUT_CSV`, `OUTPUT_CSV`, `OUTPUT_CONTACTS_CSV`, `OUTPUT_XLSX`, or `BROKER_LOOKUP_ARTIFACTS_DIR`.
 
 1. **`broker_email_lookup.py`** — primary RocketReach API pass. Uses `ROCKETREACH_API_KEY` env var.
 2. **`broker_rr_pass2.py`** — sequential RocketReach retry with relaxed filter (name + California only).
@@ -49,7 +49,12 @@ All scripts read/write state to `broker_lookup_progress.json` (colocated). They'
 
 ## Paths
 
-Scripts currently hardcode paths to `/Users/josephsullivan/Downloads/`. To rerun against the SulliLink copy, update `PROGRESS_PATH` / `INPUT_CSV` / `OUTPUT_*` constants at the top of each script.
+Default inputs and outputs are now separated:
+
+- input CSV defaults to `raw/broker-emails-2026-04-10/CostarExport_MF Sales_2024-Present.xlsx - Export041026.csv`
+- generated state and exports default to `tools/broker-email-lookup/artifacts/`
+
+If you need a different location, override the env vars instead of editing source.
 
 ## RocketReach notes
 

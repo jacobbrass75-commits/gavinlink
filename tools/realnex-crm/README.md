@@ -2,6 +2,8 @@
 
 Python client for the RealNex Sync API (`https://sync.realnex.com`).
 
+Any bulk exports or contact dumps produced with this client should live under an ignored local artifact path such as `tools/realnex-crm/artifacts/`, not in the committed repo.
+
 ## Auth
 
 Bearer JWT token from RealNex User Management. Set as environment variable:

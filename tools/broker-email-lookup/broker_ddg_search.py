@@ -7,8 +7,8 @@ import json, re, time, os, threading, urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
+from paths import PROGRESS_PATH
 
-PROGRESS_PATH = "/Users/josephsullivan/Downloads/broker_lookup_progress.json"
 UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15'
 
 BAD = ['google','example','noreply','sentry','email.com','domain','w3.org','schema.org',

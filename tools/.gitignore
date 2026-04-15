@@ -1,4 +1,4 @@
-realnex-crm/realnex_all_contacts.json
-llc-manager-finder/LLC_Manager_Contacts.xlsx
-llc-manager-finder/llc_manager_progress.json
-broker-email-lookup/broker_lookup_progress.json
+**/artifacts/
+**/*_progress.json
+**/*_contacts.json
+**/*.xlsx

@@ -4,3 +4,7 @@ npm-debug.log*
 data/
 raw/property-documents/
 wiki/reports/*.json
+tools/**/artifacts/
+tools/**/*_progress.json
+tools/**/*_contacts.json
+tools/**/*.xlsx

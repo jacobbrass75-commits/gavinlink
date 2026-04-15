@@ -7,9 +7,9 @@ import json, re, time, os, threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import deque
 import requests
+from paths import PROGRESS_PATH
 
 RR_KEY = os.environ["ROCKETREACH_API_KEY"]
-PROGRESS_PATH = "/Users/josephsullivan/Downloads/broker_lookup_progress.json"
 
 PERSONAL = {'gmail.com','yahoo.com','hotmail.com','aol.com','outlook.com',
     'sbcglobal.net','verizon.net','ca.rr.com','bellsouth.net',

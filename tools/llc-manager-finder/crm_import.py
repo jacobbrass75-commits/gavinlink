@@ -7,14 +7,22 @@ import json
 import sys
 import os
 import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'realnex-crm'))
 from realnex_client import RealNexClient
 
 TOKEN = os.environ.get("REALNEX_API_TOKEN", "").strip()
-
-PROGRESS_PATH = os.path.join(os.path.dirname(__file__), "llc_manager_progress.json")
-CRM_DUMP_PATH = os.path.join(os.path.dirname(__file__), "..", "realnex-crm", "realnex_all_contacts.json")
+ROOT = Path(__file__).resolve().parent
+ARTIFACTS_DIR = Path(os.environ.get("LLC_MANAGER_ARTIFACTS_DIR", ROOT / "artifacts"))
+ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+PROGRESS_PATH = Path(os.environ.get("PROGRESS_PATH", str(ARTIFACTS_DIR / "llc_manager_progress.json")))
+CRM_DUMP_PATH = Path(
+    os.environ.get(
+        "CRM_DUMP_PATH",
+        str(ROOT.parent / "realnex-crm" / "artifacts" / "realnex_all_contacts.json"),
+    )
+)
 
 if not TOKEN:
     raise RuntimeError("REALNEX_API_TOKEN environment variable is required")
@@ -50,6 +58,17 @@ def format_phone(phone):
 
 
 def main():
+    if not CRM_DUMP_PATH.exists():
+        raise FileNotFoundError(
+            f"CRM dump not found at {CRM_DUMP_PATH}. Put the export under tools/realnex-crm/artifacts/ "
+            "or override CRM_DUMP_PATH."
+        )
+    if not PROGRESS_PATH.exists():
+        raise FileNotFoundError(
+            f"LLC manager progress not found at {PROGRESS_PATH}. Put the progress file under "
+            "tools/llc-manager-finder/artifacts/ or override PROGRESS_PATH."
+        )
+
     # Load existing CRM contacts for dedup
     print("Loading existing CRM contacts...")
     with open(CRM_DUMP_PATH) as f:

@@ -8,8 +8,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import defaultdict
 import requests
 from bs4 import BeautifulSoup
+from paths import PROGRESS_PATH
 
-PROGRESS_PATH = "/Users/josephsullivan/Downloads/broker_lookup_progress.json"
 UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15'
 
 BAD_EMAIL = ['noreply','no-reply','info@','support@','admin@','contact@','sales@',

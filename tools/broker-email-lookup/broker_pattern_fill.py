@@ -14,10 +14,7 @@ Run after broker_email_lookup.py finishes.
 """
 import json, re, csv
 from collections import defaultdict
-
-PROGRESS_PATH = "/Users/josephsullivan/Downloads/broker_lookup_progress.json"
-INPUT_CSV = "/Users/josephsullivan/Downloads/CostarExport_MF Sales_2024-Present.xlsx - Export041026.csv"
-OUTPUT_CSV = "/Users/josephsullivan/Downloads/CoStar_Brokers_With_Emails.csv"
+from paths import INPUT_CSV, OUTPUT_CSV, PROGRESS_PATH
 
 PERSONAL_DOMAINS = {
     'gmail.com','yahoo.com','hotmail.com','aol.com','outlook.com',

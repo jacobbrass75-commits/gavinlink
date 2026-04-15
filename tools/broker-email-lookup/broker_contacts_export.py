@@ -5,11 +5,7 @@ One row per unique broker with: name, email, company, phone, linkedin, source, r
 """
 import json, csv
 from collections import defaultdict
-
-PROGRESS_PATH = "/Users/josephsullivan/Downloads/broker_lookup_progress.json"
-INPUT_CSV = "/Users/josephsullivan/Downloads/CostarExport_MF Sales_2024-Present.xlsx - Export041026.csv"
-OUTPUT_CSV = "/Users/josephsullivan/Downloads/CoStar_Broker_Contacts.csv"
-
+from paths import INPUT_CSV, OUTPUT_CONTACTS_CSV as OUTPUT_CSV, PROGRESS_PATH
 
 def main():
     with open(PROGRESS_PATH) as f:

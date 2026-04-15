@@ -56,18 +56,18 @@ python3 finder.py --csv data.csv --step excel
 ### SMTP Email Guesser (the big one)
 ```bash
 # Find emails via SMTP verification - 98% hit rate
-python3 smtp_guesser.py --progress progress.json --workers 8
+python3 smtp_guesser.py --progress artifacts/progress.json --workers 8
 ```
 
 ### Contact Intelligence Engine
 ```bash
 # Full pipeline: deep search + LinkedIn + SMTP + email hunt
-python3 contact_engine.py --progress progress.json --workers 6
+python3 contact_engine.py --progress artifacts/progress.json --workers 6
 
 # Run specific phases
-python3 contact_engine.py --progress progress.json --phase search   # 4-engine web search
-python3 contact_engine.py --progress progress.json --phase emails   # email-focused hunt
-python3 contact_engine.py --progress progress.json --phase linkedin # LinkedIn employer discovery
+python3 contact_engine.py --progress artifacts/progress.json --phase search   # 4-engine web search
+python3 contact_engine.py --progress artifacts/progress.json --phase emails   # email-focused hunt
+python3 contact_engine.py --progress artifacts/progress.json --phase linkedin # LinkedIn employer discovery
 ```
 
 ### Custom workers and output
@@ -85,7 +85,7 @@ Requires these columns:
 
 ## Output
 
-- **Progress JSON** - Auto-saved alongside CSV, tracks all lookups and contacts. Resumable.
+- **Progress JSON** - Keep it in an ignored local artifact path like `tools/llc-manager-finder/artifacts/`. Resumable.
 - **Excel** - Three sheets:
   - *With Contact Info* - Managers that have email or phone
   - *All Managers* - Every manager found

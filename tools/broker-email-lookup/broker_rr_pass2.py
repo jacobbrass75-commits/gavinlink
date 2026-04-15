@@ -15,9 +15,9 @@ Run after broker_email_lookup.py and broker_pattern_fill.py finish.
 """
 import json, re, time, os
 import requests
+from paths import PROGRESS_PATH
 
 RR_KEY = os.environ["ROCKETREACH_API_KEY"]
-PROGRESS_PATH = "/Users/josephsullivan/Downloads/broker_lookup_progress.json"
 
 PERSONAL_DOMAINS = {
     'gmail.com','yahoo.com','hotmail.com','aol.com','outlook.com',

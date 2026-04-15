@@ -45,6 +45,15 @@ The `tools/` directory is different. It contains standalone utilities, bulk expo
 
 If something in `tools/` becomes product-critical, move the adapter into `src/integrations`, the orchestration into `src/app`, and the entry point into the API/CLI/MCP/ops surfaces.
 
+Generated output from standalone tools is not part of the product runtime.
+
+- progress JSON
+- contact dumps
+- spreadsheets
+- ad hoc export files
+
+Those outputs belong in ignored local `artifacts/` directories or private storage, not in the committed application tree.
+
 ## Claude / Assistant Use
 
 Soleil is designed to be used by assistants through the MCP surface, not just by humans reading docs.
@@ -152,6 +161,27 @@ npm run local:up:pm2
 - Set `BRAIN_TRANSPORT=http` only when you explicitly want those surfaces to target a remote HTTP API.
 - `/brain/*` is a mixed compatibility layer, not the canonical product API.
 - Standalone `tools/*` outputs are not source of truth and should not be treated like live runtime data.
+
+## Runtime Boundary
+
+Canonical runtime:
+
+- `src/api`
+- `src/app`
+- `src/ops`
+- `src/cli`
+- `src/mcp`
+- `scripts/*` entry points that call the runtime
+- `ecosystem.config.cjs`
+- PostgreSQL + ChromaDB
+
+Not canonical runtime:
+
+- `tools/*`
+- generated files under `tools/*`
+- PM2 logs
+- deploy finisher logs
+- local checkpoint files under `data/*`
 
 ## Test Modes
 

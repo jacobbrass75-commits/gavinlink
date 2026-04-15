@@ -17,6 +17,30 @@ The repo contains one core backend application plus assistant adapters, narrativ
 
 `wiki/` is downstream of the core brain. It is not the system of record.
 
+## Canonical Runtime Boundary
+
+These are the only directories and files that define the product runtime:
+
+- `src/api`
+- `src/app`
+- `src/ops`
+- `src/cli`
+- `src/mcp`
+- `src/integrations`
+- `scripts/` entry points
+- `ecosystem.config.cjs`
+- `docker-compose.yml`
+
+Everything else is either:
+
+- storage (`raw/`, `wiki/`)
+- tests
+- briefs
+- deployment support
+- standalone utility code under `tools/`
+
+`tools/` is not part of the live runtime contract, even when it contains useful workflows.
+
 ## Architecture In One View
 
 ```text
@@ -203,6 +227,7 @@ Runtime state and operational artifacts live outside the durable domain model:
 | `data/propertyradar-feed-state.json` | PropertyRadar Gmail checkpoint state | runtime state, not business truth |
 | PM2 logs | operational diagnostics | clear or rotate routinely; do not treat as product data |
 | deploy finisher output | deployment diagnostics | useful for ops, not for product truth |
+| standalone tool exports | utility output only | never treat as runtime surfaces or canonical data |
 
 These files should stay out of the narrative layer and out of source-of-truth discussions.
 
@@ -238,6 +263,8 @@ These files should stay out of the narrative layer and out of source-of-truth di
 If a tool becomes part of the product, its adapter belongs under `src/integrations`, its orchestration under `src/app`, and its runtime entry points under `src/api`, `src/cli`, `src/mcp`, or `src/ops`.
 
 Generated exports under `tools/` are not authoritative product data. They should be treated as transient artifacts and moved to private storage if they need to persist.
+
+Generated exports should not be committed back into the main application repo. Version code here, not dumps, progress files, or spreadsheets.
 
 ## Major Data Flows
 
