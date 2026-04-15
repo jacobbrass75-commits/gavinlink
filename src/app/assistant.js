@@ -1,6 +1,7 @@
 const brainApp = require('./brain');
 const realNexApp = require('./realnex');
 const runtimeApp = require('./runtime');
+const operatorApp = require('./operator');
 const inferenceProvider = require('../inference/provider');
 
 function cleanText(value, fallback = null) {
@@ -63,6 +64,20 @@ function parseAssistantCommand(text) {
 
 function stripTrailingPunctuation(text) {
   return String(text || '').replace(/^[\s"'`]+|[\s"'`?!.,:;]+$/g, '').trim();
+}
+
+function humanizeToken(value, fallback = null) {
+  const text = cleanText(value, fallback);
+
+  if (!text) {
+    return fallback;
+  }
+
+  return text
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
 }
 
 function splitLookupIdentity(argument) {
@@ -156,6 +171,50 @@ function classifyPlainTextHeuristically(text) {
   ) {
     return {
       name: 'daily',
+      argument: '',
+      route: 'heuristic'
+    };
+  }
+
+  if (
+    /\b(overview|operator view|operator overview|dashboard|control center|command center|what'?s going on|what is going on)\b/i.test(
+      normalized
+    )
+  ) {
+    return {
+      name: 'overview',
+      argument: '',
+      route: 'heuristic'
+    };
+  }
+
+  if (/\b(backlog|what'?s pending|what is pending|priority queue|what is on deck)\b/i.test(normalized)) {
+    return {
+      name: 'backlog',
+      argument: '',
+      route: 'heuristic'
+    };
+  }
+
+  if (
+    /\b(alerts|propertyradar|what came in|new notices|new defaults|recent alerts|recent default alerts)\b/i.test(
+      normalized
+    )
+  ) {
+    return {
+      name: 'alerts',
+      argument: '',
+      route: 'heuristic'
+    };
+  }
+
+  if (
+    /\b(workflow|workflows|what'?s stuck|what is stuck|queue status|promotion queue|match pipeline)\b/i.test(
+      normalized
+    )
+  ) {
+    return {
+      name: 'workflows',
       argument: '',
       route: 'heuristic'
     };
@@ -259,7 +318,7 @@ async function classifyPlainTextWithInference(text) {
   const prompt = [
     'You route broker requests for Soleil, a commercial real estate assistant.',
     'Return minified JSON only with keys: intent, argument.',
-    'Allowed intents: help, status, daily, search, lookup, match, add, cancel, unknown.',
+    'Allowed intents: help, status, daily, overview, backlog, alerts, workflows, search, lookup, match, add, cancel, unknown.',
     'Choose add only when the user is explicitly asking to save, remember, capture, or log a note, or the message is clearly broker intel intended for storage.',
     'Casual chat, corrections, greetings, status checks, and "do not save" messages must not be add.',
     'For lookup/search/match, extract the tightest usable argument string.',
@@ -282,6 +341,10 @@ async function classifyPlainTextWithInference(text) {
       'help',
       'status',
       'daily',
+      'overview',
+      'backlog',
+      'alerts',
+      'workflows',
       'search',
       'lookup',
       'match',
@@ -361,6 +424,154 @@ function formatDailyPayload(payload) {
     lines.push('', 'No priority items yet.');
   }
 
+  return truncateMessage(lines.join('\n'));
+}
+
+function formatTopMatches(matches = [], limit = 3) {
+  return Array.isArray(matches)
+    ? matches.slice(0, limit).map((match) => ({
+        buyer: match?.buyer?.entity_name || 'Unknown buyer',
+        property: match?.property?.address || match?.property?.apn || 'Unknown property',
+        score: match?.score
+      }))
+    : [];
+}
+
+function formatOperatorOverview(payload) {
+  const lines = ['Soleil operator overview'];
+  const runtime = payload?.runtime || {};
+  const backlog = payload?.backlog || {};
+  const alerts = payload?.alerts || {};
+  const workflows = payload?.workflows || {};
+
+  lines.push(
+    '',
+    `Runtime: ${runtime.status || 'unknown'} | DB ${runtime.database || 'unknown'} | Chroma ${runtime.chromadb || 'unknown'}`
+  );
+
+  const actionCount = Array.isArray(backlog.action_items) ? backlog.action_items.length : 0;
+  const queueCount = Array.isArray(backlog.pending_promotions) ? backlog.pending_promotions.length : 0;
+  const matchCount = Array.isArray(backlog.top_matches) ? backlog.top_matches.length : 0;
+  lines.push(`Backlog: ${actionCount} action items | ${queueCount} pending promotions | ${matchCount} suggested matches`);
+
+  const alertTotals = alerts.last_7_days || {};
+  lines.push(
+    `Alerts (7d): ${alertTotals.total || 0} total | ${alertTotals.matched || 0} matched | ${alertTotals.unmatched || 0} unmatched`
+  );
+
+  const queueStatuses = Array.isArray(workflows.wiki_queue)
+    ? workflows.wiki_queue.map((row) => `${row.status} ${row.count}`).join(', ')
+    : '';
+  const matchStatuses = Array.isArray(workflows.match_pipeline)
+    ? workflows.match_pipeline.map((row) => `${row.status} ${row.count}`).join(', ')
+    : '';
+
+  if (queueStatuses) {
+    lines.push(`Wiki queue: ${queueStatuses}`);
+  }
+
+  if (matchStatuses) {
+    lines.push(`Match pipeline: ${matchStatuses}`);
+  }
+
+  const seenMessageCount = workflows?.propertyradar_feed?.seen_message_count || 0;
+  lines.push(`PropertyRadar checkpoints: ${seenMessageCount} seen messages`);
+
+  return truncateMessage(lines.join('\n'));
+}
+
+function formatBacklogPayload(payload) {
+  const lines = ['Soleil backlog'];
+  const actionItems = Array.isArray(payload?.action_items) ? payload.action_items.slice(0, 5) : [];
+  const promotions = Array.isArray(payload?.pending_promotions)
+    ? payload.pending_promotions.slice(0, 5)
+    : [];
+  const matches = formatTopMatches(payload?.top_matches, 5);
+
+  if (actionItems.length > 0) {
+    lines.push('', 'Action items:');
+    for (const item of actionItems) {
+      lines.push(`- ${item.action}${item.summary ? ` (${item.summary})` : ''}`);
+    }
+  }
+
+  if (promotions.length > 0) {
+    lines.push('', 'Pending promotions:');
+    for (const item of promotions) {
+      lines.push(`- ${item.knowledge_title || item.title_override || item.knowledge_entry_id} [${item.status}]`);
+    }
+  }
+
+  if (matches.length > 0) {
+    lines.push('', 'Suggested matches:');
+    for (const match of matches) {
+      lines.push(`- ${match.property} -> ${match.buyer} (score ${match.score})`);
+    }
+  }
+
+  if (actionItems.length === 0 && promotions.length === 0 && matches.length === 0) {
+    lines.push('', 'No active backlog items right now.');
+  }
+
+  return truncateMessage(lines.join('\n'));
+}
+
+function formatAlertsPayload(payload) {
+  const lines = ['Soleil alerts'];
+  const totals = payload?.last_7_days || {};
+  const recentAlerts = Array.isArray(payload?.recent_alerts) ? payload.recent_alerts.slice(0, 5) : [];
+  const byType = Array.isArray(payload?.by_change_type) ? payload.by_change_type.slice(0, 4) : [];
+
+  lines.push(
+    '',
+    `Last 7 days: ${totals.total || 0} total | ${totals.matched || 0} matched | ${totals.unmatched || 0} unmatched`
+  );
+
+  if (byType.length > 0) {
+    lines.push(`Mix: ${byType.map((row) => `${row.label} ${row.count}`).join(' | ')}`);
+  }
+
+  if (recentAlerts.length > 0) {
+    lines.push('', 'Recent alerts:');
+    for (const alert of recentAlerts) {
+      lines.push(
+        `- ${humanizeToken(alert.normalized_change_type, alert.change_summary || 'Alert')}: ${alert.property_address || 'unknown property'}`
+      );
+    }
+  }
+
+  if (recentAlerts.length === 0) {
+    lines.push('', 'No recent alerts in the brain.');
+  }
+
+  return truncateMessage(lines.join('\n'));
+}
+
+function formatWorkflowsPayload(payload) {
+  const lines = ['Soleil workflow status'];
+  const wikiQueue = Array.isArray(payload?.wiki_queue) ? payload.wiki_queue : [];
+  const matchPipeline = Array.isArray(payload?.match_pipeline) ? payload.match_pipeline : [];
+  const propertyRadarFeed = payload?.propertyradar_feed || {};
+
+  lines.push('', 'Wiki queue:');
+  if (wikiQueue.length > 0) {
+    for (const item of wikiQueue) {
+      lines.push(`- ${item.status}: ${item.count}`);
+    }
+  } else {
+    lines.push('- empty');
+  }
+
+  lines.push('', 'Match pipeline:');
+  if (matchPipeline.length > 0) {
+    for (const item of matchPipeline) {
+      lines.push(`- ${item.status}: ${item.count}`);
+    }
+  } else {
+    lines.push('- empty');
+  }
+
+  lines.push('', `PropertyRadar feed seen-message cache: ${propertyRadarFeed.seen_message_count || 0}`);
   return truncateMessage(lines.join('\n'));
 }
 
@@ -491,6 +702,10 @@ function buildHelpText(surface = 'assistant') {
         '/help',
         '/status',
         '/daily',
+        '/overview',
+        '/backlog',
+        '/alerts',
+        '/workflows',
         '/search <query>',
         '/lookup <name or address>',
         '/match <buyer or property>',
@@ -508,6 +723,9 @@ function buildHelpText(surface = 'assistant') {
       'Examples:',
       '- who is Mike Chen',
       '- what should I do today',
+      '- give me an operator overview',
+      '- what alerts came in',
+      '- what is stuck in workflows',
       '- find me Carson industrial buyers',
       '- save: Mike Chen wants 30k sqft in Carson'
     ].join('\n')
@@ -565,6 +783,59 @@ async function answerMessage(options = {}) {
         route: resolved.route,
         saved: false,
         reply: formatDailyPayload(payload),
+        payload
+      };
+    }
+    case 'overview': {
+      const payload = await operatorApp.getOperatorOverview({
+        actionLimit: limit,
+        queueLimit: limit,
+        matchLimit: limit,
+        limit
+      });
+      return {
+        intent: 'overview',
+        argument: '',
+        route: resolved.route,
+        saved: false,
+        reply: formatOperatorOverview(payload),
+        payload
+      };
+    }
+    case 'backlog': {
+      const payload = await operatorApp.getBacklogSnapshot({
+        actionLimit: limit,
+        queueLimit: limit,
+        matchLimit: limit
+      });
+      return {
+        intent: 'backlog',
+        argument: '',
+        route: resolved.route,
+        saved: false,
+        reply: formatBacklogPayload(payload),
+        payload
+      };
+    }
+    case 'alerts': {
+      const payload = await operatorApp.getAlertSnapshot({ limit });
+      return {
+        intent: 'alerts',
+        argument: '',
+        route: resolved.route,
+        saved: false,
+        reply: formatAlertsPayload(payload),
+        payload
+      };
+    }
+    case 'workflows': {
+      const payload = await operatorApp.getWorkflowSnapshot();
+      return {
+        intent: 'workflows',
+        argument: '',
+        route: resolved.route,
+        saved: false,
+        reply: formatWorkflowsPayload(payload),
         payload
       };
     }
@@ -788,6 +1059,10 @@ module.exports = {
   resolveAssistantIntent,
   answerMessage,
   formatDailyPayload,
+  formatOperatorOverview,
+  formatBacklogPayload,
+  formatAlertsPayload,
+  formatWorkflowsPayload,
   formatSearchPayload,
   formatLookupPayload,
   formatMatchPayload,

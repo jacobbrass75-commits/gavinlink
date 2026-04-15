@@ -56,9 +56,15 @@ async function requestJson(app, method, routePath, body = undefined) {
   const { port } = server.address();
 
   try {
+    const headers = body ? { 'content-type': 'application/json' } : {};
+
+    if (process.env.ADMIN_API_KEY) {
+      headers['x-api-key'] = process.env.ADMIN_API_KEY;
+    }
+
     const response = await fetch(`http://127.0.0.1:${port}${routePath}`, {
       method,
-      headers: body ? { 'content-type': 'application/json' } : {},
+      headers,
       body: body ? JSON.stringify(body) : undefined
     });
 

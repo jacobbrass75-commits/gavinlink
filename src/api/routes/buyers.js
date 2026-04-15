@@ -1,22 +1,5 @@
 const express = require('express');
-const {
-  createBuyerProfile,
-  getBuyerProfile,
-  updateBuyerProfile,
-  listBuyerProfiles,
-  searchBuyerProfiles,
-  deactivateBuyerProfile
-} = require('../../buyers/profiles');
-const {
-  recordPurchase,
-  getPurchaseHistory,
-  getBuyerStats
-} = require('../../buyers/activity');
-const {
-  getLenderReport,
-  getLenderDetail,
-  getLenderOwnerOverlaps
-} = require('../../buyers/lender-report');
+const buyersApp = require('../../app/buyers');
 const { requireAdminApiKey } = require('../guardrails');
 const { validateBody, z } = require('../validation');
 
@@ -73,7 +56,7 @@ router.get('/api/buyers/search', async (req, res, next) => {
       return res.status(400).json({ error: 'q is required' });
     }
 
-    const results = await searchBuyerProfiles(q);
+    const results = await buyersApp.searchBuyerProfiles(q);
     return res.json({ results, total: results.length });
   } catch (error) {
     return next(error);
@@ -86,10 +69,7 @@ router.post('/api/buyers/:id/purchases', requireAdminApiKey, async (req, res, ne
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const purchase = await recordPurchase({
-      ...req.body,
-      buyer_profile_id: req.params.id
-    });
+    const purchase = await buyersApp.recordBuyerPurchase(req.params.id, req.body || {});
     return res.status(201).json(purchase);
   } catch (error) {
     return next(error);
@@ -102,7 +82,7 @@ router.get('/api/buyers/:id/purchases', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const purchases = await getPurchaseHistory(req.params.id);
+    const purchases = await buyersApp.getBuyerPurchaseHistory(req.params.id);
     return res.json({ results: purchases, total: purchases.length });
   } catch (error) {
     return next(error);
@@ -115,7 +95,7 @@ router.get('/api/buyers/:id/stats', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const stats = await getBuyerStats(req.params.id);
+    const stats = await buyersApp.getBuyerStats(req.params.id);
     return res.json(stats);
   } catch (error) {
     return next(error);
@@ -128,7 +108,7 @@ router.get('/api/buyers/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const profile = await getBuyerProfile(req.params.id);
+    const profile = await buyersApp.getBuyerProfileById(req.params.id);
 
     if (!profile) {
       return res.status(404).json({ error: 'Buyer profile not found' });
@@ -142,7 +122,7 @@ router.get('/api/buyers/:id', async (req, res, next) => {
 
 router.post('/api/buyers', requireAdminApiKey, validateBody(buyerCreateSchema), async (req, res, next) => {
   try {
-    const profile = await createBuyerProfile(req.validatedBody || {});
+    const profile = await buyersApp.createBuyerProfile(req.validatedBody || {});
     return res.status(201).json(profile);
   } catch (error) {
     return next(error);
@@ -151,7 +131,7 @@ router.post('/api/buyers', requireAdminApiKey, validateBody(buyerCreateSchema), 
 
 router.get('/api/buyers', async (req, res, next) => {
   try {
-    const result = await listBuyerProfiles({
+    const result = await buyersApp.listBuyerProfiles({
       property_type: req.query.property_type,
       city: req.query.city,
       strategy: req.query.strategy,
@@ -176,7 +156,7 @@ router.put('/api/buyers/:id', requireAdminApiKey, validateBody(buyerUpdateSchema
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const profile = await updateBuyerProfile(req.params.id, req.validatedBody || {});
+    const profile = await buyersApp.updateBuyerProfile(req.params.id, req.validatedBody || {});
     return res.json(profile);
   } catch (error) {
     return next(error);
@@ -189,7 +169,7 @@ router.delete('/api/buyers/:id', requireAdminApiKey, async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const profile = await deactivateBuyerProfile(req.params.id);
+    const profile = await buyersApp.deactivateBuyerProfile(req.params.id);
     return res.json(profile);
   } catch (error) {
     return next(error);
@@ -198,7 +178,7 @@ router.delete('/api/buyers/:id', requireAdminApiKey, async (req, res, next) => {
 
 router.get('/api/lenders/overlaps', async (_req, res, next) => {
   try {
-    const results = await getLenderOwnerOverlaps();
+    const results = await buyersApp.getLenderOwnerOverlaps();
     return res.json({ results, total: results.length });
   } catch (error) {
     return next(error);
@@ -211,7 +191,7 @@ router.get('/api/lenders/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const detail = await getLenderDetail(req.params.id);
+    const detail = await buyersApp.getLenderDetail(req.params.id);
 
     if (!detail) {
       return res.status(404).json({ error: 'Lender not found' });
@@ -225,7 +205,7 @@ router.get('/api/lenders/:id', async (req, res, next) => {
 
 router.get('/api/lenders', async (_req, res, next) => {
   try {
-    const results = await getLenderReport();
+    const results = await buyersApp.getLenderReport();
     return res.json({ results, total: results.length });
   } catch (error) {
     return next(error);

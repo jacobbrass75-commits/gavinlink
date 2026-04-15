@@ -1,5 +1,6 @@
 const brainApp = require('../app/brain');
 const runtimeApp = require('../app/runtime');
+const operatorApp = require('../app/operator');
 const {
   createRealNexService,
   disambiguateLocalEntityAgainstRealNex
@@ -81,6 +82,21 @@ const TOOLS = [
     description:
       'Get live runtime status for Soleil, including database, ChromaDB, inference provider, and write-auth mode.',
     inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'brain_operator',
+    description:
+      'Get Soleil operator context from one shared surface: overview, backlog, alerts, or workflows. Use this when the user wants the current control-center view instead of a narrow lookup or search.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        section: {
+          type: 'string',
+          description: 'Which operator section to load: overview, backlog, alerts, or workflows',
+          default: 'overview'
+        }
+      }
+    }
   },
   {
     name: 'brain_realnex_disambiguate',
@@ -199,6 +215,14 @@ async function callTool(name, args = {}) {
         return callApi('GET', '/api/daily');
       case 'brain_status':
         return callApi('GET', '/health');
+      case 'brain_operator': {
+        const section = String(args.section || 'overview').trim().toLowerCase();
+        const endpoint =
+          section === 'backlog' || section === 'alerts' || section === 'workflows'
+            ? `/api/operator/${section}`
+            : '/api/operator/overview';
+        return callApi('GET', endpoint);
+      }
       case 'brain_realnex_disambiguate':
         return callApi('POST', '/api/realnex/disambiguate', {
           entityId: args.entityId,
@@ -249,6 +273,24 @@ async function callTool(name, args = {}) {
       return callLocal(() => brainApp.getDailyBrief());
     case 'brain_status':
       return callLocal(() => runtimeApp.getRuntimeStatus());
+    case 'brain_operator':
+      return callLocal(() => {
+        const section = String(args.section || 'overview').trim().toLowerCase();
+
+        if (section === 'backlog') {
+          return operatorApp.getBacklogSnapshot();
+        }
+
+        if (section === 'alerts') {
+          return operatorApp.getAlertSnapshot();
+        }
+
+        if (section === 'workflows') {
+          return operatorApp.getWorkflowSnapshot();
+        }
+
+        return operatorApp.getOperatorOverview();
+      });
     case 'brain_realnex_disambiguate':
       return callLocal(async () => {
         const service = createRealNexService();

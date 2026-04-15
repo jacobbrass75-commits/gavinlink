@@ -1,11 +1,5 @@
 const express = require('express');
-const {
-  listMatches,
-  getMatch,
-  getTopMatches,
-  updateMatchStatus,
-  generateNarrativeForMatch
-} = require('../../matching/runner');
+const matchingApp = require('../../app/matching');
 const { createRateLimiter, requireAdminApiKey } = require('../guardrails');
 const { z } = require('../validation');
 
@@ -38,7 +32,7 @@ const updateStatusSchema = z.object({
 
 router.get('/api/matches/top', async (req, res, next) => {
   try {
-    const results = await getTopMatches({
+    const results = await matchingApp.getTopMatches({
       limit: parseLimit(req.query.limit, 10),
       status: req.query.status
     });
@@ -54,7 +48,7 @@ router.get('/api/matches/buyer/:buyerId', async (req, res, next) => {
       return res.status(400).json({ error: 'buyerId must be a valid UUID' });
     }
 
-    const result = await listMatches({
+    const result = await matchingApp.listMatches({
       buyer_profile_id: req.params.buyerId,
       status: req.query.status,
       min_score: req.query.min_score,
@@ -73,7 +67,7 @@ router.get('/api/matches/property/:propertyId', async (req, res, next) => {
       return res.status(400).json({ error: 'propertyId must be a valid UUID' });
     }
 
-    const result = await listMatches({
+    const result = await matchingApp.listMatches({
       property_id: req.params.propertyId,
       status: req.query.status,
       min_score: req.query.min_score,
@@ -92,7 +86,7 @@ router.get('/api/matches/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const match = await getMatch(req.params.id);
+    const match = await matchingApp.getMatchById(req.params.id);
 
     if (!match) {
       return res.status(404).json({ error: 'Match not found' });
@@ -126,7 +120,7 @@ router.put('/api/matches/:id/status', requireAdminApiKey, async (req, res, next)
       });
     }
 
-    const match = await updateMatchStatus(req.params.id, parsed.data.status);
+    const match = await matchingApp.updateMatchStatus(req.params.id, parsed.data.status);
     return res.json(match);
   } catch (error) {
     return next(error);
@@ -139,7 +133,7 @@ router.post('/api/matches/:id/narrative', requireAdminApiKey, narrativeLimiter, 
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const match = await generateNarrativeForMatch(req.params.id);
+    const match = await matchingApp.generateNarrativeForMatch(req.params.id);
     return res.status(201).json(match);
   } catch (error) {
     return next(error);
@@ -148,7 +142,7 @@ router.post('/api/matches/:id/narrative', requireAdminApiKey, narrativeLimiter, 
 
 router.get('/api/matches', async (req, res, next) => {
   try {
-    const result = await listMatches({
+    const result = await matchingApp.listMatches({
       buyer_profile_id: req.query.buyer_profile_id,
       property_id: req.query.property_id,
       status: req.query.status,

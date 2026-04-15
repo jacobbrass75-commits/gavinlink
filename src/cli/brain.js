@@ -4,6 +4,7 @@ const path = require('path');
 const { startMCPServer } = require('../mcp/server');
 const brainApp = require('../app/brain');
 const assistantApp = require('../app/assistant');
+const operatorApp = require('../app/operator');
 const { promoteKnowledgeEntry } = require('../wiki/promote');
 const { lintWiki } = require('../wiki/lint');
 const { processAutoPromoteQueue } = require('../wiki/queue');
@@ -322,6 +323,30 @@ async function main() {
       return printResult(
         useHttpTransport() ? await apiRequest('GET', '/api/daily') : await brainApp.getDailyBrief()
       );
+    case 'overview':
+      return printResult(
+        useHttpTransport()
+          ? await apiRequest('GET', '/api/operator/overview')
+          : await operatorApp.getOperatorOverview()
+      );
+    case 'backlog':
+      return printResult(
+        useHttpTransport()
+          ? await apiRequest('GET', '/api/operator/backlog')
+          : await operatorApp.getBacklogSnapshot()
+      );
+    case 'alerts':
+      return printResult(
+        useHttpTransport()
+          ? await apiRequest('GET', '/api/operator/alerts')
+          : await operatorApp.getAlertSnapshot()
+      );
+    case 'workflows':
+      return printResult(
+        useHttpTransport()
+          ? await apiRequest('GET', '/api/operator/workflows')
+          : await operatorApp.getWorkflowSnapshot()
+      );
     case 'promote':
       return promoteCommand(args);
     case 'promote-document':
@@ -335,7 +360,7 @@ async function main() {
       return undefined;
     default:
       throw new Error(
-        'Usage: brain add <message> | brain add --audio <file> | brain answer <message> | brain search <query> | brain lookup <name> | brain match <identifier> | brain daily | brain promote <knowledge-entry-id> [--page wiki/...md] [--title "..."] | brain promote-document <property-id> <file> [--document-type type] [--notes text] [--queue-only] | brain autopromote [--limit N] [--dry-run] | brain lint [--offline] | brain serve'
+        'Usage: brain add <message> | brain add --audio <file> | brain answer <message> | brain search <query> | brain lookup <name> | brain match <identifier> | brain daily | brain overview | brain backlog | brain alerts | brain workflows | brain promote <knowledge-entry-id> [--page wiki/...md] [--title "..."] | brain promote-document <property-id> <file> [--document-type type] [--notes text] [--queue-only] | brain autopromote [--limit N] [--dry-run] | brain lint [--offline] | brain serve'
       );
   }
 }

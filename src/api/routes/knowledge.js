@@ -1,9 +1,5 @@
 const express = require('express');
-const {
-  listKnowledgeEntries,
-  getKnowledgeEntry,
-  deleteKnowledgeEntry
-} = require('../../knowledge/extract');
+const knowledgeApp = require('../../app/knowledge');
 const { requireAdminApiKey } = require('../guardrails');
 
 const router = express.Router();
@@ -30,7 +26,7 @@ router.get('/api/knowledge/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const entry = await getKnowledgeEntry(req.params.id);
+    const entry = await knowledgeApp.getKnowledgeEntryById(req.params.id);
 
     if (!entry) {
       return res.status(404).json({ error: 'Knowledge entry not found' });
@@ -44,7 +40,7 @@ router.get('/api/knowledge/:id', async (req, res, next) => {
 
 router.get('/api/knowledge', async (req, res, next) => {
   try {
-    const result = await listKnowledgeEntries({
+    const result = await knowledgeApp.listKnowledgeEntries({
       source: req.query.source,
       entity_id: req.query.entity_id,
       property_id: req.query.property_id,
@@ -68,7 +64,7 @@ router.delete('/api/knowledge/:id', requireAdminApiKey, async (req, res, next) =
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const deleted = await deleteKnowledgeEntry(req.params.id);
+    const deleted = await knowledgeApp.deleteKnowledgeEntryById(req.params.id);
 
     if (!deleted) {
       return res.status(404).json({ error: 'Knowledge entry not found' });

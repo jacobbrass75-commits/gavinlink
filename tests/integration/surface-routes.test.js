@@ -4,13 +4,21 @@ const assert = require('node:assert/strict');
 const assistantApp = require('../../src/app/assistant');
 const brainApp = require('../../src/app/brain');
 const realNexApp = require('../../src/app/realnex');
+const buyersApp = require('../../src/app/buyers');
+const propertiesApp = require('../../src/app/properties');
+const matchingApp = require('../../src/app/matching');
+const operatorApp = require('../../src/app/operator');
 
 function clearApiCache() {
   for (const modulePath of [
     '../../src/api/server',
     '../../src/api/routes/answer',
     '../../src/api/routes/channels',
-    '../../src/api/routes/realnex'
+    '../../src/api/routes/realnex',
+    '../../src/api/routes/operator',
+    '../../src/api/routes/buyers',
+    '../../src/api/routes/properties',
+    '../../src/api/routes/matches'
   ]) {
     delete require.cache[require.resolve(modulePath)];
   }
@@ -336,4 +344,92 @@ test('POST /api/realnex/sync uses the shared RealNex sync service', async (t) =>
   assert.equal(response.status, 200);
   assert.equal(payload.status, 'imported');
   assert.equal(payload.entity.name, 'Shelly Garcia');
+});
+
+test('GET /api/operator/overview uses the shared operator service', async (t) => {
+  const originalGetOperatorOverview = operatorApp.getOperatorOverview;
+
+  t.after(() => {
+    operatorApp.getOperatorOverview = originalGetOperatorOverview;
+  });
+
+  operatorApp.getOperatorOverview = async () => ({
+    runtime: { status: 'ok' },
+    backlog: { action_items: [] },
+    alerts: { last_7_days: { total: 0, matched: 0, unmatched: 0 } },
+    workflows: { wiki_queue: [], match_pipeline: [], propertyradar_feed: { seen_message_count: 4 } }
+  });
+
+  const { baseUrl } = await withServer(t);
+  const response = await fetch(`${baseUrl}/api/operator/overview`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.runtime.status, 'ok');
+  assert.equal(payload.workflows.propertyradar_feed.seen_message_count, 4);
+});
+
+test('GET /api/buyers/search uses the shared buyer app service', async (t) => {
+  const originalSearchBuyerProfiles = buyersApp.searchBuyerProfiles;
+
+  t.after(() => {
+    buyersApp.searchBuyerProfiles = originalSearchBuyerProfiles;
+  });
+
+  buyersApp.searchBuyerProfiles = async (query) => [
+    {
+      id: 'buyer-1',
+      entity_name: `stub:${query}`
+    }
+  ];
+
+  const { baseUrl } = await withServer(t);
+  const response = await fetch(`${baseUrl}/api/buyers/search?q=Mike%20Chen`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.results[0].entity_name, 'stub:Mike Chen');
+});
+
+test('GET /api/properties/:id uses the shared properties app service', async (t) => {
+  const originalGetPropertyDetail = propertiesApp.getPropertyDetail;
+
+  t.after(() => {
+    propertiesApp.getPropertyDetail = originalGetPropertyDetail;
+  });
+
+  propertiesApp.getPropertyDetail = async (propertyId) => ({
+    id: propertyId,
+    address: '8122 Maie Ave',
+    documents: []
+  });
+
+  const { baseUrl } = await withServer(t);
+  const response = await fetch(`${baseUrl}/api/properties/11111111-1111-4111-8111-111111111111`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.address, '8122 Maie Ave');
+});
+
+test('GET /api/matches/top uses the shared matching app service', async (t) => {
+  const originalGetTopMatches = matchingApp.getTopMatches;
+
+  t.after(() => {
+    matchingApp.getTopMatches = originalGetTopMatches;
+  });
+
+  matchingApp.getTopMatches = async () => [
+    {
+      id: 'match-1',
+      score: 84
+    }
+  ];
+
+  const { baseUrl } = await withServer(t);
+  const response = await fetch(`${baseUrl}/api/matches/top`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.results[0].score, 84);
 });

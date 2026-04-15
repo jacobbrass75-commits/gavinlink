@@ -23,6 +23,7 @@ The software is built to help a brokerage team move from raw market signals to a
 - Telegram bot: worker in `src/ops/telegram-bot.js`
 - Channel ingress: `/api/channels/{omi,hermes,vermes}`
 - Assistant answer surface: `/api/answer`, `brain answer ...`, and MCP `brain_answer`
+- Operator surface: `/api/operator/{overview,backlog,alerts,workflows}`, `brain overview`, and MCP `brain_operator`
 - Recurring workers: PM2-managed jobs such as the PropertyRadar feed under `src/ops/`
 - Ops scripts: grouped under `scripts/admin`, `scripts/imports`, `scripts/ops`, and `scripts/qa`
 
@@ -171,6 +172,7 @@ Canonical runtime:
 - `src/ops`
 - `src/cli`
 - `src/mcp`
+- `src/integrations`
 - `scripts/*` entry points that call the runtime
 - `ecosystem.config.cjs`
 - PostgreSQL + ChromaDB
@@ -201,10 +203,13 @@ npm start
 brain search "industrial Carson"
 brain answer "who is Mike Chen"
 brain match "Mike Chen"
+brain overview
 brain serve
 ```
 
 For local development, the CLI, MCP server, and Telegram worker now call the shared app layer directly by default instead of bouncing through HTTP. Set `BRAIN_TRANSPORT=http` only when you explicitly want those surfaces to target a remote API.
+
+The core route families for entities, buyers, sellers, knowledge, properties, and matching now sit behind `src/app/*` facades rather than importing domain modules straight from route files. The HTTP API, CLI, MCP, Telegram, and operator summaries now share the same orchestration boundary.
 
 Import or enrich data:
 

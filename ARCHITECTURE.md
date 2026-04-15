@@ -127,6 +127,7 @@ These are the user-facing or operator-facing entry points:
 | CLI | `src/cli/brain.js` | Operator and broker-facing adapter over shared app services plus wiki commands |
 | MCP | `src/mcp` | Assistant tool adapter over shared app services |
 | Telegram bot | `src/ops/telegram-bot.js` | Chat front door with command and plain-text intent routing |
+| Operator surface | `src/api/routes/operator.js`, `src/app/operator.js` | Unified overview/backlog/alerts/workflows surface over the shared app layer |
 | Channel ingress | `src/api/routes/channels.js` | Hermes, Omi, and Vermes webhook-style ingress |
 | Ops scripts | `scripts/` | Support setup, import, maintenance, and QA |
 
@@ -138,6 +139,7 @@ The Express server in `src/api/server.js` mounts route families for:
 
 - health
 - answer
+- operator
 - ingest
 - search
 - entities
@@ -154,6 +156,8 @@ The Express server in `src/api/server.js` mounts route families for:
 `/api/*` is the real working surface. `/brain/*` is a mixed compatibility layer: some routes still proxy real behavior and some remain placeholders. It should not be treated as the canonical product API.
 
 Protected write surfaces fail closed unless explicit secrets are configured. Administrative routes use `ADMIN_API_KEY`. Channel ingress uses route-specific shared secrets instead of a global admin fallback.
+
+The core route families for entities, buyers, sellers, knowledge, properties, and matching now sit behind `src/app/*` facades rather than importing domain modules directly from the HTTP layer. That makes `src/app` the real runtime boundary for the main product surface.
 
 ### Compatibility And Legacy Surface
 
@@ -180,6 +184,10 @@ The repo should not add new product behavior under direct `/brain/*`. New capabi
 - `lookup`
 - `match`
 - `daily`
+- `overview`
+- `backlog`
+- `alerts`
+- `workflows`
 
 It also owns local narrative operations:
 
@@ -194,6 +202,7 @@ It also owns local narrative operations:
 The MCP server currently exposes these operator tools:
 
 - `brain_answer`
+- `brain_operator`
 - `brain_add`
 - `brain_search`
 - `brain_lookup`
@@ -208,12 +217,15 @@ The operator contract for assistants lives in `CLAUDE_SKILL.md` and the assistan
 
 Today `brain_answer` is best described as a single-turn intent router with a few enrichment fallbacks, not a general multi-step broker agent. The docs and operator expectations should stay aligned with that reality until a planner/executor layer exists above it.
 
+The broker-facing control-center view now lives in `src/app/operator.js` and is exposed consistently through API, CLI, MCP, and assistant routing. That surface aggregates runtime health, backlog, alert state, and workflow queues without making those channels maintain their own summary logic.
+
 ### Telegram
 
 Telegram is a broker-facing front door, not a separate brain:
 
 - slash commands map into the shared assistant service
 - plain text is routed through the same shared assistant service
+- overview/backlog/alerts/workflows resolve through the shared operator surface rather than Telegram-specific summary code
 - explicit save requests still flow into note ingestion
 - the bot should not be treated as a generic open-ended chatbot unless the routing layer is upgraded further
 
@@ -352,7 +364,7 @@ This connects evidence handling with the narrative layer without making the wiki
 
 The repo is better organized now, but some architectural blur remains:
 
-- API route files still contain some direct SQL and response shaping instead of calling a dedicated application-service layer.
+- Import/export and a few legacy compatibility routes still need the same treatment the core route families now have through `src/app/*`.
 - `src/ingestion/router.js` coordinates too many cross-domain side effects.
 - `src/properties/documents.js` and `src/knowledge/transcribe.js` are cross-cutting modules that touch both core and narrative workflows.
 - Matching currently reaches into knowledge retrieval directly instead of depending on a narrower scoring input contract.
@@ -362,4 +374,4 @@ The repo is better organized now, but some architectural blur remains:
 
 ## Directional Cleanup
 
-The application layer now exists in `src/app/`, but not every route family has been fully pulled through it yet. Buyers, sellers, properties, knowledge, and import/export are still partially hybrid.
+The application layer in `src/app/` is now the real boundary for the core broker/runtime surfaces. The next cleanup targets are older import/export entry points, compatibility routes, and deeper orchestration inside `src/ingestion/router.js` rather than the main domain route families themselves.

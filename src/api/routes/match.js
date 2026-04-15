@@ -1,10 +1,5 @@
 const express = require('express');
-const {
-  runFullMatching,
-  runMatchingForBuyer,
-  runMatchingForProperty,
-  getMatchDistribution
-} = require('../../matching/runner');
+const matchingApp = require('../../app/matching');
 const { matchIdentifier, toNumber } = require('../../app/brain');
 const { createRateLimiter, requireAdminApiKey } = require('../guardrails');
 const { validateBody, z } = require('../validation');
@@ -44,7 +39,7 @@ const matchingRunSchema = z.object({
 router.post('/api/match/run', requireAdminApiKey, matchingLimiter, validateBody(matchingRunSchema), async (req, res, next) => {
   try {
     const body = req.validatedBody || {};
-    const result = await runFullMatching({
+    const result = await matchingApp.runFullMatching({
       minScore: body.minScore ?? req.query.minScore,
       dryRun: parseBoolean(body.dryRun ?? req.query.dryRun, false),
       generateNarratives: parseBoolean(
@@ -65,7 +60,7 @@ router.post('/api/match/run-for-buyer/:buyerId', requireAdminApiKey, matchingLim
     }
 
     const body = req.validatedBody || {};
-    const matches = await runMatchingForBuyer(req.params.buyerId, {
+    const matches = await matchingApp.runMatchingForBuyer(req.params.buyerId, {
       minScore: body.minScore ?? req.query.minScore,
       dryRun: parseBoolean(body.dryRun ?? req.query.dryRun, false),
       generateNarratives: parseBoolean(
@@ -86,7 +81,7 @@ router.post('/api/match/run-for-property/:propertyId', requireAdminApiKey, match
     }
 
     const body = req.validatedBody || {};
-    const matches = await runMatchingForProperty(req.params.propertyId, {
+    const matches = await matchingApp.runMatchingForProperty(req.params.propertyId, {
       minScore: body.minScore ?? req.query.minScore,
       dryRun: parseBoolean(body.dryRun ?? req.query.dryRun, false),
       generateNarratives: parseBoolean(
@@ -102,7 +97,7 @@ router.post('/api/match/run-for-property/:propertyId', requireAdminApiKey, match
 
 router.get('/api/match/distribution', async (_req, res, next) => {
   try {
-    return res.json(await getMatchDistribution());
+    return res.json(await matchingApp.getMatchDistribution());
   } catch (error) {
     return next(error);
   }

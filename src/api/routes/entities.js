@@ -1,16 +1,7 @@
 const express = require('express');
-const { query } = require('../../db/connection');
-const { lookupBrain, getEntityDetail } = require('../../app/brain');
-const { getPortfolio, detectPortfolioDistress } = require('../../entities/cluster');
-const { normalizeName } = require('../../entities/extract');
-const { buildContainsPattern } = require('../../utils/sql');
+const entitiesApp = require('../../app/entities');
 
 const router = express.Router();
-
-function parsePositiveInteger(value, fallback) {
-  const parsed = Number.parseInt(String(value || ''), 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-}
 
 function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -20,7 +11,7 @@ function isUuid(value) {
 
 router.get('/api/entities/lookup', async (req, res, next) => {
   try {
-    return res.json(await lookupBrain({ name: req.query.name }));
+    return res.json(await entitiesApp.lookupEntity({ name: req.query.name }));
   } catch (error) {
     return next(error);
   }
@@ -36,37 +27,9 @@ router.get('/api/entities/search', async (req, res, next) => {
       });
     }
 
-    const limit = Math.min(parsePositiveInteger(req.query.limit, 25) || 25, 100);
-    const offset = parsePositiveInteger(req.query.offset, 0);
-    const normalizedQuery = normalizeName(q);
-    const result = await query(
-      `
-        SELECT
-          id,
-          name,
-          entity_type,
-          similarity(normalized_name, $1) AS score
-        FROM entities
-        WHERE normalized_name % $1
-           OR normalized_name LIKE $2 ESCAPE '\\'
-        ORDER BY score DESC, name ASC
-        LIMIT $3
-        OFFSET $4
-      `,
-      [normalizedQuery, buildContainsPattern(normalizedQuery), limit, offset]
-    );
-
-    return res.json({
-      results: result.rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        type: row.entity_type,
-        score: Number(row.score)
-      })),
-      total: result.rows.length,
-      limit,
-      offset
-    });
+    const limit = Math.min(entitiesApp.parsePositiveInteger(req.query.limit, 25) || 25, 100);
+    const offset = entitiesApp.parsePositiveInteger(req.query.offset, 0);
+    return res.json(await entitiesApp.searchEntities({ query: q, limit, offset }));
   } catch (error) {
     return next(error);
   }
@@ -74,7 +37,7 @@ router.get('/api/entities/search', async (req, res, next) => {
 
 router.get('/api/entities/distressed', async (_req, res, next) => {
   try {
-    const results = await detectPortfolioDistress();
+    const results = await entitiesApp.getDistressedEntities();
     res.json({
       results,
       total: results.length
@@ -94,7 +57,7 @@ router.get('/api/entities/:id/portfolio', async (req, res, next) => {
       });
     }
 
-    const portfolio = await getPortfolio(id);
+    const portfolio = await entitiesApp.getEntityPortfolio(id);
 
     if (!portfolio) {
       return res.status(404).json({
@@ -118,7 +81,7 @@ router.get('/api/entities/:id', async (req, res, next) => {
       });
     }
 
-    const entityDetail = await getEntityDetail(id);
+    const entityDetail = await entitiesApp.getEntityDetailById(id);
 
     if (!entityDetail) {
       return res.status(404).json({
@@ -134,44 +97,12 @@ router.get('/api/entities/:id', async (req, res, next) => {
 
 router.get('/api/entities', async (req, res, next) => {
   try {
-    const limit = Math.min(parsePositiveInteger(req.query.limit, 25) || 25, 100);
-    const offset = parsePositiveInteger(req.query.offset, 0);
+    const limit = Math.min(entitiesApp.parsePositiveInteger(req.query.limit, 25) || 25, 100);
+    const offset = entitiesApp.parsePositiveInteger(req.query.offset, 0);
     const entityType = typeof req.query.type === 'string' && req.query.type.trim() !== ''
       ? req.query.type.trim().toLowerCase()
       : null;
-    const countResult = await query(
-      `
-        SELECT COUNT(*)::int AS count
-        FROM entities
-        WHERE ($1::text IS NULL OR entity_type = $1)
-      `,
-      [entityType]
-    );
-    const rowsResult = await query(
-      `
-        SELECT id, name, entity_type, source, created_at, updated_at
-        FROM entities
-        WHERE ($1::text IS NULL OR entity_type = $1)
-        ORDER BY name ASC
-        LIMIT $2
-        OFFSET $3
-      `,
-      [entityType, limit, offset]
-    );
-
-    return res.json({
-      results: rowsResult.rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        type: row.entity_type,
-        source: row.source,
-        created_at: row.created_at,
-        updated_at: row.updated_at
-      })),
-      total: countResult.rows[0].count,
-      limit,
-      offset
-    });
+    return res.json(await entitiesApp.listEntities({ type: entityType, limit, offset }));
   } catch (error) {
     return next(error);
   }
@@ -187,7 +118,7 @@ router.get('/brain/entity/:id', async (req, res, next) => {
       });
     }
 
-    const entityDetail = await getEntityDetail(id);
+    const entityDetail = await entitiesApp.getEntityDetailById(id);
 
     if (!entityDetail) {
       return res.status(404).json({

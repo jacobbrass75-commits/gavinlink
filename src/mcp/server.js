@@ -126,6 +126,20 @@ async function createMCPServer() {
   );
 
   server.registerTool(
+    'brain_operator',
+    {
+      description: TOOLS.find((tool) => tool.name === 'brain_operator').description,
+      inputSchema: {
+        section: z.enum(['overview', 'backlog', 'alerts', 'workflows']).optional()
+      }
+    },
+    async ({ section }) => {
+      const result = await callTool('brain_operator', { section });
+      return toToolResponse(result);
+    }
+  );
+
+  server.registerTool(
     'brain_realnex_disambiguate',
     {
       description: TOOLS.find((tool) => tool.name === 'brain_realnex_disambiguate').description,

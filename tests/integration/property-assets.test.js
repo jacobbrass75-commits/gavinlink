@@ -50,9 +50,15 @@ async function request(app, method, routePath, body = undefined, headers = {}) {
   const { port } = server.address();
 
   try {
+    const requestHeaders = { ...headers };
+
+    if (process.env.ADMIN_API_KEY) {
+      requestHeaders['x-api-key'] = process.env.ADMIN_API_KEY;
+    }
+
     const response = await fetch(`http://127.0.0.1:${port}${routePath}`, {
       method,
-      headers,
+      headers: requestHeaders,
       body
     });
 

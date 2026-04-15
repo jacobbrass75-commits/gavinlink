@@ -16,6 +16,7 @@ const importExportRouter = require('./routes/import-export');
 const realNexRouter = require('./routes/realnex');
 const channelRouter = require('./routes/channels');
 const answerRouter = require('./routes/answer');
+const operatorRouter = require('./routes/operator');
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
@@ -37,6 +38,7 @@ function createApp() {
   app.use(realNexRouter);
   app.use(channelRouter);
   app.use(answerRouter);
+  app.use(operatorRouter);
   app.use((error, _req, res, _next) => {
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
     const message = statusCode >= 500 ? 'Internal server error' : error.message;

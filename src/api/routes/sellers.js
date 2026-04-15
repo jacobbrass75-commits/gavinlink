@@ -1,23 +1,5 @@
 const express = require('express');
-const {
-  getSellerProfile,
-  getSellerProfileByProperty,
-  updateSellerProfile,
-  listSellerProfiles,
-  searchSellerProfiles,
-  autoGenerateSellerProfiles,
-  getSellerDistribution
-} = require('../../sellers/profiles');
-const {
-  batchScoreProperties
-} = require('../../sellers/distress-score');
-const {
-  batchInferMotivation
-} = require('../../sellers/motivation');
-const {
-  findPortfolioDistress,
-  findLenderOwnerPatterns
-} = require('../../sellers/portfolio-distress');
+const sellersApp = require('../../app/sellers');
 const { createRateLimiter, requireAdminApiKey } = require('../guardrails');
 const { validateBody, z } = require('../validation');
 
@@ -76,7 +58,7 @@ router.get('/api/sellers/search', async (req, res, next) => {
       return res.status(400).json({ error: 'q is required' });
     }
 
-    const results = await searchSellerProfiles(q);
+    const results = await sellersApp.searchSellerProfiles(q);
     return res.json({ results, total: results.length });
   } catch (error) {
     return next(error);
@@ -89,7 +71,7 @@ router.get('/api/sellers/by-property/:propertyId', async (req, res, next) => {
       return res.status(400).json({ error: 'propertyId must be a valid UUID' });
     }
 
-    const profile = await getSellerProfileByProperty(req.params.propertyId);
+    const profile = await sellersApp.getSellerProfileByProperty(req.params.propertyId);
 
     if (!profile) {
       return res.status(404).json({ error: 'Seller profile not found' });
@@ -103,7 +85,7 @@ router.get('/api/sellers/by-property/:propertyId', async (req, res, next) => {
 
 router.get('/api/sellers/distressed', async (_req, res, next) => {
   try {
-    const results = await findPortfolioDistress();
+    const results = await sellersApp.getPortfolioDistress();
     return res.json({ results, total: results.length });
   } catch (error) {
     return next(error);
@@ -112,7 +94,7 @@ router.get('/api/sellers/distressed', async (_req, res, next) => {
 
 router.get('/api/sellers/lender-patterns', async (_req, res, next) => {
   try {
-    const results = await findLenderOwnerPatterns();
+    const results = await sellersApp.getLenderOwnerPatterns();
     return res.json({ results, total: results.length });
   } catch (error) {
     return next(error);
@@ -121,7 +103,7 @@ router.get('/api/sellers/lender-patterns', async (_req, res, next) => {
 
 router.get('/api/sellers/distribution', async (_req, res, next) => {
   try {
-    const distribution = await getSellerDistribution();
+    const distribution = await sellersApp.getSellerDistribution();
     return res.json(distribution);
   } catch (error) {
     return next(error);
@@ -130,7 +112,7 @@ router.get('/api/sellers/distribution', async (_req, res, next) => {
 
 router.post('/api/sellers/auto-generate', requireAdminApiKey, sellerLimiter, async (_req, res, next) => {
   try {
-    const result = await autoGenerateSellerProfiles();
+    const result = await sellersApp.autoGenerateSellerProfiles();
     return res.status(201).json(result);
   } catch (error) {
     return next(error);
@@ -139,7 +121,7 @@ router.post('/api/sellers/auto-generate', requireAdminApiKey, sellerLimiter, asy
 
 router.post('/api/sellers/score', requireAdminApiKey, sellerLimiter, async (req, res, next) => {
   try {
-    const result = await batchScoreProperties({
+    const result = await sellersApp.scoreSellerProperties({
       limit: parseLimit(req.query.limit, 0),
       rescore: parseBoolean(req.query.rescore, false)
     });
@@ -151,7 +133,7 @@ router.post('/api/sellers/score', requireAdminApiKey, sellerLimiter, async (req,
 
 router.post('/api/sellers/infer', requireAdminApiKey, sellerLimiter, async (req, res, next) => {
   try {
-    const result = await batchInferMotivation({
+    const result = await sellersApp.inferSellerMotivation({
       limit: parseLimit(req.query.limit, 5)
     });
     return res.status(201).json(result);
@@ -166,7 +148,7 @@ router.get('/api/sellers/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const profile = await getSellerProfile(req.params.id);
+    const profile = await sellersApp.getSellerProfileById(req.params.id);
 
     if (!profile) {
       return res.status(404).json({ error: 'Seller profile not found' });
@@ -180,7 +162,7 @@ router.get('/api/sellers/:id', async (req, res, next) => {
 
 router.get('/api/sellers', async (req, res, next) => {
   try {
-    const result = await listSellerProfiles({
+    const result = await sellersApp.listSellerProfiles({
       min_distress: req.query.min_distress,
       max_distress: req.query.max_distress,
       motivation: req.query.motivation,
@@ -209,7 +191,7 @@ router.put('/api/sellers/:id', requireAdminApiKey, validateBody(sellerUpdateSche
       return res.status(400).json({ error: 'id must be a valid UUID' });
     }
 
-    const profile = await updateSellerProfile(req.params.id, req.validatedBody || {});
+    const profile = await sellersApp.updateSellerProfile(req.params.id, req.validatedBody || {});
     return res.json(profile);
   } catch (error) {
     return next(error);

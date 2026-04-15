@@ -5,6 +5,7 @@ const assistantApp = require('../../src/app/assistant');
 const brainApp = require('../../src/app/brain');
 const realNexApp = require('../../src/app/realnex');
 const runtimeApp = require('../../src/app/runtime');
+const operatorApp = require('../../src/app/operator');
 
 test('answerMessage routes status-style plain text to runtime status', async (t) => {
   const originalGetRuntimeStatus = runtimeApp.getRuntimeStatus;
@@ -28,6 +29,45 @@ test('answerMessage routes status-style plain text to runtime status', async (t)
   assert.equal(result.intent, 'status');
   assert.equal(result.saved, false);
   assert.match(result.reply, /Brain health: ok/);
+});
+
+test('answerMessage routes overview-style plain text to the operator surface', async (t) => {
+  const originalGetOperatorOverview = operatorApp.getOperatorOverview;
+
+  t.after(() => {
+    operatorApp.getOperatorOverview = originalGetOperatorOverview;
+  });
+
+  operatorApp.getOperatorOverview = async () => ({
+    runtime: {
+      status: 'ok',
+      database: 'connected',
+      chromadb: 'connected'
+    },
+    backlog: {
+      action_items: [{ action: 'Call Mike Chen' }],
+      pending_promotions: [],
+      top_matches: []
+    },
+    alerts: {
+      last_7_days: { total: 3, matched: 2, unmatched: 1 }
+    },
+    workflows: {
+      wiki_queue: [],
+      match_pipeline: [],
+      propertyradar_feed: { seen_message_count: 12 }
+    }
+  });
+
+  const result = await assistantApp.answerMessage({
+    message: 'give me an operator overview',
+    source: 'unit_test'
+  });
+
+  assert.equal(result.intent, 'overview');
+  assert.equal(result.saved, false);
+  assert.match(result.reply, /Soleil operator overview/);
+  assert.match(result.reply, /Alerts \(7d\): 3 total/);
 });
 
 test('answerMessage saves only explicit capture requests', async (t) => {
