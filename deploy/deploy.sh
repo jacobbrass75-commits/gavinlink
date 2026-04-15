@@ -89,6 +89,43 @@ run_with_retry() {
   return 1
 }
 
+wait_for_remote_finisher() {
+  local attempts="${DEPLOY_FINISH_ATTEMPTS:-180}"
+  local sleep_seconds="${DEPLOY_FINISH_SLEEP_SECONDS:-5}"
+  local i
+  local status
+
+  for ((i = 1; i <= attempts; i += 1)); do
+    status="$(
+      ssh "${SSH_OPTS[@]}" "${DEPLOY_TARGET}" \
+        "test -f /tmp/sullilink-deploy/finish.exit && cat /tmp/sullilink-deploy/finish.exit || true" \
+        2>/dev/null || true
+    )"
+    status="$(printf '%s' "${status}" | tr -d '\r\n[:space:]')"
+
+    if [[ -n "${status}" ]]; then
+      if [[ "${status}" == "0" ]]; then
+        return 0
+      fi
+
+      echo "Remote deploy finisher failed with exit status ${status}." >&2
+      ssh "${SSH_OPTS[@]}" "${DEPLOY_TARGET}" \
+        "echo '--- /tmp/sullilink-deploy/finish.log ---'; tail -n 120 /tmp/sullilink-deploy/finish.log 2>/dev/null || true; echo '--- PM2 ---'; pm2 list --no-color 2>/dev/null || true" \
+        || true
+      return 1
+    fi
+
+    echo "Waiting for remote finisher on ${DEPLOY_TARGET} (${i}/${attempts})..."
+    sleep "${sleep_seconds}"
+  done
+
+  echo "Timed out waiting for remote deploy finisher on ${DEPLOY_TARGET}." >&2
+  ssh "${SSH_OPTS[@]}" "${DEPLOY_TARGET}" \
+    "echo '--- /tmp/sullilink-deploy/finish.log ---'; tail -n 120 /tmp/sullilink-deploy/finish.log 2>/dev/null || true; echo '--- /tmp/sullilink-deploy/finish.launch.log ---'; tail -n 80 /tmp/sullilink-deploy/finish.launch.log 2>/dev/null || true" \
+    || true
+  return 1
+}
+
 for cmd in ssh rsync python3; do
   require_cmd "$cmd"
 done
@@ -282,6 +319,9 @@ wait_for_ssh
 run_with_retry "Prepare remote directories" \
   ssh "${SSH_OPTS[@]}" "${DEPLOY_TARGET}" "mkdir -p '${DEPLOY_PATH}' '${DEPLOY_PATH}/data' /tmp/sullilink-deploy"
 
+run_with_retry "Reset remote deploy status files" \
+  ssh "${SSH_OPTS[@]}" "${DEPLOY_TARGET}" "rm -f /tmp/sullilink-deploy/finish.exit /tmp/sullilink-deploy/finish.log /tmp/sullilink-deploy/finish.launch.log"
+
 run_with_retry "Sync repository" \
   rsync -az --delete \
     --exclude '.git/' \
@@ -303,4 +343,6 @@ run_with_retry "Upload remote finisher" \
 run_with_retry "Start remote finisher" \
   ssh "${SSH_OPTS[@]}" "${DEPLOY_TARGET}" "chmod +x /tmp/sullilink-deploy/finish.sh && pkill -f '/tmp/sullilink-deploy/finish.sh' >/dev/null 2>&1 || true; nohup /tmp/sullilink-deploy/finish.sh >/tmp/sullilink-deploy/finish.launch.log 2>&1 < /dev/null &"
 
-echo "Deploy started. The remote finisher will complete npm install, migrations, and PM2 restart server-side."
+wait_for_remote_finisher
+
+echo "Deploy completed successfully on ${DEPLOY_TARGET}."
