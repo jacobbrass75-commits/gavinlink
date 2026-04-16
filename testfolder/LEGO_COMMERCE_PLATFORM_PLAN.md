@@ -13,7 +13,7 @@ Build an internal platform that becomes the source of truth for:
 - stock adjustments
 - AI-assisted pricing, listing, and purchasing workflows
 
-The platform should connect BrickLink, eBay, and Whatnot without relying on those marketplaces as peer-to-peer sources of truth.
+The platform should connect BrickLink, eBay, Whatnot, and Airtable without relying on those systems as peer-to-peer sources of truth.
 
 ## Recommendation
 
@@ -52,6 +52,7 @@ Build v1 around these jobs:
 - import inventory from BrickLink
 - import listings and orders from eBay
 - import Whatnot sales and listings via CSV or API, depending on access
+- sync selected operational data to Airtable
 - maintain one internal SKU/catalog model
 - maintain one inventory ledger
 - publish quantity and price updates back to BrickLink and eBay
@@ -206,6 +207,54 @@ Recommended v2 Whatnot behavior with API access:
 - add a GraphQL adapter
 - ingest sale notifications
 - create and update products/listings through the API
+
+### Airtable
+
+Yes, Airtable can be connected, but it should be treated as a secondary operations surface.
+
+Best use cases for Airtable:
+
+- sourcing pipeline
+- purchase intake queue
+- listing review queue
+- manual exception handling
+- KPI dashboards for non-technical operators
+- lightweight mobile-friendly ops views
+
+Do not use Airtable as:
+
+- the source of truth for stock counts
+- the only place where purchases are recorded
+- the system that decides channel quantity
+
+Recommended Airtable behavior:
+
+- your app writes selected records to Airtable for visibility and workflow
+- Airtable writes back only limited approved fields such as notes, tags, review status, or sourcing decisions
+- stock quantities, reservations, and cost-basis calculations stay in PostgreSQL
+
+Implementation notes:
+
+- use Airtable Personal Access Tokens for your own internal connection
+- use OAuth only if you later build a third-party Airtable integration for other users
+- Airtable Web API is rate-limited to 5 requests per second per base
+- Airtable also supports webhooks, which is useful for reacting to changes in review/status tables
+
+Recommended Airtable tables for v1:
+
+- Purchases Queue
+- Inventory Review
+- Channel Listing Review
+- Sync Exceptions
+- Pricing Suggestions
+- KPI Snapshot
+
+Recommended sync direction for v1:
+
+- PostgreSQL -> Airtable for dashboards and operator workflows
+- Airtable -> PostgreSQL only for human-entered metadata and approval fields
+
+That gives you the convenience of Airtable without corrupting inventory truth.
 
 ## LEGO-Specific Data Model Advice
 
@@ -387,6 +436,20 @@ Exit criteria:
 - AI answers are grounded in your actual data
 - AI actions always pass through explicit approval
 
+### Phase 5.5: Airtable Ops Sync
+
+Deliverables:
+
+- Airtable base design for ops workflows
+- outbound sync from PostgreSQL to Airtable
+- limited inbound sync for approved human-entered fields
+- webhook or polling support for Airtable status changes
+
+Exit criteria:
+
+- operators can manage sourcing/review work in Airtable
+- Airtable changes cannot silently alter inventory truth
+
 ### Phase 6: Optional Whatnot API Adapter
 
 Only do this if you already have Seller API access.
@@ -413,7 +476,8 @@ Tell the implementation model to do this in order:
 6. Add eBay adapter in read-only mode first.
 7. Add write-back sync for BrickLink and eBay quantities.
 8. Add Whatnot CSV export/import workflows.
-9. Add AI query and listing-draft workflows last.
+9. Add Airtable ops sync for review queues and dashboards.
+10. Add AI query and listing-draft workflows last.
 
 That ordering minimizes risk and gives you a usable internal system before automation starts mutating channel inventory.
 
@@ -430,6 +494,7 @@ That ordering minimizes risk and gives you a usable internal system before autom
 - add BrickLink credential storage and signing utility
 - add eBay OAuth token refresh flow
 - add Whatnot CSV generator and importer
+- add Airtable sync service for review/status tables
 - add product image storage with public HTTPS URLs
 - add error reporting and retry queue for sync jobs
 
@@ -455,6 +520,10 @@ Once you use eBay Inventory API for a listing workflow, keep that listing manage
 
 Bundles, lots, and decomposed sets should be deferred until the base ledger is proven.
 
+### 6. Airtable scope creep
+
+If Airtable becomes the place where people “just fix stock quickly,” your system will drift. Keep its write-back fields narrow.
+
 ## Definition Of Success
 
 The project is successful when:
@@ -462,6 +531,7 @@ The project is successful when:
 - internal available stock is trustworthy
 - BrickLink and eBay stock reflect internal stock
 - Whatnot can be operated without duplicate manual entry
+- Airtable gives you a usable ops layer without becoming a second database of truth
 - purchases and profitability are visible per item or lot
 - AI helps you decide what to buy, list, and move, instead of guessing
 
@@ -486,6 +556,7 @@ Rules:
 - Do not build bundle logic yet.
 - Do not build autonomous AI actions yet.
 - Do not implement Whatnot API access unless credentials and access are confirmed.
+- Treat Airtable as an ops/reporting layer, not the stock source of truth.
 - Prefer simple, auditable service-layer code over abstraction-heavy design.
 
 First deliverable:
@@ -509,3 +580,7 @@ After that, stop and summarize what was built, what migrations were added, and w
 - Whatnot Inventory docs: https://developers.whatnot.com/docs/information/inventory
 - Whatnot CSV bulk import guide: https://help.whatnot.com/hc/en-us/articles/7440530071821-Bulk-import-products-from-a-CSV-file
 - Whatnot cross-listing via Vendoo guide: https://help.whatnot.com/hc/en-us/articles/14064450060941-Import-listings-from-other-marketplaces-using-Vendoo
+- Airtable Web API guide: https://support.airtable.com/docs/public-rest-api
+- Airtable Personal Access Tokens: https://support.airtable.com/docs/how-do-i-get-my-api-key-
+- Airtable Webhooks API overview: https://support.airtable.com/docs/airtable-webhooks-api-overview
+- Airtable OAuth overview: https://support.airtable.com/docs/third-party-integrations-via-oauth-overview
