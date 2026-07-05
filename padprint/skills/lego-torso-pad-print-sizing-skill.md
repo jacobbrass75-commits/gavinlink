@@ -4,13 +4,20 @@ You are a coding agent producing production pad printing films for custom LEGO m
 
 ## 1. Production context
 
-- Machine: TTN Universal Series pad printer
-- Plates: red photopolymer cliche, 190 x 250 mm, UV exposed through a film positive
+- Machine: TTN Universal Series pad printer (Automark, North America)
+- Plates: water wash photopolymer cliche (WS 43 / WSA 52 class), 190 x 250 mm, UV exposed through a film positive
 - Film: printed transparency at 100 percent scale, dense black where ink goes, clear elsewhere
-- Film logic: black on film = etched area on cliche = ink on part
-- Parts: white ABS torsos. White is the part color. Never create a white ink layer.
+- Film logic: black on film = uncured, washed out, recessed area on cliche = ink area
+- Parts: white ABS torsos. White is the part color. Never create a white ink layer for white parts. White ink layers are allowed only when printing on colored parts.
 
 Final film rules, non-negotiable: black vector art only, transparent or empty background, no guides, labels, crosshairs, or crop marks inside the 190 x 250 plate area. The only allowed extra element is the cut rectangle in section 6.
+
+Film printing rules, from the plate vendor (Automark) process document:
+
+- Print films MIRRORED. The printed ink side of the film must lie face down in direct contact with the polymer during exposure. Asymmetric designs therefore ship the mirrored film as the primary production film; the unmirrored file is only a proofing aid. Symmetric designs are unaffected.
+- Print blacks as rich black, all four ink channels at 100 percent, from a full printer driver at maximum quality. Plain single-channel black from a default driver often passes UV and produces a shallow etch. Density check: hold the film over a bright light; if any light shows through the black, the film will not expose properly.
+- The plate process is two exposures at the same time setting: the artwork film exposure, then a raster (screen tint, around 250L at 90 percent) exposure that builds the textured floor of the etch so the ink doctoring works. Both films go printed side down.
+- Etch depth control: LONGER exposure = SHALLOWER etch; shorter exposure = deeper. Longer washout = deeper; shorter = shallower. Exposure time is unit dependent (vendor guidance for the Automark unit: about 35 to 45 seconds per step with 15 W bulbs; other units run 90 to 120 seconds). Calibrate with step tests, never assume.
 
 ## 2. Torso geometry, the source of all sizing
 
@@ -137,5 +144,5 @@ Also commit the generator and verifier scripts next to the outputs so every film
 - A contour line running parallel to a filled band at 0.20 mm reads fine on screen and bridges on the plate. Keep parallel same-ink features 0.30 mm apart edge to edge.
 - Photo references lie: bands are thicker than they look, separate marks are often one continuous stroke, straight lines are often shallow arcs. Expect 2 to 4 visual iteration passes against the reference.
 - Emblem corners near the shoulder bevels are the classic tight spot on emblem designs; the neck area top corners are the classic tight spot on full-face designs.
-- UV exposure baseline is 60 seconds and not yet calibrated per unit; shorter etches deeper. The mirror orientation test has not been run; supply mirrored variants for asymmetric designs or design symmetric.
+- UV exposure is unit dependent and must be step-test calibrated; shorter etches deeper. Vendor guidance for the Automark unit is about 35 to 45 seconds per exposure step, NOT the old 60 second assumption, which overexposes and produces a shallow etch. Films must be printed mirrored so ink contacts the polymer; supply mirrored films as the production files for asymmetric designs, or design symmetric.
 - Printer scale is not ruler-verified; the cut rectangle is the scale check.

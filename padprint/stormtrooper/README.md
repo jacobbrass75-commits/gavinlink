@@ -54,5 +54,6 @@ Bold structural black 0.24 to 0.26, sternum 0.22, dark gray details 0.18 to 0.20
 ## Before committing a plate
 
 - Print a paper proof at 100 percent, cut the torso art out, and lay it on a real torso. Binding point is the neck seal top corners at x = +/-4.40 mm on the top edge (0.60 mm envelope clearance).
-- First UV exposure: start from the 60 second baseline, calibrate with test plates.
-- Orientation: this design is symmetric, so the unresolved mirror question from the R test does not affect it.
+- Film must be printed mirrored (ink side down on the polymer) per the Automark process. This design is symmetric, so the same film works either way and orientation cannot ruin the plate.
+- Print film blacks as rich black, all four channels at 100 percent, max driver quality. Check density over a bright light before exposing.
+- UV exposure: vendor guidance for the Automark unit is about 35 to 45 seconds per step (artwork pass, then 250L 90 percent raster pass), not 60. Longer exposure etches shallower. Calibrate with a step test.
